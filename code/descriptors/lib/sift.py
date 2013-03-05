@@ -98,10 +98,12 @@ def appendimages(im1,im2):
     #select the image with the fewest rows and fill in enough empty rows
     rows1 = im1.shape[0]    
     rows2 = im2.shape[0]
+    print(im1.shape)
+    print(im2.shape)
     
     if rows1 < rows2:
         im1 = concatenate((im1,zeros((rows2-rows1,im1.shape[1]))), axis=0)
-    else:
+    elif rows1 > rows2:
         im2 = concatenate((im2,zeros((rows1-rows2,im2.shape[1]))), axis=0)
         
     return concatenate((im1,im2), axis=1)
