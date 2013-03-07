@@ -60,12 +60,13 @@ def read_features_from_file(filename):
     
     return locs,descriptors
     
-def match(desc1,desc2):
+def match(desc1,desc2, error_ratio = 0.6):
     """ for each descriptor in the first image, select its match to second image
         input: desc1 (matrix with descriptors for first image), 
         desc2 (same for second image)"""
     
-    dist_ratio = 0.6
+    # dist_ratio = 0.6
+    dist_ratio = error_ratio
     desc1_size = desc1.shape
     
     matchscores = zeros((desc1_size[0],1))
