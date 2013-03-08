@@ -121,7 +121,7 @@ def plot_matches(im1,im2,locs1,locs2,matchscores):
     
     cols1 = im1.shape[1]
     for i in range(len(matchscores)):
-        if matchscores[i] > 0:
+        if matchscores[i] != None:
             pylab.plot([locs1[i,1], locs2[int(matchscores[i]),1]+cols1], [locs1[i,0], locs2[int(matchscores[i]),0]], 'c')
     pylab.axis('off')
     pylab.show()

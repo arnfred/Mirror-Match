@@ -2,7 +2,7 @@
 Python module for use with openCV to extract features and descriptors
 and match them using variuos approaches, including SIFT and SURF
 
-Some of this code is adapted from Jan Erik Solem's python wrapper 
+Some of this code is inspired by Jan Erik Solem's python wrapper 
 (http://www.janeriksolem.net/2009/02/sift-python-implementation.html),
 which in turn is adapted from the matlab code examples at
 http://www.cs.ubc.ca/~lowe/keypoints/
@@ -23,84 +23,120 @@ import numpy
 
 ####################################
 #                                  #
+#           Attributes             #
+#                                  #
+####################################
+
+supported_keypoint_types = ["FAST","STAR","SIFT","SURF","ORB","MSER","BRISK","GFTT","HARRIS","Dense","SimpleBlob"]
+supported_descriptor_types = ["SIFT","SURF","ORB","BRISK","BRIEF","FREAK"]
+
+
+
+####################################
+#                                  #
 #           Functions              #
 #                                  #
 ####################################
 
-
-def getFeature(feature_type, params = {}) :
-	""" Returns a feature object from opencv with the parameters set
-		input: feature_type [string] (the type of the feature)
-		       params [dict] (Extra parameters for the method)
-		out:   [feature class] an object like cv2.SURF() or cv2.SIFT()
-	"""
-	# Get hold of method
-	if not cv2.__dict__.has_key(feature_type) : raise NonExistantMethod(feature_type)
-	feature = cv2.__dict__[feature_type]()
-
-	# Set parameters
-	for key, value in params : setattr(m, key, value)
-
-	return feature
-
-
-
-def getKeypoints(feature_type, image, params = {}) :
+def getKeypoints(keypoint_type, image, params = {}) :
 	""" Given the feature_type and an image, we return the keypoints for this image
-		input: feature_type [string] (The feature we are using to extract keypoints)
+		input: descriptor_type [string] (The feature we are using to extract keypoints)
 		       image [numpy.ndarray] (The image format used by scipy and opencv)
 		       params [dict] (Extra parameters for the method)
 		out:   [list of cv2.Keypoint]
 	"""
+	# Check if feature_type exists
+	if not keypoint_type in supported_keypoint_types : raise NonExistantFeature(keypoint_type)
+
 	# Get the feature
-	feature = getFeature(feature_type, params)
+	feature = cv2.FeatureDetector_create(keypoint_type)
 	
 	# Return feature points
 	return feature.detect(image)
 
 
 
-def getDescriptors(feature_type, image, keypoints) :
+def getDescriptors(descriptor_type, image, keypoints) :
 	""" Given a set of keypoints we convert them to descriptors using the method 
 	    specified by the feature_type
-		input: feature_type [string] (The feature we are using to extract keypoints)
+		input: descriptor_type [string] (The feature we are using to extract keypoints)
 		       image [numpy.ndarray] (The image format used by scipy and opencv)
 			   keypoints [list of cv2.Keypoint] (The keypoints we want to encode)
 		       params [dict] (Extra parameters for the method)
 		out:   [numpy.ndarray] (matrix of size n x 64 where n is the number of keypoints)
 	"""
-	# Make sure the feature_type exists and if it does, load it
-	if not cv2.__dict__.has_key(feature_type) : raise NonExistantMethod(feature_type)
-	extractor = cv2.DescriptorExtractor_create(feature_type)
+	# Check if feature_type exists
+	if not descriptor_type in supported_descriptor_types : raise NonExistantFeature(descriptor_type)
+
+	feature = cv2.DescriptorExtractor_create(descriptor_type)
 
 	# compute descriptors
-	keypoints, descriptors = extractor.compute(image, keypoints)
+	keypoints, descriptors = feature.compute(image, keypoints)
 	
 	return descriptors
 
 
 
-def match(D1, D2, ratio = 0.6) :
-	""" for each descriptor in the first image, select its match to second image
-		input: desc1 [numpy.ndarray] (matrix of length n x 64 with descriptors for first image) 
-			   desc2 [numpy.ndarray] (matrix of length m x 64 with descriptors for second image)
+def match(distFun, D1, D2, ratio = 0.6) :
+	""" for each descriptor in the first image, select its match in the second image
+		input: distFun [numpy.ndarray] (given D1 of size n x k and D2 of size m x k this 
+		                                function must return matrix of size m x n with all
+										distances between rows of D1 and D2)
+			   D1 [numpy.ndarray] (matrix of length n x k with descriptors for first image) 
+			   D2 [numpy.ndarray] (matrix of length m x k with descriptors for second image)
 			   ratio [float] (The difference between the closest and second
 							  closest keypoint match.)
 		out:   [list of floats] (list of length n with index of corresponding keypoint in second 
 								 image if any and None if not)
-		Adapted from http://www.janeriksolem.net/2009/02/sift-python-implementation.html
 	"""
-	# Return the first element if the ratio between first and second 
-	# element is more than the ratio argument
 	def bestMatch(row) :
 		s = numpy.argsort(row)
-		return s[0] if row[s[0]] < ratio*row[s[1]] else -1
+		return s[0] if row[s[0]] < ratio*row[s[1]] else None
+
+	T = distFun(D1,D2)
+	m1 = [numpy.argmin(row) for row in T]
+	m2 = [numpy.argmin(row) for row in T.T]
+
+
+	return [pos if index == m2[pos] else None for (pos, index) in zip(m1, range(len(m1)))]
+	#T = distFun(D1,D2)
+	#matchscores = [bestMatch(row) for row in T]
+	#return matchscores
+
+
+
+# Compute D1 * D2.T, and find approx dist with arccos
+def angleDist(D1, D2) : return numpy.arccos(D1.dot(D2.T))
+
+
+
+# Compute hamming distance
+def hammingDist(D1, D2) :
+	# Fast function for computing hamming distance
+	# n and m should both be integers
+	def hammingDistInt(n,m):
+		k = n ^ m
+		count = 0
+		while(k):
+			k &= k - 1
+			count += 1
+		return(count)
+
+	# Vectorizing the hammingDistInt function to take arrays
+	hm = numpy.vectorize(hammingDistInt)
+
+	# Record size and initialize data
+	n = D1.shape[0]
+	m = D2.shape[0]
+	result = numpy.zeros((n,m), 'uint8')
+
+	# Fill each spot in the resulting matrix with the distance
+	for i in range(n) : 
+		for j in range(m) : 
+			result[i,j] = sum(hm(D1[i], D2[j]))
 	
-	# Compute D1 * D2, and find approx dist with arccos
-	T = D1.dot(D2.T)
-	matchscores = [bestMatch(row) for row in numpy.arccos(T)]
-	
-	return matchscores
+	return result
+
 
 
 
@@ -131,7 +167,7 @@ class NonExistantPath(Exception) :
 		self.path = path
 		self.msg = msg
 
-class NonExistantMethod(Exception) :
+class NonExistantFeature(Exception) :
 	def __init__(self, method, msg = "") :
-		self.path = path
+		self.method = method
 		self.msg = msg
