@@ -32,6 +32,7 @@ def getFeature(feature_type, params = {}) :
 	""" Returns a feature object from opencv with the parameters set
 		input: feature_type [string] (the type of the feature)
 		       params [dict] (Extra parameters for the method)
+		out:   [feature class] an object like cv2.SURF() or cv2.SIFT()
 	"""
 	# Get hold of method
 	if not cv2.__dict__.has_key(feature_type) : raise NonExistantMethod(feature_type)
@@ -49,6 +50,7 @@ def getKeypoints(feature_type, image, params = {}) :
 		input: feature_type [string] (The feature we are using to extract keypoints)
 		       image [numpy.ndarray] (The image format used by scipy and opencv)
 		       params [dict] (Extra parameters for the method)
+		out:   [list of cv2.Keypoint]
 	"""
 	# Get the feature
 	feature = getFeature(feature_type, params)
@@ -63,8 +65,9 @@ def getDescriptors(feature_type, image, keypoints) :
 	    specified by the feature_type
 		input: feature_type [string] (The feature we are using to extract keypoints)
 		       image [numpy.ndarray] (The image format used by scipy and opencv)
-			   keypoints [list of cv2.Keypoint] (The keypoints we want to encode
+			   keypoints [list of cv2.Keypoint] (The keypoints we want to encode)
 		       params [dict] (Extra parameters for the method)
+		out:   [numpy.ndarray] (matrix of size n x 64 where n is the number of keypoints)
 	"""
 	# Make sure the feature_type exists and if it does, load it
 	if not cv2.__dict__.has_key(feature_type) : raise NonExistantMethod(feature_type)
@@ -79,10 +82,12 @@ def getDescriptors(feature_type, image, keypoints) :
 
 def match(D1, D2, ratio = 0.6) :
 	""" for each descriptor in the first image, select its match to second image
-		input: desc1 [numpy.ndarray] (matrix with descriptors for first image), 
-			   desc2 [numpy.ndarray] (same for second image)
+		input: desc1 [numpy.ndarray] (matrix of length n x 64 with descriptors for first image) 
+			   desc2 [numpy.ndarray] (matrix of length m x 64 with descriptors for second image)
 			   ratio [float] (The difference between the closest and second
 							  closest keypoint match.)
+		out:   [list of floats] (list of length n with index of corresponding keypoint in second 
+								 image if any and None if not)
 		Adapted from http://www.janeriksolem.net/2009/02/sift-python-implementation.html
 	"""
 	# Return the first element if the ratio between first and second 
@@ -100,8 +105,9 @@ def match(D1, D2, ratio = 0.6) :
 
 
 def loadImage(path) : 
-	""" Given a path, an image will be loaded and converted to grayscale 
+	""" Given a path, an image will be loaded and converted to grayscale
 		input: path [string] (path to the image)
+		out:   [numpy.ndarray] cv2 representation of image in one channel
 	"""
 	# Try to read image, and if doesn't exist, throw exception
 	img = cv2.imread(path)
