@@ -77,7 +77,7 @@ def getDescriptors(descriptor_type, image, keypoints) :
 
 
 
-def match(distFun, D1, D2, ratio = 0.6) :
+def match(distFun, D1, D2) :
 	""" for each descriptor in the first image, select its match in the second image
 		input: distFun [numpy.ndarray] (given D1 of size n x k and D2 of size m x k this 
 		                                function must return matrix of size m x n with all
@@ -89,16 +89,30 @@ def match(distFun, D1, D2, ratio = 0.6) :
 		out:   [list of floats] (list of length n with index of corresponding keypoint in second 
 								 image if any and None if not)
 	"""
-	def bestMatch(row) :
-		s = numpy.argsort(row)
-		return s[0] if row[s[0]] < ratio*row[s[1]] else None
+	# def bestMatch(row) :
+	# 	s = numpy.argsort(row)
+	# 	return (s[0], row[s[0]]) if row[s[0]] < ratio*row[s[1]] else None
+
+	def getData(row) :
+		ranking = numpy.argsort(row)
+		# The index of the best and second best match
+		i,j = ranking[0], ranking[1]
+		# The score of the best and second best match
+		s,t = row[i], row[j]
+		# Uniqueness: The ration between the best and second best match
+		u = s / (1.0 * t)
+		return (i,s,u)
 
 	T = distFun(D1,D2)
-	m1 = [numpy.argmin(row) for row in T]
-	m2 = [numpy.argmin(row) for row in T.T]
+	m1 = [getData(row) for row in T]
+	m2 = [getData(row) for row in T.T]
 
+	m2_indices = zip(*m2)[0]
 
-	return [pos if index == m2[pos] else None for (pos, index) in zip(m1, range(len(m1)))]
+	data = [(i,s,u) if index == m2_indices[i] else (None,None,None) 
+			  for ((i,s,u), index) in zip(m1, range(len(m1)))]
+
+	return zip(*data)
 	#T = distFun(D1,D2)
 	#matchscores = [bestMatch(row) for row in T]
 	#return matchscores

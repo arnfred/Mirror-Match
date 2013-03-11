@@ -58,7 +58,7 @@ def keypoints(im, locs) :
 
 
 
-def matches(im1, im2, locs1, locs2, matchscores) :
+def matches(im1, im2, locs1, locs2, matchpos) :
 	""" show a figure with lines joining the accepted matches in im1 and im2
 	    input: im1,im2 (images as arrays), locs1,locs2 (location of features), 
 	    matchscores (as output from 'match'). 
@@ -76,8 +76,8 @@ def matches(im1, im2, locs1, locs2, matchscores) :
 
 	# Plot all lines
 	cols1 = im1.shape[1]
-	for i in range(len(matchscores)):
-		if matchscores[i] != None:
-			pylab.plot([pos1[i,1], pos2[int(matchscores[i]),1]+cols1], [pos1[i,0], pos2[int(matchscores[i]),0]], 'c')
+	for i in range(len(matchpos)):
+		if matchpos[i] != None:
+			pylab.plot([pos1[i,1], pos2[int(matchpos[i]),1]+cols1], [pos1[i,0], pos2[int(matchpos[i]),0]], 'c')
 	pylab.axis('off')
 	pylab.show()
