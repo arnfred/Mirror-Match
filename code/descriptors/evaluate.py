@@ -16,6 +16,7 @@ import numpy
 import display
 import features as f
 import sys
+import math
 from itertools import combinations
 
 
@@ -40,7 +41,8 @@ def imageToImage(paths, keypoint_type, descriptor_type, score_fun = lambda i,s,u
 	keypoints = map(lambda i : f.getKeypoints(keypoint_type, i), images)
 
 	# Get descriptors
-	descriptors = map(lambda i,k : f.getDescriptors(descriptor_type, i, k), images, keypoints)
+	data = map(lambda i,k : f.getDescriptors(descriptor_type, i, k), images, keypoints)
+	keypoints, descriptors = zip(*data)
 
 	# Create a set of labels
 	labels = map(f.getLabel, paths)
@@ -53,9 +55,9 @@ def imageToImage(paths, keypoint_type, descriptor_type, score_fun = lambda i,s,u
 def matchDescriptors(descriptors, labels, descriptor_type, score_fun) :
 
 	def filterNone(l) : return [i for i in l if i != None]
-	def getScore(D1, D2) :
-		sys.stdout.write('#')
-		indices, scores, uniques = f.match(descriptor_type, D1, D2)
+	def getScore(D1, D2, i) :
+		if (i % 100 == 0) : sys.stdout.write('#')
+		indices, scores, uniques = f.bfMatch(descriptor_type, D1, D2)
 		noNones = map(filterNone, [indices, scores, uniques])
 		return score_fun(*noNones)
 
@@ -64,8 +66,13 @@ def matchDescriptors(descriptors, labels, descriptor_type, score_fun) :
 	label_pairs = [p for p in combinations(labels,2)]
 
 	# Print status
-	print("=") * len(label_pairs)
+	print("=") * (int(len(label_pairs) / 100) +1)
 
-	return [((l1 == l2), getScore(D1,D2))
-			for ((D1, D2), (l1, l2)) 
-			in zip( combinations(descriptors,2), combinations(labels,2) )]
+	score = [((l1 == l2), getScore(D1, D2, i))
+			for ((D1, D2), (l1, l2), i) 
+			in zip( desc_pairs, label_pairs, range(len(label_pairs)) )]
+
+	# Add a newline
+	print("")
+
+	return score

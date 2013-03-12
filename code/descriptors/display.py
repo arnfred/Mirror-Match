@@ -63,6 +63,9 @@ def matches(im1, im2, locs1, locs2, matchpos) :
 	    input: im1,im2 (images as arrays), locs1,locs2 (location of features), 
 	    matchscores (as output from 'match'). 
 	"""
+
+	assert len(locs1) == len(matchpos)
+
 	# Extract positions from keypoints
 	pos1 = getPositions(locs1)
 	pos2 = getPositions(locs2)
@@ -140,7 +143,6 @@ def scoreHist(scores) :
 	same = [score for (b, score) in scores if b]
 	diff = [score for (b, score) in scores if not b]
 
-	print("here")
 	x_min = min(min([same,diff])) 
 	x_max = max(max([same, diff]))
 	margin = (x_max - x_min) * 0.2

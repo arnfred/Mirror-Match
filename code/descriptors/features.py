@@ -72,7 +72,7 @@ def getDescriptors(descriptor_type, image, keypoints) :
 	# compute descriptors
 	keypoints, descriptors = feature.compute(image, keypoints)
 	
-	return descriptors
+	return keypoints, descriptors
 
 
 
