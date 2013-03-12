@@ -146,13 +146,13 @@ def scoreHist(scores) :
 	margin = (x_max - x_min) * 0.2
 
 	pylab.subplot(1,2,1)
-	pylab.hist(same, 20, label="Same", color="green", alpha=0.65)
+	pylab.hist(same, bins=20, label="Same", color="green", alpha=0.65)
 	pylab.legend()
 	pylab.xlim(x_min - margin ,x_max + margin )
 	removeDecoration
 
 	pylab.subplot(1,2,2)
-	pylab.hist(diff, 20,label="Diff", color="red", alpha=0.65)
+	pylab.hist(diff, bins=20,label="Diff", color="red", alpha=0.65)
 	pylab.legend()
 	pylab.xlim(x_min - margin ,x_max + margin )
 	removeDecoration

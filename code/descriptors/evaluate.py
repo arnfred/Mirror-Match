@@ -15,6 +15,7 @@ import pylab
 import numpy
 import display
 import features as f
+import sys
 from itertools import combinations
 
 
@@ -53,9 +54,17 @@ def matchDescriptors(descriptors, labels, descriptor_type, score_fun) :
 
 	def filterNone(l) : return [i for i in l if i != None]
 	def getScore(D1, D2) :
+		sys.stdout.write('#')
 		indices, scores, uniques = f.match(descriptor_type, D1, D2)
 		noNones = map(filterNone, [indices, scores, uniques])
 		return score_fun(*noNones)
+
+	# Get all pairings of descriptors and labels
+	desc_pairs = [p for p in combinations(descriptors,2)]
+	label_pairs = [p for p in combinations(labels,2)]
+
+	# Print status
+	print("=") * len(label_pairs)
 
 	return [((l1 == l2), getScore(D1,D2))
 			for ((D1, D2), (l1, l2)) 

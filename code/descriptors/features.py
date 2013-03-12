@@ -90,6 +90,16 @@ def match(descriptor_type, D1, D2) :
 	# 	s = numpy.argsort(row)
 	# 	return (s[0], row[s[0]]) if row[s[0]] < ratio*row[s[1]] else None
 
+
+	dist_fun_map = {
+		"SIFT"   : angleDist,
+		"SURF"   : angleDist,
+		"ORB"    : hammingDist,
+		"BRISK"  : hammingDist,
+		"BRIEF"  : hammingDist,
+		"FREAK"  : hammingDist
+	}
+
 	# Get distFun
 	dist_fun = dist_fun_map[descriptor_type]
 
@@ -116,6 +126,51 @@ def match(descriptor_type, D1, D2) :
 	#T = dist_fun(D1,D2)
 	#matchscores = [bestMatch(row) for row in T]
 	#return matchscores
+
+
+
+def bfMatch(descriptor_type, D1, D2) :
+
+	# Map for the type of distance measure to use
+	dist_map = {
+		"SIFT"   : cv2.NORM_L2,
+		"SURF"   : cv2.NORM_L2,
+		"ORB"    : cv2.NORM_HAMMING,
+		"BRISK"  : cv2.NORM_HAMMING,
+		"BRIEF"  : cv2.NORM_HAMMING,
+		"FREAK"  : cv2.NORM_HAMMING
+	}
+
+	# Map for the type of the data in the array
+	type_map = {
+		"SIFT"   : numpy.float32,
+		"SURF"   : numpy.float32,
+		"ORB"    : numpy.uint8,
+		"BRISK"  : numpy.uint8,
+		"BRIEF"  : numpy.uint8,
+		"FREAK"  : numpy.uint8
+	}
+
+	dtype = type_map[descriptor_type]
+	dist = dist_map[descriptor_type]
+
+	# Now get BFMatcher
+	matcher = cv2.BFMatcher(dist)
+
+	# Make sure the array is encoded properly
+	query = numpy.array(D1, dtype = dtype)
+	train = numpy.array(D2, dtype = dtype)
+
+	# Find nearest neighbor
+	matches_qt = matcher.knnMatch(query, train, k=2)
+	#matches_tq = bf.knnMatch(train, query, k=2)
+
+	# Convert result
+	data = [(m1.trainIdx, m1.distance, m1.distance*1.0/m2.distance) 
+				for [m1,m2] in matches_qt]
+				# if matches_tq[m1.trainIdx][0].trainIdx == m1.queryIdx]
+
+	return zip(*data)
 
 
 
@@ -152,14 +207,6 @@ def hammingDist(D1, D2) :
 	return result
 
 
-dist_fun_map = {
-		"SIFT"   : angleDist,
-		"SURF"   : angleDist,
-		"ORB"    : hammingDist,
-		"BRISK"  : hammingDist,
-		"BRIEF"  : hammingDist,
-		"FREAK"  : hammingDist
-		}
 
 
 def loadImage(path) : 
