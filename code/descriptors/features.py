@@ -31,7 +31,6 @@ supported_keypoint_types = ["FAST","STAR","SIFT","SURF","ORB","MSER","BRISK","GF
 supported_descriptor_types = ["SIFT","SURF","ORB","BRISK","BRIEF","FREAK"]
 
 
-
 ####################################
 #                                  #
 #           Functions              #
@@ -77,11 +76,9 @@ def getDescriptors(descriptor_type, image, keypoints) :
 
 
 
-def match(distFun, D1, D2) :
+def match(descriptor_type, D1, D2) :
 	""" for each descriptor in the first image, select its match in the second image
-		input: distFun [numpy.ndarray] (given D1 of size n x k and D2 of size m x k this 
-		                                function must return matrix of size m x n with all
-										distances between rows of D1 and D2)
+		input: descriptor_type [string] (The feature we are using to extract keypoints)
 			   D1 [numpy.ndarray] (matrix of length n x k with descriptors for first image) 
 			   D2 [numpy.ndarray] (matrix of length m x k with descriptors for second image)
 			   ratio [float] (The difference between the closest and second
@@ -93,6 +90,9 @@ def match(distFun, D1, D2) :
 	# 	s = numpy.argsort(row)
 	# 	return (s[0], row[s[0]]) if row[s[0]] < ratio*row[s[1]] else None
 
+	# Get distFun
+	dist_fun = dist_fun_map[descriptor_type]
+
 	def getData(row) :
 		ranking = numpy.argsort(row)
 		# The index of the best and second best match
@@ -103,7 +103,7 @@ def match(distFun, D1, D2) :
 		u = s / (1.0 * t)
 		return (i,s,u)
 
-	T = distFun(D1,D2)
+	T = dist_fun(D1,D2)
 	m1 = [getData(row) for row in T]
 	m2 = [getData(row) for row in T.T]
 
@@ -113,7 +113,7 @@ def match(distFun, D1, D2) :
 			  for ((i,s,u), index) in zip(m1, range(len(m1)))]
 
 	return zip(*data)
-	#T = distFun(D1,D2)
+	#T = dist_fun(D1,D2)
 	#matchscores = [bestMatch(row) for row in T]
 	#return matchscores
 
@@ -152,6 +152,14 @@ def hammingDist(D1, D2) :
 	return result
 
 
+dist_fun_map = {
+		"SIFT"   : angleDist,
+		"SURF"   : angleDist,
+		"ORB"    : hammingDist,
+		"BRISK"  : hammingDist,
+		"BRIEF"  : hammingDist,
+		"FREAK"  : hammingDist
+		}
 
 
 def loadImage(path) : 
@@ -168,6 +176,10 @@ def loadImage(path) :
 	img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2LUV)[:,:,0]
 
 	return img_gray
+
+
+
+def getLabel(path) : return " ".join(path.split("/")[-1].split("_")[0:-1])
 
 
 ####################################
