@@ -141,7 +141,13 @@ def barWithMask(X,Y,mask,color='blue') :
 def scoreHist(scores) : 
 
 	same = [score for (b, score) in scores if b]
-	diff = [score for (b, score) in scores if not b]
+	diff = [score for (b, score) in scores if not b] 
+
+	mean_same = numpy.mean(same)
+	mean_diff = numpy.mean(diff)
+	print("Mean(same): {0:.3f}".format(mean_same))
+	print("Mean(diff): {0:.3f}".format(mean_diff))
+	print("Difference: {0:.3f}%".format(100*(1 - mean_same/mean_diff)))
 
 	x_min = min(min([same,diff])) 
 	x_max = max(max([same, diff]))
