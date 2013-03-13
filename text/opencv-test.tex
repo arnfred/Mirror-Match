@@ -1,6 +1,10 @@
 \documentclass{article}
 \usepackage{graphicx}
 \usepackage{hyperref}
+\usepackage[stable]{footmisc}
+\usepackage{caption}
+\usepackage{adjustbox}
+\usepackage{subcaption}
 
 \begin{document}
 
@@ -27,7 +31,7 @@ not revealing the entire face the performance drops further to around 40\%
 genuine accept rate at 1\% false accept rate.
 
 If we relax the problem of classification to the more general problem of 
-clustering it might turn out that this accuracity is sufficient to accurately 
+clustering it might turn out that this accuracy is sufficient to accurately 
 separate a set of face patches into partitions each ideally only containing 
 pictures belonging to one person.
 
@@ -40,12 +44,13 @@ pictures belonging to one person.
 % v_i, v_j \in c, C(v_i) = C(v_j)$ \emph{even} when the graph contains 
 % interclass edges, that is an $\exists e \in E$ for which $
 %
-If we consider a graph it is often possible to succesfully obtain a 
+If we consider a graph it is often possible to successfully obtain a 
 partitioning that adheres to a classification of the graph even if the graph 
-has intercluster edges. This is of course only possible as long as the 
-intercluster edges outnumber or outweigh the intracluster edges, but if we can 
-create a link between two nodes around 40\% of the time and only have 1\% of 
-them be incorrect, we are looking at a very well behaved graph.
+has \emph{inter}-cluster edges. This is of course only possible as long as the 
+\emph{inter}-cluster edges outnumber or outweigh the \emph{intra}-cluster 
+edges, but if we can create a link between two nodes around 40\% of the time 
+and only have 1\% of them be incorrect, we are looking at a very well behaved 
+graph.
 
 To apply graph clustering to image clustering, consider the set of image 
 patches as the set of nodes and the edges between the nodes as the similarity 
@@ -77,7 +82,7 @@ Before I present the finished algorithm there are a few practical and
 theoretical problems that need to be solved first.
 
 \subsection{Theoretical shenanigans\footnote{%
-\href{http://www.youtube.com/watch?v=MFZG8KQJni8}{Relevant YouTube Clip}}}
+\href{http://www.youtube.com/watch?v=MFZG8KQJni8}{http://www.youtube.com/watch?v=MFZG8KQJni8}}}
 
 Given two sets of feature points and trying to match them, it's important to 
 realize that these two sets might be obtained from face-patches that contain 
@@ -135,31 +140,350 @@ I have however not been able to get FREAK to work}. So in order to see if any
 of these feature detectors might be usable and if yes, which ones, I decided to 
 put them to the test.
 
-\section{Getting some data\footnote{%
-\href{http://www.youtube.com/watch?v=FQ3UrLQP2ok}{Relevant YouTube clip}}}
+\section{Experiments}
+The goal of these experiment is to see if different feature descriptors given 
+real life images would score the similarities between images showing the same 
+face significantly higher than images showing the faces of different people.  
 
+\subsection{Getting some data\footnote{%
+\href{http://www.youtube.com/watch?v=FQ3UrLQP2ok}{http://www.youtube.com/watch?v=FQ3UrLQP2ok}}}
+In order to test this I used the LFW dataset\footnote{Labeled Faces in the 
+Wild}.  This is a dataset consisting of labeled photos of famous people taken 
+by photographers under different circumstances and in different quality. The 
+faces vary between looking straight at the camera and turning their head to 
+either side, but not to the extend of being full profile. The lighting is 
+usually relatively good but very inconsistent as most photos are from different 
+events, sometimes years apart.
 
+This dataset is not a perfect match since the ideal application for this 
+algorithm would be people's own photo albums, where the camera used is 
+consistent and the faces often might be in profile. However it does pose 
+similar challenges in the form of lightning and non-aligned faces that it 
+serves well to give a rough idea of the general performance of different 
+feature descriptors.
 
+\subsection{Experiment Setup}
 
+In general there are two measures to consider when we compare keypoints in an 
+image; the distance measure and how unique the match is. The distance measure 
+for the keypoint descriptors I have reviewed are either based on euclidean 
+distance or on hamming distance. Once we have matched keypoints of one image to 
+their highest matching counterpart in another image, we can filter these 
+matches either by only including matches that symmetric, i.e. if we swap the 
+two images and run the same matching algorithm we get the same match. Another 
+method proposed in \cite{lowe2004sift} is to look at the ratio between the best 
+and second best match. If the distances are too similar, the keypoint match is 
+not unique enough and hence discarded.
 
-Here is the text of your introduction.
+Since I don't have a solution yet for how best to compare two face-patches, I 
+have created four na\"ive methods that gives a score for a match of two 
+face-patches given their keypoint descriptors. These methods might not be 
+ideal, but it's my hope that they serve the purpose of rating the similarities 
+between images well enough to evaluate the different types of descriptors.  
+Notice that since a better matching function would be able to discard more bad 
+matches and keep more good matches, the results obtained using my na\"ive 
+methods sets a lower bound on how well the different descriptors perform.  
+Hopefully this lower bound is equally tight for all of them, but this is by no 
+means a given and my comparison can therefore not be seen as a general 
+evaluation of their performance.
 
-\begin{equation}
-    \label{simple_equation}
-    \alpha = \sqrt{ \beta }
-\end{equation}
+The four matching functions are given as parameters the distance for each 
+keypoint to it's closest match and the ratio for each keypoint between the 
+distance of the closest and second closest match. They work as follows:
+\begin{itemize}
+	\item{\emph{Simple Mean}: Take the mean of all distances}
+	\item{\emph{Better half}: Take the mean of the best half of the distances}
+	\item{\emph{Treshold}: Take the mean of only the points that are both in the 
+	better half of distances and ratios}
+	\item{\emph{Limit to 10}: As above but take only the 10 points with the 
+best distance}
+\end{itemize}
+I also created another four similarly functions, the only difference being that 
+the mean was over the \emph{ratio} and not the \emph{distance}.
 
-\subsection{Subsection Heading Here}
-Write your subsection text here.
+To quickly weed out bad performers I designed a small test-set including three 
+people from the LFW testset\footnote{Anna Kournikova, Ann Veneman and Bill 
+Gates}. For each person 10 images were picked at random and all pairs of images 
+compared using the eight functions mentioned above.
+
+\begin{table}[t]
+\begin{center}
+	\begin{tabular}{l l|l l}
+		\multicolumn{2}{c}{Preliminary Test} & \multicolumn{2}{c}{Full Test} \\
+		\hline
+		Locator & Descriptor & Locator & Descriptor \\
+		\hline
+		Sift & Sift & &\\
+		Surf & Surf & &\\
+		Orb & Orb & Orb & Orb \\
+		Fast & Orb & Fast & Orb \\
+		Orb & Brief & Orb & Brief \\
+		Fast & Brief & Fast & Brief \\
+		Orb & Brisk & & \\
+		Brisk & Brisk & & \\
+	\end{tabular}
+	\label{table:features}
+	\caption{Keypoints and descriptors used in preliminary and full testing 
+round}
+\end{center}
+\end{table}
+
+Since I have several different methods for selecting keypoints and several 
+different algorithms for creating descriptors based on the keypoints 
+available in OpenCV. The pairings I tested can be seen in table 1.  
+Generally I used the keypoint locator that was available for the 
+descriptor I was testing, and when this wasn't possible paired the 
+descriptor with a keypoint locator of a similar method.
+
+Upon finding the best performing keypoint locator and descriptor pairs I went 
+on to test them on an imageset containing $60$ people with ten images per 
+person, that is $600$ images in total.
+
+\section{Results\footnote{%
+\href{http://www.youtube.com/watch?v=tKT-eWMWXOE}{http://www.youtube.com/watch?v=tKT-eWMWXOE}}}
+
+The results from the preliminary testing can be seen in table 2.  The 
+difference displayed is the percentage wise difference between the score 
+of pairs of faces belonging to the same person as opposed to pairs of 
+faces belonging to two different people. The score is calculated using 
+either the ratio or the distance with one of the four functions 
+described above.
+
+It is immediately obvious that the distance based measures fare much better 
+than the ratio based measures. In particular the `treshold' and `limit10' 
+methods work well. However our main concern is not with how well the different 
+functions perform but rather the performance of different descriptors. Here we 
+see a clear advantage of Orb, Brief and Brisk. Brisk however shows some strange 
+fluctuations and would be surprised if these results were a true indicator of 
+the performance of the descriptor. Brisk is also significantly slower than the 
+others, usually taking around 9-10 seconds to calculate similarities between 30 
+images, something than can be calculated by the other methods in around 0.3 
+seconds.
+
+\begin{table}[t]
+\begin{adjustbox}{center}
+	\label{table:preliminary}
+	\begin{tabular}{l c c c c c c c c}
+		& \multicolumn{4}{c}{Ratio} & \multicolumn{4}{c}{Distance} \\
+		& Mean & Best Half & Treshold & Limit10 & Mean & Best Half & Treshold &
+Limit10 \\
+		\hline
+		Sift-Sift	& 0.4 & 0.7 & 0.8  & 0.4  & 0.7 & -0.4 & 1.0 & 1.5 \\
+		Surf-Surf	& 0.4 & 0.7 & 0.8  & 1.4  & 0.9 & 0.9  & 0.7 & 0.9 \\
+		Orb-Orb		& 0.6 & 1.1 & 1.3  & 1.1  & 2.0 & 0.6  & 3.8 & 3.5 \\
+		Fast-Orb	& 0.8 & 1.5 & 1.7  & 1.6  & 2.7 & 13.2 & 4.3 & 4.7 \\
+		Orb-Brief	& 0.4 & 0.9 & 1.0  & 0.6  & 5.8 & 2.3  & 8.9 & 8.8 \\
+		Fast-Brief	& 1.1 & 2.0 & 2.2  & 2.0  & 4.8 & 11.0 & 8.3 & 10.6 \\
+		Orb-Brisk	& 1.1 & 2.0 & 2.2  & 2.3  & 4.8 & 7.3  & 6.7 & 6.8 \\
+		Brisk-Brisk	& 0.0 & 0.0 & -0.1 & -0.1 & 0.9 & -6.2 & 1.7 & 1.7 \\
+	\end{tabular}
+\end{adjustbox}
+	\caption{Percentage difference in preliminary testing round}
+\end{table}
+
+The difference in mean doesn't tell us much if we don't know the variance of 
+the individual classifier, since a high variance would mean that we would need 
+an equally big difference to use the similarity score for anything. To 
+illustrate the behavior of the distributions I've made a few plots. In 
+figure \ref{fig:smallset-all-methods} eight histograms are shown, each 
+displaying the behavior of a particular keypoint locator-descriptor 
+combination using the same score function (Treshold).  When taking the 
+distributions into account it's apparent that the descriptors Orb and 
+Brief are performing about equally well given Orb's lower variance.
 
 \begin{figure}
-    \centering
-    \includegraphics[width=3.0in]{myfigure}
-    \caption{Simulation Results}
-    \label{simulationfigure}
+        \centering
+		\begin{subfigure}[b]{0.45\textwidth}
+                \centering
+				\includegraphics[width=\textwidth]{../results/OpenCV-Evaluate/Smallset/sift-sift-treshold}
+				\caption{Sift-Sift Treshold: 1.0\% diff.}
+				\label{fig:smallset-sift-sift-treshold}
+        \end{subfigure}%
+		\quad %add desired spacing between images, e. g. ~, \quad, \qquad etc.
+          %(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[b]{0.45\textwidth}
+                \centering
+				\includegraphics[width=\textwidth]{../results/OpenCV-Evaluate/Smallset/surf-surf-treshold}
+				\caption{Surf-Surf Treshold: 0.6\% diff.}
+				\label{fig:smallset-surf-surf-treshold}
+        \end{subfigure}%
+
+
+		\begin{subfigure}[b]{0.45\textwidth}
+                \centering
+				\includegraphics[width=\textwidth]{../results/OpenCV-Evaluate/Smallset/orb-orb-treshold}
+				\caption{Orb-Orb Treshold: 3.8\% diff.}
+				\label{fig:smallset-orb-orb-treshold}
+        \end{subfigure}%
+		\quad%
+		\begin{subfigure}[b]{0.45\textwidth}
+                \centering
+				\includegraphics[width=\textwidth]{../results/OpenCV-Evaluate/Smallset/fast-orb-treshold}
+				\caption{Fast-Orb Treshold: 4.3\% diff.}
+				\label{fig:smallset-fast-orb-treshold}
+        \end{subfigure}%
+
+		\begin{subfigure}[b]{0.45\textwidth}
+                \centering
+				\includegraphics[width=\textwidth]{../results/OpenCV-Evaluate/Smallset/orb-brief-treshold}
+				\caption{Orb-Brief Treshold: 8.9\% diff.}
+				\label{fig:smallset-orb-brief-treshold}
+        \end{subfigure}%
+		\quad%
+		\begin{subfigure}[b]{0.45\textwidth}
+                \centering
+				\includegraphics[width=\textwidth]{../results/OpenCV-Evaluate/Smallset/fast-brief-treshold}
+				\caption{Fast-Brief Treshold: 8.3\% diff.}
+				\label{fig:smallset-fast-brief-treshold}
+        \end{subfigure}%
+
+		\begin{subfigure}[b]{0.45\textwidth}
+                \centering
+				\includegraphics[width=\textwidth]{../results/OpenCV-Evaluate/Smallset/orb-brisk-treshold}
+				\caption{Orb-Brisk Treshold: 6.7\% diff.}
+				\label{fig:smallset-orb-brisk-treshold}
+        \end{subfigure}%
+		\quad%
+		\begin{subfigure}[b]{0.45\textwidth}
+                \centering
+				\includegraphics[width=\textwidth]{../results/OpenCV-Evaluate/Smallset/brisk-brisk-treshold}
+				\caption{Brisk-Brisk Treshold: 1.7\% diff.}
+				\label{fig:smallset-brisk-brisk-treshold}
+        \end{subfigure}%
+		\caption{Treshold results on 30 images}\label{fig:smallset-all-methods}
 \end{figure}
 
-\section{Conclusion}
-Write your conclusion here.
+I've included figure \ref{fig:smallset-orb-brief} to illustrate how Orb-Brief 
+performs over different score functions using the small testset of 30 images.  
+With only 30 images, there is no saying if the scores are just a fluke, or if 
+they will behave consistently at bigger datasets. Figure \ref{fig:bigset} is 
+included to illustrate the behavior of Orb-Brief when testing on 600 images and 
+60 people instead. The results are encouraging since they replicate and 
+usual exceeds the preliminary results using only 30 images. In table 3 
+the results from the simulation on 600 images are displayed.
+
+\begin{figure}
+        \centering
+		\begin{subfigure}[b]{0.45\textwidth}
+                \centering
+				\includegraphics[width=\textwidth]{../results/OpenCV-Evaluate/Smallset/orb-brief-simplemean}
+				\caption{Orb-Brief Simple mean: 5.8\% diff.}
+				\label{fig:smallset-orb-brief-simplemean}
+        \end{subfigure}%
+		\quad %add desired spacing between images, e. g. ~, \quad, \qquad etc.
+          %(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[b]{0.45\textwidth}
+				\centering
+				\includegraphics[width=\textwidth]{../results/OpenCV-Evaluate/Smallset/orb-brief-besthalf}
+				\caption{Orb-Brief Best half: 2.3\% diff.}
+				\label{fig:smallset-orb-brief-besthalf}
+		\end{subfigure}
+
+
+		\begin{subfigure}[b]{0.45\textwidth}
+				\centering
+				\includegraphics[width=\textwidth]{../results/OpenCV-Evaluate/Smallset/orb-brief-treshold}
+				\caption{Orb-Brief Treshold: 8.7\% diff.}
+				\label{fig:smallset-orb-brief-treshold}
+		\end{subfigure}
+		\quad%
+		\begin{subfigure}[b]{0.45\textwidth}
+				\centering
+				\includegraphics[width=\textwidth]{../results/OpenCV-Evaluate/Smallset/orb-brief-limit10}
+				\caption{Orb-Brief Limit 10: 8.8\% diff.}
+				\label{fig:smallset-orb-brief-limit10}
+		\end{subfigure}
+		\caption{Orb-Brief results on 30 images}\label{fig:smallset-orb-brief}
+\end{figure}
+
+\begin{figure}
+        \centering
+		\begin{subfigure}[b]{0.45\textwidth}
+                \centering
+				\includegraphics[width=\textwidth]{../results/OpenCV-Evaluate/Bigset/orb-brief-simplemean}
+				\caption{Orb-Brief Simple mean: 6.3\% diff.}
+				\label{fig:bigset-orb-brief-simplemean}
+        \end{subfigure}%
+        ~ %add desired spacing between images, e. g. ~, \quad, \qquad etc.
+          %(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[b]{0.45\textwidth}
+				\centering
+				\includegraphics[width=\textwidth]{../results/OpenCV-Evaluate/Bigset/orb-brief-besthalf}
+				\caption{Orb-Brief Best half: 9.2\% diff.}
+				\label{fig:bigset-orb-brief-besthalf}
+		\end{subfigure}
+
+
+		\begin{subfigure}[b]{0.45\textwidth}
+				\centering
+				\includegraphics[width=\textwidth]{../results/OpenCV-Evaluate/Bigset/orb-brief-treshold}
+				\caption{Orb-Brief Treshold: 9.3\% diff.}
+				\label{fig:bigset-orb-brief-treshold}
+		\end{subfigure}
+%
+		\begin{subfigure}[b]{0.45\textwidth}
+				\centering
+				\includegraphics[width=\textwidth]{../results/OpenCV-Evaluate/Bigset/orb-brief-limit10}
+				\caption{Orb-Brief Limit 10: 9.8\% diff.}
+				\label{fig:bigset-orb-brief-limit10}
+		\end{subfigure}
+		\caption{Orb-Brief results on 600 images}\label{fig:bigset}
+\end{figure}
+
+\begin{table}[t]
+	\centering
+	\label{table:bigset}
+	\begin{tabular}{l c c c c}
+		& Mean & Best Half & Treshold & Limit10 \\
+		\hline
+		Orb-Orb		& 2.4 & 3.8 & 4.1  & 4.4 \\
+		Fast-Orb	& 3.9 & 5.7 & 6.2  & 7.1 \\
+		Orb-Brief	& 6.3 & 9.2 & 9.3  & 9.8 \\
+		Fast-Brief	& 4.7 & 7.0 & 7.3  & 8.2 \\
+	\end{tabular}
+	\caption{Percentage difference in full testing round}
+\end{table}
+
+\section{Conclusion and Questions for tomorrow}
+
+In conclusion I think that both Orb and Brief would be worth testing out for an 
+alignment free clustering approach. The important details I think we should 
+touch upon tomorrow are as follows:
+\begin{itemize}
+\item{Do these results overall show enough discriminative power to merit 
+further exploration?}
+\item{How can I best compare the keypoints of two face-patches?}
+\item{Does my proposal for using Metric trees to circumvent the problem sound 
+doable?}
+\item{Is there something super important that I've completely ignored so far?  
+(I'm mostly sitting alone with this, so I need a reality check)}
+\end{itemize}
+
+\bibliographystyle{plainnat}
+\bibliography{bibliography}
+
+
+
+
+
+% Here is the text of your introduction.
+% 
+% \begin{equation}
+%     \label{simple_equation}
+%     \alpha = \sqrt{ \beta }
+% \end{equation}
+% 
+% \subsection{Subsection Heading Here}
+% Write your subsection text here.
+% 
+% \begin{figure}
+%     \centering
+%     \includegraphics[width=3.0in]{myfigure}
+%     \caption{Simulation Results}
+%     \label{simulationfigure}
+% \end{figure}
+% 
+% \section{Conclusion}
+% Write your conclusion here.
 
 \end{document}
