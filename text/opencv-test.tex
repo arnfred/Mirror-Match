@@ -1,0 +1,140 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\begin{document}
+
+\title{Preliminary test on OpenCV feature implementations}
+\author{Jonas Arnfred}
+
+\maketitle
+
+\begin{abstract}
+% TODO!
+\end{abstract}
+
+\section{Project Description} 
+In controlled settings existing face recognition
+algorithms have achieved good results in both classifying and clustering faces,
+but often these approaches break down when we consider images from real life 
+application such as cell phone photo albums. Here we encounter non-aligned 
+faces under different lighting conditions that might be partially obscured and 
+turning in different directions. Even recent approaches to recognize 
+non-aligned faces such as \cite[pp 9.]{liao2011} don't achieve more than 60\% 
+geniune accept rate at 1\% false accept rate when comparing faces from 
+LFW\footnote{Labeled Faces in the Wild} database. When we consider face patches 
+not revealing the entire face the performance drops further to around 40\% 
+genuine accept rate at 1\% false accept rate.
+
+If we relax the problem of classification to the more general problem of 
+clustering it might turn out that this accuracity is sufficient to accurately 
+separate a set of face patches into partitions each ideally only containing 
+pictures belonging to one person.
+
+\subsection{A modest proposal}
+%
+% Consider a graph $G = (V, E)$ where $v_i$ is a vertix if $v_i \in V$ and 
+% $e_i$ is an edge if $(v_i, v_j) \in E$ for $v_i, v_j \in V$ and a class 
+% function $C (V \rightarrow c (c \in C)$ it is often possible to obtain a 
+% partitioning $P$ such that for each partition $p \in P$ we have that $\forall 
+% v_i, v_j \in c, C(v_i) = C(v_j)$ \emph{even} when the graph contains 
+% interclass edges, that is an $\exists e \in E$ for which $
+%
+If we consider a graph it is often possible to succesfully obtain a 
+partitioning that adheres to a classification of the graph even if the graph 
+has intercluster edges. This is of course only possible as long as the 
+intercluster edges outnumber or outweigh the intracluster edges, but if we can 
+create a link between two nodes around 40\% of the time and only have 1\% of 
+them be incorrect, we are looking at a very well behaved graph.
+
+To apply graph clustering to image clustering, consider the set of image 
+patches as the set of nodes and the edges between the nodes as the similarity 
+between two image patches. The ideal partitioning of the graph is then one 
+where all the nodes representing image patches belonging to a particular person 
+are clustered together in their own partition.
+
+Intuitively this is an easier problem than classification. Even if two 
+images-patches might not resemble each other, they could both happen to 
+resemble a common neighbor and consequently be clustered together.
+
+\subsection{How can this be done?}
+Because images in real world conditions are often taken under changing light 
+and containing partially obscured or half turned faces, we can't require images 
+to be aligned and homogenious in lighting and position in order to use them.  
+
+An alternative approach would be to sample characteristics from the face-patch 
+in the form of feature points and compare how well these samples match feature 
+points from other face-patches. If we can descripe the feature points in a 
+light and affine transformation agnostic way, ideally we would be able to match 
+them to corresponding feature points on other face-patches.
+
+By comparing feature points we can construct a similarity graph linking the 
+face-patches to each other and use a graph clustering algorithm to obtain the 
+final clusterings.
+
+\section{So is it done yet?}
+Before I present the finished algorithm there are a few practical and 
+theoretical problems that need to be solved first.
+
+\subsection{Theoretical shenanigans}
+
+Given two sets of feature points and trying to match them, it's important to 
+realize that these two sets might be obtained from face-patches that contain 
+some overlapping characteristics but both might also contain features that are 
+not present in the other patch at all. If one patch contain the face from the 
+eyes and down (the person might be wearing a cap) and the other patch contain 
+everything from the nose and up (the same person might cover their mouth with 
+their hand) we will have feature points from the cap, the hair, the mouth and 
+the hand that will not match at all. This means that when we try to match two 
+face-patches, we need to match them in a way that highlights the points that 
+match well and ignores the points that don't.
+
+I see two ways to possibly approach the problem. One is to find a mathematical 
+method like sub-tree matching or similar approaches to match the two sets of 
+feature points against each other for each image\footnote{I would be interested 
+in hearing your input on this subject, or be put in contact with someone who 
+might answer it}. A different (and in my opinion promising) approach is to 
+forego the matching of two images entirely:
+
+If we consider the entire set of face-patches and the even bigger set of all 
+the feature points, we could potentially match each feature point against the 
+set of all possible feature points. Instead of basing the edges in the graph on 
+the similarity of two image patches, we base the edge on the feature points 
+that happen to be linked between any two given face-patches when matched 
+against all possible points. A na\"ive approach is obviously of quadratic 
+complexity in the amount of feature points, which very fast would become 
+unfeasible to compute, but since points that can be compared both euclidean 
+distances and hamming distances form a metric space, a much faster solution 
+might be possible using metric trees like VP and BK trees\footnote{See: 
+\href{http://stackoverflow.com/questions/6389841/efficiently-find-binary-strings-with-low-hamming-distance-in-large-set}{This 
+answe on stackoverflow.com} and 
+\href{http://en.wikipedia.org/wiki/Metric_tree}{Wikipedia} (I promise and swear 
+I won't use wikipedia as a source for the thesis!)
+}. In the case of hamming distance I could potentially further Huffman encode 
+the library of feature points to reduce their length without reducing 
+dimensionality.
+
+
+
+
+Here is the text of your introduction.
+
+\begin{equation}
+    \label{simple_equation}
+    \alpha = \sqrt{ \beta }
+\end{equation}
+
+\subsection{Subsection Heading Here}
+Write your subsection text here.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=3.0in]{myfigure}
+    \caption{Simulation Results}
+    \label{simulationfigure}
+\end{figure}
+
+\section{Conclusion}
+Write your conclusion here.
+
+\end{document}
