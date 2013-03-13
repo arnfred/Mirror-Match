@@ -64,7 +64,7 @@ to be aligned and homogenious in lighting and position in order to use them.
 
 An alternative approach would be to sample characteristics from the face-patch 
 in the form of feature points and compare how well these samples match feature 
-points from other face-patches. If we can descripe the feature points in a 
+points from other face-patches. If we can describe the feature points in a 
 light and affine transformation agnostic way, ideally we would be able to match 
 them to corresponding feature points on other face-patches.
 
@@ -76,7 +76,8 @@ final clusterings.
 Before I present the finished algorithm there are a few practical and 
 theoretical problems that need to be solved first.
 
-\subsection{Theoretical shenanigans}
+\subsection{Theoretical shenanigans\footnote{%
+\href{http://www.youtube.com/watch?v=MFZG8KQJni8}{Relevant YouTube Clip}}}
 
 Given two sets of feature points and trying to match them, it's important to 
 realize that these two sets might be obtained from face-patches that contain 
@@ -92,9 +93,8 @@ match well and ignores the points that don't.
 I see two ways to possibly approach the problem. One is to find a mathematical 
 method like sub-tree matching or similar approaches to match the two sets of 
 feature points against each other for each image\footnote{I would be interested 
-in hearing your input on this subject, or be put in contact with someone who 
-might answer it}. A different (and in my opinion promising) approach is to 
-forego the matching of two images entirely:
+in hearing your input on this subject}.  A different (and in my opinion 
+promising) approach is to forego the matching of two images entirely:
 
 If we consider the entire set of face-patches and the even bigger set of all 
 the feature points, we could potentially match each feature point against the 
@@ -113,6 +113,31 @@ I won't use wikipedia as a source for the thesis!)
 }. In the case of hamming distance I could potentially further Huffman encode 
 the library of feature points to reduce their length without reducing 
 dimensionality.
+
+\subsection{Practical considerations}
+
+The success of this approach is dependent on feature points being able to 
+describe image keypoints in a light and affine transformation agnostic way. In 
+the paper using an alignment free approach to match images I mentioned 
+before\footnote{\cite{liao2011}} they whip up their own feature descriptor, an 
+approach I'm not personally very convinced of since they never show their own 
+descriptor to be superior to anything else than sift. Given that many new 
+feature descriptors have come out in recent years, it seems to me much more 
+sensible to use an already tested and confirmed approach than to cook up a new 
+method, before I can show that coming up with a new feature descriptor is the 
+only way to solve the problem\footnote{And in this case I'll most likely spend 
+my thesis trying to come up with a feature descriptor instead of solving the 
+original problem}.
+
+Fortunately OpenCV implements a range of feature descriptors\footnote{To be 
+precise they include an interface for: SIFT, SURF, ORB, BRISK, BRIEF and FREAK.  
+I have however not been able to get FREAK to work}. So in order to see if any 
+of these feature detectors might be usable and if yes, which ones, I decided to 
+put them to the test.
+
+\section{Getting some data\footnote{%
+\href{http://www.youtube.com/watch?v=FQ3UrLQP2ok}{Relevant YouTube clip}}}
+
 
 
 
