@@ -21,9 +21,10 @@ from itertools import combinations
 
 
 
-def imageToImage(paths, keypoint_type, descriptor_type, score_fun = lambda i,s,u : numpy.mean(s)) :
+def imageToImage(images, labels, keypoint_type, descriptor_type, score_fun = lambda i,s,u : numpy.mean(s)) :
 	""" Compare every image with every other image, generating a few different scores
-	    input: paths [List of Strings] Paths of all the images
+	    input: images [List of nparrays] all the images
+	           labels [List of Strings] labels of all the images
 		       keypoint_type [String] e.g "SURF" or "ORB" etc
 		       keypoint_descriptor [String] e.g "SURF" or "ORB" etc
 		       score_fun [(list(int), list(int/float), list(float)) -> float]
@@ -34,18 +35,12 @@ def imageToImage(paths, keypoint_type, descriptor_type, score_fun = lambda i,s,u
 		                                   where of the same person and false if not
 	"""
 
-	# Load all images
-	images = map(f.loadImage, paths)
-
 	# Get keypoints
 	keypoints = map(lambda i : f.getKeypoints(keypoint_type, i), images)
 
 	# Get descriptors
 	data = map(lambda i,k : f.getDescriptors(descriptor_type, i, k), images, keypoints)
 	keypoints, descriptors = zip(*data)
-
-	# Create a set of labels
-	labels = map(f.getLabel, paths)
 
 	# Return the scores labeled with a boolean to indicate if they are of same set
 	return matchDescriptors(descriptors, labels, descriptor_type, score_fun)
