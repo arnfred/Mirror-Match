@@ -22,13 +22,13 @@ import graph_tool.all as gt
 
 ####################################
 #                                  #
-#           Attributes             #
+#           Properties             #
 #                                  #
 ####################################
 
 feature_keypoint = "ORB"
 feature_descriptor = "BRIEF"
-graph = gt.Graph()
+N = 600
 
 
 ####################################
@@ -58,44 +58,58 @@ def getDescriptors(paths) :
 
 
 
-def initGraph(N = 600) :
+def initGraph() :
 	""" To speed up the calculations I reuse the same graph over and over
 	"""
+	# Initialize graph
+	graph = gt.Graph()
+
 	# Add N vertices
-	vertices = [graph.add_vertix() for _ in range(N)]
+	vertices = [graph.add_vertex() for _ in range(N)]
 
 	# Add an edge between every vertex
-	edges = [g.add_edge(v1,v2) for (v1,v2) in combinations(g.vertices(),2)]
+	edges = [graph.add_edge(v1,v2) for (v1,v2) in combinations(graph.vertices(),2)]
+
+	return graph
 
 
 
-# TODO: time this function
-def getGraph(descriptors) :
+def trimGraph(descriptors, graph) :
 
 	# First filter the edges and vertices to fit with the amount of descriptors
-	dg = graph.new_edge_property("bool")
-	N = graph.num_vertices()
+	dv = graph.new_vertex_property("bool")
 	n = len(descriptors)
-	assert (n < N)
-	dg.a = [True]*n + [False]*(N - n)
+	dv.a = [True]*n + [False]*(N - n)
 
 	# Filter edges
+	de = graph.new_edge_property("bool")
+	de.a = [dv[e.source()] and dv[e.target()] for e in graph.edges()]
+
+	return gt.GraphView(graph, vfilt=dv, efilt=de, directed=False)
+
+
+
+def setWeights(descriptors, graph) :
+	dists = hammingDist(descriptors)
+	weights = graph.new_edge_property("int")
+	weights.fa = [(dists[graph.vertex_index[e.target()], graph.vertex_index[e.source()]] + 1) for e in graph.edges()]
+	return weights
 
 
 
 
 
-def hamming_mat(descriptors) :
+def hammingDist(descriptors) :
 	""" Returns a matrix of size n x n where n is the amount of descriptors
 		output[0][1] is equal to the hamming distance between descriptors[0] and descriptors[1]
 		where output is the matrix returned from this function
 	"""
 	# rearrange inputs
-	binary = array(numpy.unpackbits(rows), dtype=numpy.bool)
-	binary.shape = (rows.shape[0], rows.shape[1] * 8)
+	binary = numpy.array(numpy.unpackbits(descriptors), dtype=numpy.bool)
+	binary.shape = (descriptors.shape[0], descriptors.shape[1] * 8)
 
 	# Initialize return matrix
-	result = numpy.zeros([rows.shape[0], rows.shape[0]], dtype=numpy.uint8)
+	result = numpy.zeros([descriptors.shape[0], descriptors.shape[0]], dtype=numpy.uint8)
 
 	# Fill result matrix and return
 	for (i, bin_row) in enumerate(binary) :
