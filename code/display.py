@@ -2,7 +2,7 @@
 Python module for use with openCV and features.py to display keypoints
 and their links between images
 
-Most of this code is adapted from Jan Erik Solem's python wrapper 
+Most of this code is adapted from Jan Erik Solem's python wrapper for sift
 (http://www.janeriksolem.net/2009/02/sift-python-implementation.html)
 
 Jonas Toft Arnfred, 2013-03-08

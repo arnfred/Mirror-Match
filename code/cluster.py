@@ -59,36 +59,14 @@ def getDescriptors(paths) :
 
 
 
-# def initGraph() :
-# 	""" To speed up the calculations I reuse the same graph over and over
-# 	"""
-# 	# Initialize graph
-# 	graph = gt.Graph()
-# 
-# 	# Add N vertices
-# 	vertices = [graph.add_vertex() for _ in range(N)]
-# 
-# 	# Add an edge between every vertex
-# 	edges = [graph.add_edge(v1,v2) for (v1,v2) in combinations(graph.vertices(),2)]
-# 
-# 	return graph
-
-
-
 def initGraph(descriptors, indices) :
 
 	# This is a faster way to initialize a graph. It's not random.
 	N = len(descriptors)
-	#graph = gt.random_graph(N, lambda: N - 1, directed=False, random=False)
+	graph = gt.random_graph(N, lambda: N - 1, directed=False, random=False)
 
- 	# Initialize graph
- 	graph = gt.Graph()
- 
- 	# Add N vertices
- 	vertices = [graph.add_vertex() for _ in range(N)]
- 
- 	# Add an edge between every vertex
- 	edges = [graph.add_edge(v1,v2) for (v1,v2) in combinations(graph.vertices(),2)]
+	# Because the random graph 
+	graph.reindex_edges()
 
 	# Set weights
 	setWeights(descriptors, graph)
@@ -106,17 +84,20 @@ def setWeights(descriptors, graph) :
 	# Get all hamming distances
 	distances = hammingDist(descriptors)
 
-	# Set weights
+	# assign weights
 	weights = graph.new_edge_property("int")
 	weights.fa = [(distances[graph.vertex_index[e.target()], 
-							 graph.vertex_index[e.source()]] + 1) for e in graph.edges()]
+							 graph.vertex_index[e.source()]]) for e in graph.edges()]
+
+	# Save weights as a graph property
 	graph.edge_properties["weights"] = weights
 
-	# Set normalized weights
+	# Set normalized and inverted weights
 	weights_normalized = graph.new_edge_property("float")
 	norm_hamming = numpy.array(weights.a - numpy.min(weights.a), dtype=numpy.float) / numpy.array(numpy.max(weights.a) - numpy.min(weights.a), dtype=numpy.float)
-		
 	weights_normalized.fa = (1 - norm_hamming)
+
+	# Store normalized weights as graph property
 	graph.edge_properties["weights_normalized"] = weights_normalized
 
 	return distances
@@ -164,7 +145,7 @@ def show(graph, clusters="orange", filename="graph.png") :
 
 	# Define class colors
 	class_colors = graph.new_vertex_property("vector<float>")
-	colors = [[0.1, 0.1, 0.1, 0.9], [0.3, 0.3, 0.3, 0.9]] 
+	colors = [[0.1, 0.1, 0.1, 0.9], [0.3, 0.3, 0.3, 0.9], [0.5, 0.5, 0.5, 0.9]] 
 	for v in graph.vertices() : class_colors[v] = colors[indices[v]]
 
 	# Get weights and positions
@@ -176,6 +157,7 @@ def show(graph, clusters="orange", filename="graph.png") :
 			   vertex_fill_color=clusters, vertex_size=5, edge_pen_width=weights_normalized, output=filename)
 
 
+
 def showClusters(graph, clusters, filename="graph_clusters.png") :
 	# Prune inter cluster edges
 	intra_cluster = graph.new_edge_property("bool")
@@ -185,6 +167,17 @@ def showClusters(graph, clusters, filename="graph_clusters.png") :
 	g_cluster = gt.GraphView(graph, efilt=intra_cluster)
 
 	show(g_cluster, clusters, filename=filename)
+
+
+
+def showOnImages(graph, images, keypoints, cluster_index) :
+	# Prune inter cluster vertices
+	intra_cluster = graph.new_edge_property("bool")
+	intra_cluster.fa = [(cluster_index == clusters[v]) for v in graph.vertices()]
+
+	# Create graph with less vertices
+	g_cluster = gt.GraphView(graph, efilt=intra_cluster)
+
 
 
 
@@ -215,8 +208,8 @@ def partitionKeypoints(graph, keypoints, clusters) :
 	"""
 	indices = graph.vertex_properties["indices"]
 
-	d1 = ((clusters[v], indices[v], keypoints[graph.vertex_index[v]]) for v in graph.vertices())
-	d2 = ((n, [(j,k) for (i,j,k) in g]) for n,g in groupby(sorted(d1), lambda e : e[0]))
-	d3 = ((i, ((n, (k for (j,k) in g)) for n,g in groupby(ks, lambda e : e[0]))) for (i,ks) in d2)
+	d1 = ((clusters[v], v, keypoints[graph.vertex_index[v]]) for v in graph.vertices())
+	d2 = ((n, [(v,k) for (i,v,k) in g]) for n,g in groupby(sorted(d1), lambda e : e[0]))
+	d3 = ((i, ((n, ((v,k) for (v,k) in g)) for n,g in groupby(ks, lambda e : indices[e[0]]))) for (i,ks) in d2)
 	d4 = [[[i for i in l] for (j,l) in ll] for (i,ll) in d3]
 	return d4
