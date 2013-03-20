@@ -57,6 +57,32 @@ def keypoints(im, locs) :
 	pylab.show()
 
 
+def compareKeypoints(im1, im2, locs1, locs2) :
+	""" Show two images next to each other with the keypoints marked
+	"""
+
+	# Extract positions from keypoints
+	pos1 = getPositions(locs1)
+	pos2 = getPositions(locs2)
+	print(pos1)
+	print(pos2)
+
+	# Construct unified image
+	im3 = appendimages(im1,im2)
+
+	# Find the offset and add it
+	offset = im1.shape[1]
+	pos2[:,1] = pos2[:,1] + offset
+
+	# Show images
+	pylab.gray()
+	pylab.imshow(im3)
+	pylab.plot([p[1] for p in pos1], [p[0] for p in pos1], '.b')
+	pylab.plot([p[1] for p in pos2], [p[0] for p in pos2], '.b')
+	pylab.axis('off')
+	pylab.show()
+
+
 
 def matches(im1, im2, locs1, locs2, matchpos) :
 	""" show a figure with lines joining the accepted matches in im1 and im2
