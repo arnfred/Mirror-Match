@@ -57,13 +57,10 @@ def keypoints(im, locs) :
 	pylab.show()
 
 
-def compareKeypoints(im1, im2, locs1, locs2) :
+def compareKeypoints(im1, im2, pos1, pos2) :
 	""" Show two images next to each other with the keypoints marked
 	"""
 
-	# Extract positions from keypoints
-	pos1 = getPositions(locs1)
-	pos2 = getPositions(locs2)
 	print(pos1)
 	print(pos2)
 

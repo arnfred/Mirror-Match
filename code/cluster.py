@@ -18,6 +18,9 @@ import features
 from itertools import combinations
 from itertools import groupby
 import graph_tool.all as gt
+from itertools import tee
+from scipy.misc import imresize
+import Image
 
 
 
@@ -69,7 +72,7 @@ def initGraph(descriptors, indices) :
 	graph.reindex_edges()
 
 	# Set weights
-	setWeights(descriptors, graph)
+	setWeights(graph, descriptors)
 
 	# Create indicemap
 	ind = graph.new_vertex_property("int")
@@ -80,7 +83,23 @@ def initGraph(descriptors, indices) :
 
 
 
-def setWeights(descriptors, graph) :
+def setPositions(graph, keypoints) :
+
+	positions = display.getPositions(keypoints)
+
+	posMap = graph.new_vertex_property("vector<float>")
+	for v in graph.vertices() : posMap[v] = positions[graph.vertex_index[v]]
+
+	# Save weights as a graph property
+	graph.vertex_properties["positions"] = posMap
+
+	return graph
+
+
+
+
+
+def setWeights(graph, descriptors) :
 	# Get all hamming distances
 	distances = hammingDist(descriptors)
 
@@ -124,6 +143,10 @@ def prune(graph, deviations=1.5) :
 	connected = graph.new_vertex_property("bool")
 	connected.fa = [v.in_degree() + v.out_degree() > 0 for v in filtered.vertices()]
 
+	# Print out how many nodes we filter away
+	print(str(sum(1 - connected.fa)) + " nodes pruned")
+
+
 	# Return a graphview reflecting this
 	return gt.GraphView(filtered, vfilt=connected)
 
@@ -135,6 +158,17 @@ def cluster(graph, nb_clusters=20, iter=100) :
 	weights_normalized = graph.edge_properties["weights_normalized"]
 
 	return gt.community_structure(graph, iter, nb_clusters, weight=weights_normalized)
+
+
+
+def getCluster(graph, clusters, cluster_index) :
+
+	# Create a filter
+	in_cluster = graph.new_vertex_property("bool")
+	in_cluster.fa = [(clusters[v] == cluster_index) for v in graph.vertices()]
+
+	# Create graph_view for the cluster
+	return gt.GraphView(graph, vfilt=in_cluster)
 
 
 
@@ -170,13 +204,64 @@ def showClusters(graph, clusters, filename="graph_clusters.png") :
 
 
 
-def showOnImages(graph, images, keypoints, cluster_index) :
-	# Prune inter cluster vertices
-	intra_cluster = graph.new_edge_property("bool")
-	intra_cluster.fa = [(cluster_index == clusters[v]) for v in graph.vertices()]
 
-	# Create graph with less vertices
-	g_cluster = gt.GraphView(graph, efilt=intra_cluster)
+
+def showOnImages(graph, images) :
+	""" Displays the feature points of the graph as they are located on the images
+	    Input: graph [Graph]
+		       images [List of images]
+	"""
+
+	def tails(it):
+		""" tails([1,2,3,4,5]) --> [[1,2,3,4,5], [2,3,4,5], [3,4,5], [4,5], [5], []] """
+		while True:
+			tail, it = tee(it)
+			yield tail
+			next(it)
+
+	# Interpolate images to double size
+	scale = 2.0
+
+	# Image paths
+	bg_path = "graph_background.png"
+	fg_path = "graph_foreground.png"
+	merge_path = "graph_on_image.png"
+
+	# Put images together and resize
+	bg_small = numpy.concatenate(images, axis=1)
+	bg = imresize(bg_small, size=scale, interp='bicubic')
+	pylab.imsave(bg_path, bg)
+
+	# Calculate offsets
+	offsets = map(sum, [list(t) for t in tails(map(lambda i : i.shape[1]*scale, images))])[::-1]
+
+	# Get scaled positions
+	ind_prop = graph.vertex_properties["indices"]
+	positions = graph.vertex_properties["positions"]
+	positions_scaled = graph.new_vertex_property("vector<float>")
+	for v in graph.vertices() : positions_scaled[v] = numpy.array(positions[v]) * scale + numpy.array([offsets[ind_prop[v]], 0])
+
+	# Draw graph
+	gt.graph_draw(graph, 
+				  pos=positions_scaled, 
+				  fit_view=False, 
+				  output_size=[bg.shape[1], bg.shape[0]],
+				  vertex_size=8,
+				  vertex_fill_color=ind_prop,
+				  output=fg_path
+				 )
+	
+	# Merge the graph and background images
+	background = Image.open(bg_path)
+	foreground = Image.open(fg_path)
+	background.paste(foreground, (0, 0), foreground)
+	background.save(merge_path)
+	
+	# Show resulting image
+	im = pylab.imread(merge_path)
+	pylab.imshow(im)
+
+
 
 
 
