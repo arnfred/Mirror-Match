@@ -62,27 +62,6 @@ def getDescriptors(paths) :
 
 
 
-def initGraph(descriptors, indices) :
-
-	# This is a faster way to initialize a graph. It's not random.
-	N = len(descriptors)
-	graph = gt.random_graph(N, lambda: N - 1, directed=False, random=False)
-
-	# Because the random graph 
-	graph.reindex_edges()
-
-	# Set weights
-	setWeights(graph, descriptors)
-
-	# Create indicemap
-	ind = graph.new_vertex_property("int")
-	ind.fa = indices
-	graph.vertex_properties["indices"] = ind
-
-	return graph
-
-
-
 def setPositions(graph, keypoints) :
 
 	positions = display.getPositions(keypoints)
@@ -97,6 +76,25 @@ def setPositions(graph, keypoints) :
 
 
 
+def initGraph(descriptors, indices) :
+
+	# This is a faster way to initialize a graph. It's not random.
+	N = len(descriptors)
+	graph = gt.random_graph(N, lambda: N - 1, directed=False, random=False)
+
+	# Because the random graph 
+	graph.reindex_edges()
+
+	# Create indicemap
+	ind = graph.new_vertex_property("int")
+	ind.fa = indices
+	graph.vertex_properties["indices"] = ind
+
+	# Set weights
+	distances = setWeights(graph, descriptors)
+
+	return graph, distances
+
 
 
 def setWeights(graph, descriptors) :
@@ -104,20 +102,20 @@ def setWeights(graph, descriptors) :
 	distances = hammingDist(descriptors)
 
 	# assign weights
-	weights = graph.new_edge_property("int")
-	weights.fa = [(distances[graph.vertex_index[e.target()], 
+	distance_prop = graph.new_edge_property("int")
+	distance_prop.fa = [(distances[graph.vertex_index[e.target()], 
 							 graph.vertex_index[e.source()]]) for e in graph.edges()]
 
 	# Save weights as a graph property
-	graph.edge_properties["weights"] = weights
+	graph.edge_properties["distance"] = distance_prop
 
 	# Set normalized and inverted weights
-	weights_normalized = graph.new_edge_property("float")
-	norm_hamming = numpy.array(weights.a - numpy.min(weights.a), dtype=numpy.float) / numpy.array(numpy.max(weights.a) - numpy.min(weights.a), dtype=numpy.float)
-	weights_normalized.fa = (1 - norm_hamming)
+	weight_prop = graph.new_edge_property("float")
+	norm_hamming = numpy.array(distance_prop.a - numpy.min(distance_prop.a), dtype=numpy.float) / numpy.array(numpy.max(distance_prop.a) - numpy.min(weight_prop.a), dtype=numpy.float)
+	weight_prop.fa = (1 - norm_hamming)
 
 	# Store normalized weights as graph property
-	graph.edge_properties["weights_normalized"] = weights_normalized
+	graph.edge_properties["weights"] = weight_prop
 
 	return distances
 
@@ -282,19 +280,3 @@ def hammingDist(descriptors) :
 	for (i, bin_row) in enumerate(binary) :
 		result[i] = numpy.sum(numpy.bitwise_xor(binary, bin_row), 1)
 	return result
-
-
-def partitionKeypoints(graph, keypoints, clusters) :
-	""" Partitions the keypoints up in two sets (one for each image) for each
-	    cluster.
-		Input: graph [Graph] The graph containing indices of keypoints
-		       keypoints [List of Keypoints]
-		       clusters [PropertyMap of the Graph]
-	"""
-	indices = graph.vertex_properties["indices"]
-
-	d1 = ((clusters[v], v, keypoints[graph.vertex_index[v]]) for v in graph.vertices())
-	d2 = ((n, [(v,k) for (i,v,k) in g]) for n,g in groupby(sorted(d1), lambda e : e[0]))
-	d3 = ((i, ((n, ((v,k) for (v,k) in g)) for n,g in groupby(ks, lambda e : indices[e[0]]))) for (i,ks) in d2)
-	d4 = [[[i for i in l] for (j,l) in ll] for (i,ll) in d3]
-	return d4
