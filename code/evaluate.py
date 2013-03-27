@@ -53,6 +53,10 @@ def imageToImage(images, labels, keypoint_type, descriptor_type, score_fun = lam
 
 
 
+
+
+
+
 def matchDescriptors(descriptors, labels, descriptor_type, score_fun) :
 
 	def filterNone(l) : return [i for i in l if i != None]
