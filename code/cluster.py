@@ -42,7 +42,7 @@ N = 600
 
 
 
-def scoreImagePair(paths, nb_clusters = 20) :
+def scoreImagePair(paths, nb_clusters = 20, deviations=1.0) :
 	""" Given paths to two images, the images are scored based on how 
 	    well their traits match
 	"""
@@ -50,13 +50,13 @@ def scoreImagePair(paths, nb_clusters = 20) :
 	indices, keypoints, descriptors = getDescriptors(paths)
 
 	# Construct graph
-	graph, weights = initGraph(descriptors, indices, 1.5)
+	graph, weights = initGraph(descriptors, indices, deviations)
 
 	# Create bipartite graph
-	graph_intra = removeInterImageEdges(graph)
+	#graph_intra = removeInterImageEdges(graph)
 
 	# Cluster graph
-	clusters = cluster(graph_intra, nb_clusters)
+	clusters = cluster(graph, nb_clusters)
 
 	# Match the traits
 	scores = scoreAll(graph, clusters, nb_clusters)
@@ -102,13 +102,13 @@ def setPositions(graph, keypoints) :
 
 
 
-def initGraph(descriptors, indices, treshold = 1.0) :
+def initGraph(descriptors, indices) :
 
 	# This is a faster way to initialize a graph. It's not random.
 	N = len(descriptors)
 	graph = gt.random_graph(N, lambda: N - 1, directed=False, random=False)
 
-	# Because the random graph 
+	# Because the random graph is generated with scrambled indices we need to reorder
 	graph.reindex_edges()
 
 	# Create indicemap
@@ -125,7 +125,7 @@ def initGraph(descriptors, indices, treshold = 1.0) :
 
 	# Set weights
 	distances = hammingDist(descriptors)
-	weights = setWeights(graph, distances, treshold)
+	weights = setWeights(graph, distances)
 
 	# Filter all zero-edges
 	weight_prop = graph.edge_properties["weights"]
@@ -139,25 +139,19 @@ def initGraph(descriptors, indices, treshold = 1.0) :
 
 
 
-def setWeights(graph, distances, treshold = 1.0) :
+def setWeights(graph, distances) :
 
 	# Normalize hamming distances
 	max_d = numpy.max(distances)
-	min_d = numpy.min(distances)
-	distances_normalized = numpy.array(distances - min_d, dtype=numpy.float) / numpy.array(max_d - min_d, dtype=numpy.float)
+	distances_normalized = numpy.array(distances, dtype=numpy.float) / numpy.array(max_d, dtype=numpy.float)
 	weights = 1 - distances_normalized
 
 	# Find some stats about the weights
 	u = numpy.mean(weights)
 	sd = numpy.sqrt(numpy.var(weights))
 
-	# Set weights below a treshold to zero
-	weights[(weights < u + treshold*sd) | (weights == 1)] = 0
-
-	# Normalize again
-	max_w = numpy.max(weights)
-	min_w = numpy.min(weights)
-	weights = (weights - min_w) / (max_w - min_w)
+	# Set weights that are too high to 0
+	weights[(weights == 1)] = 0
 
 	# Set weights
 	weight_prop = graph.new_edge_property("float")
@@ -181,18 +175,25 @@ def removeInterImageEdges(graph) :
 
 
 
-def prune(graph) :
-	""" Removes all disconnected vertices	
+def prune(graph, treshold = 1.0) :
+	""" Removes all edges under a certain treshold
 	"""
-	# Prune vertixes that have no outgoing edges
-	connected = graph.new_vertex_property("bool")
-	connected.fa = [v.in_degree() + v.out_degree() > 0 for v in graph.vertices()]
+	# Find some stats about the weights
+	weights = graph.edge_properties["weights"]
+	u = numpy.mean(weights.fa)
+	sd = numpy.sqrt(numpy.var(weights.fa))
 
-	# Print out how many nodes we filter away
-	print(str(sum(1 - connected.fa)) + " nodes pruned")
+	# Set weights below a treshold to zero
+	index = (weights.fa > u + treshold*sd) & (weights.fa < 1)
 
-	# Return a graphview reflecting this
-	return gt.GraphView(graph, vfilt=connected)
+	# Filter all zero-edges
+	non_zero = graph.new_edge_property("bool")
+	non_zero.fa = index
+
+	# Then construct a graphView reflecting this
+	filtered = gt.GraphView(graph, efilt=non_zero)
+
+	return filtered
 
 
 
@@ -344,6 +345,9 @@ def showOnImages(graph, images, clusters = "orange") :
 	# Interpolate images to double size
 	scale = 2.0
 
+	# Show in gray-scale
+	pylab.gray()
+
 	# Image paths
 	bg_path = "graph_background.png"
 	fg_path = "graph_foreground.png"
@@ -387,7 +391,6 @@ def showOnImages(graph, images, clusters = "orange") :
 	background.save(merge_path)
 	
 	# Show resulting image
-	pylab.gray()
 	im = pylab.imread(merge_path)
 	pylab.imshow(im)
 
@@ -417,7 +420,7 @@ def scoreClusterPair(graph, clusters, cluster, indices, i,j, weight=1.0) :
 
 	m = modularity(graph, f_ij)
 	c = -1 * (modularity(graph_ij, f_i) + modularity(graph_ij, f_j))
-	#printResult(m,c,weight,i,j)
+	printResult(m,c,weight,i,j)
 	return s(m,c,weight)
 
 
