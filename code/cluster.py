@@ -1,5 +1,5 @@
 """
-Python module for use with openCV to cluster descriptors from several images.
+Python module for use with OpenCV to cluster descriptors from several images.
 
 Jonas Toft Arnfred, 2013-03-19
 """
@@ -42,7 +42,18 @@ N = 600
 
 
 
-def scoreImagePair(paths, nb_clusters = 20, deviations=1.0) :
+def cluster(graph, nb_clusters=20, iter=100, gamma=1.0, corr="erdos", verbose=False) :
+
+	# Get weights (throws an error if they don't exist)
+	weights = graph.edge_properties["weights"]
+
+	clusters = gt.community_structure(graph, iter, nb_clusters, weight=weights, gamma=gamma, corr=corr, verbose=verbose)
+	t = [(k, len(list(g))) for k,g in groupby(sorted(clusters.fa))]
+	return clusters, len(t)
+
+
+
+def scoreImagePair(paths, clustering=cluster) :
 	""" Given paths to two images, the images are scored based on how 
 	    well their traits match
 	"""
@@ -50,20 +61,24 @@ def scoreImagePair(paths, nb_clusters = 20, deviations=1.0) :
 	indices, keypoints, descriptors = getDescriptors(paths)
 
 	# Construct graph
-	graph, weights = initGraph(descriptors, indices, deviations)
-
-	# Create bipartite graph
-	#graph_intra = removeInterImageEdges(graph)
+	connected, weights = initGraph(descriptors, indices)
+	connected_light = prune(connected, weights, 1.4)
+	filtered = prune(connected, weights, 2.3)
 
 	# Cluster graph
-	clusters = cluster(graph, nb_clusters)
+	clusters, nb_clusters = cluster(filtered)
 
 	# Match the traits
-	scores = scoreAll(graph, clusters, nb_clusters)
+	scores = scoreAll(connected_light, clusters, nb_clusters)
 
+	print(scores)
 	# Get score
-	score = sum(scores)
-	print("Score: %0.4f" % score)
+	if len(scores) > 2 :
+		score = sum(scores)
+		print("Score: %0.4f" % score)
+	else :
+		score = 0
+		print("Score: 0.0 (Less than two matches)")
 
 	return score
 
@@ -165,6 +180,14 @@ def setWeights(graph, distances) :
 
 
 
+def setDegree(graph, weights) :
+	degrees = numpy.array(map(numpy.sum, weights))
+	g_degrees = graph.new_vertex_property("float")
+	g_degrees.fa = degrees
+	graph.vp["degrees"] = g_degrees
+
+
+
 def removeInterImageEdges(graph) : 
 	# Filter edges within images
 	indices = graph.vertex_properties["indices"]
@@ -175,34 +198,30 @@ def removeInterImageEdges(graph) :
 
 
 
-def prune(graph, treshold = 1.0) :
+def prune(graph, weights, treshold = 1.0) :
 	""" Removes all edges under a certain treshold
 	"""
 	# Find some stats about the weights
-	weights = graph.edge_properties["weights"]
-	u = numpy.mean(weights.fa)
-	sd = numpy.sqrt(numpy.var(weights.fa))
+	g_weights = graph.edge_properties["weights"]
+	u = numpy.mean(g_weights.fa)
+	sd = numpy.sqrt(numpy.var(g_weights.fa))
 
 	# Set weights below a treshold to zero
-	index = (weights.fa > u + treshold*sd) & (weights.fa < 1)
+	index = (g_weights.fa > u + treshold*sd) & (g_weights.fa < 1)
 
 	# Filter all zero-edges
-	non_zero = graph.new_edge_property("bool")
-	non_zero.fa = index
+	g_treshold = graph.new_edge_property("bool")
+	g_treshold.fa = index
 
 	# Then construct a graphView reflecting this
-	filtered = gt.GraphView(graph, efilt=non_zero)
+	filtered = gt.GraphView(graph, efilt=g_treshold)
+
+	# Update degrees
+	index = (weights <= u + treshold*sd) | (weights == 1)
+	weights[index] = 0
+	setDegree(filtered, weights)
 
 	return filtered
-
-
-
-def cluster(graph, nb_clusters=20, iter=100, gamma=1.0, corr="erdos", verbose=False) :
-
-	# Get weights (throws an error if they don't exist)
-	weights = graph.edge_properties["weights"]
-
-	return gt.community_structure(graph, iter, nb_clusters, weight=weights, gamma=gamma, corr=corr, verbose=verbose)
 
 
 
@@ -420,7 +439,7 @@ def scoreClusterPair(graph, clusters, cluster, indices, i,j, weight=1.0) :
 
 	m = modularity(graph, f_ij)
 	c = -1 * (modularity(graph_ij, f_i) + modularity(graph_ij, f_j))
-	printResult(m,c,weight,i,j)
+	#printResult(m,c,weight,i,j)
 	return s(m,c,weight)
 
 
