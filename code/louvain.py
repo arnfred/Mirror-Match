@@ -2,7 +2,7 @@
 Python module for use with Graph-Tool to cluster a graph based on the louvain 
 clustering algorithm. Read more here: 
 
-http://iopscience.iop.org/1742-5468/2008/10/P10008
+http://iopscience.iop.org/1742-5468/2008/10/P10008 and
 http://arxiv.org/pdf/0803.0476
 
 Jonas Toft Arnfred, 2013-03-28
@@ -15,6 +15,7 @@ Jonas Toft Arnfred, 2013-03-28
 ####################################
 
 import numpy
+from itertools import groupby
 
 ####################################
 #                                  #
@@ -24,14 +25,14 @@ import numpy
 
 
 
-def cluster(graph) :
+def cluster(graph, verbose=False) :
 	moved = 1
 	partitions = initL(graph)
 	w = graph.ep["weights"]
 	K = 2*numpy.sum(w.fa)
 	while (moved > 0) :
 		moved = sum([move(graph, v, partitions, K) for v in graph.vertices()])
-		print("Moved %i vertices" % moved)
+		if verbose : print("Moved %i vertices" % moved)
 	p = reassign(partitions)
 	t = [(k, len(list(g))) for k,g in groupby(sorted(p.fa))]
 	return p,len(t)
@@ -77,7 +78,6 @@ def move(graph, v, partitions, K) :
 	delta = max_prospect[0] - old_prospect
 	if (delta > 0) : 
 		partitions[v] = max_prospect[1]
-		#print("Moving vertex %i from partition %i to partition %i" % (graph.vertex_index[v], orig_partition,p[v]) )
 		return 1
 	else : 
 		partitions[v] = orig_partition
@@ -89,7 +89,7 @@ def move(graph, v, partitions, K) :
 
 def reassign(partitioning) :
 	assignments = [(i,k) for i,(k,g) in enumerate(groupby(sorted(partitioning.fa)))]
-	p_new = p.copy()
+	p_new = partitioning.copy()
 	for i,k in assignments :
-		p_new.fa[p.fa == k] = i
+		p_new.fa[partitioning.fa == k] = i
 	return p_new

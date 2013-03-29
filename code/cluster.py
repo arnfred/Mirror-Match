@@ -18,8 +18,6 @@ import features
 import math
 from itertools import combinations, groupby, tee, product, combinations_with_replacement
 import graph_tool.all as gt
-from scipy.misc import imresize
-import Image
 
 
 
@@ -66,12 +64,11 @@ def scoreImagePair(paths, clustering=cluster) :
 	filtered = prune(connected, weights, 2.3)
 
 	# Cluster graph
-	clusters, nb_clusters = cluster(filtered)
+	clusters, nb_clusters = clustering(filtered)
 
 	# Match the traits
-	scores = scoreAll(connected_light, clusters, nb_clusters)
+	scores, cluster_indices = scoreAll(connected_light, clusters, nb_clusters)
 
-	print(scores)
 	# Get score
 	if len(scores) > 2 :
 		score = sum(scores)
@@ -306,116 +303,15 @@ def getPartition(graph, partitioning, partition_indices) :
 		f = (partitioning.fa == i) | f
 		
 	# Create new filter
-	filter = graph.new_vertex_property("bool")
-	filter.fa = f
+	new_f = graph.new_vertex_property("bool")
+	new_f.fa = f
 
 	# Create graph_view for the cluster
-	return gt.GraphView(graph, vfilt=filter)
+	return gt.GraphView(graph, vfilt=new_f)
 
 
 
-def show(graph, clusters="orange", filename="graph.png") :
-	""" Show a graph with its clustering marked
-	"""
-	# Get indices
-	indices = graph.vertex_properties["indices"]
-
-	# Get class colors
-	class_colors = graph.vertex_properties["class_colors"]
-
-	# Get weights and positions
-	weights = graph.edge_properties["weights"]
-	pos = gt.sfdp_layout(graph, eweight=weights)
-
-	# Print graph to file
-	gt.graph_draw(graph, pos=pos, output_size=(1000, 1000), vertex_halo=True, vertex_halo_color=class_colors, vertex_color=clusters,
-			   vertex_fill_color=clusters, vertex_size=5, edge_pen_width=weights, output=filename)
-
-
-
-def showClusters(graph, clusters, filename="graph_clusters.png") :
-	""" Create an image where the clusters are disconnected
-	"""
-	# Prune inter cluster edges
-	intra_cluster = graph.new_edge_property("bool")
-	intra_cluster.fa = [(clusters[e.source()] == clusters[e.target()]) for e in graph.edges()]
-
-	# Create graph with less edges
-	g_cluster = gt.GraphView(graph, efilt=intra_cluster)
-
-	show(g_cluster, clusters, filename=filename)
-
-
-
-
-def showOnImages(graph, images, clusters = "orange") :
-	""" Displays the feature points of the graph as they are located on the images
-	    Input: graph [Graph]
-		       images [List of images]
-	"""
-
-	def tails(it):
-		""" tails([1,2,3,4,5]) --> [[1,2,3,4,5], [2,3,4,5], [3,4,5], [4,5], [5], []] """
-		while True:
-			tail, it = tee(it)
-			yield tail
-			next(it)
-
-	# Interpolate images to double size
-	scale = 2.0
-
-	# Show in gray-scale
-	pylab.gray()
-
-	# Image paths
-	bg_path = "graph_background.png"
-	fg_path = "graph_foreground.png"
-	merge_path = "graph_on_image.png"
-
-	# Put images together and resize
-	bg_small = numpy.concatenate(images, axis=1)
-	bg = imresize(bg_small, size=scale, interp='bicubic')
-	pylab.imsave(bg_path, bg)
-
-	# Calculate offsets
-	offsets = map(sum, [list(t) for t in tails(map(lambda i : i.shape[1]*scale, images))])[::-1]
-
-	# Get scaled positions
-	ind_prop = graph.vertex_properties["indices"]
-	positions = graph.vertex_properties["positions"]
-	positions_scaled = graph.new_vertex_property("vector<float>")
-	for v in graph.vertices() : positions_scaled[v] = numpy.array(positions[v]) * scale + numpy.array([offsets[ind_prop[v]], 0])
-
-	# Get weights
-	weights = graph.edge_properties["weights"]
-
-	# Draw graph
-	class_colors = graph.vertex_properties["class_colors"]
-	gt.graph_draw(graph, 
-				  pos=positions_scaled, 
-				  fit_view=False, 
-				  output_size=[bg.shape[1], bg.shape[0]],
-				  vertex_halo=True,
-				  vertex_halo_color=class_colors,
-				  vertex_size=5,
-				  vertex_fill_color=clusters,
-				  edge_pen_width=weights,
-				  output=fg_path
-				 )
-	
-	# Merge the graph and background images
-	background = Image.open(bg_path)
-	foreground = Image.open(fg_path)
-	background.paste(foreground, (0, 0), foreground)
-	background.save(merge_path)
-	
-	# Show resulting image
-	im = pylab.imread(merge_path)
-	pylab.imshow(im)
-
-
-
-def scoreClusterPair(graph, clusters, cluster, indices, i,j, weight=1.0) : 
+def scoreClusterPair(graph, clusters, cluster, indices, i,j, weight=1.0, verbose=False) : 
 	""" calculates the similarity score for a set of two images
 	    input:  graph [Graph] the parent graph
 	            clusters [int vertex property] partitioning of graph corresponding to clusters
@@ -439,12 +335,12 @@ def scoreClusterPair(graph, clusters, cluster, indices, i,j, weight=1.0) :
 
 	m = modularity(graph, f_ij)
 	c = -1 * (modularity(graph_ij, f_i) + modularity(graph_ij, f_j))
-	#printResult(m,c,weight,i,j)
+	if verbose : printResult(m,c,weight,i,j)
 	return s(m,c,weight)
 
 
 
-def scoreAll(graph, clusters, nb_clusters) :
+def scoreAll(graph, clusters, nb_clusters, verbose=False) :
     # Define range and precalculate filters
 	n = nb_clusters - 1 # amount of clusters
 	filters = [getFilter(graph, clusters, c) for c in range(n)]
@@ -457,25 +353,16 @@ def scoreAll(graph, clusters, nb_clusters) :
 		return ones and zeros
 	
 	def score(c) : 
-		return scoreClusterPair(graph, clusters, c, indices, 0, 1, mods[c]/mods_sum)
+		return scoreClusterPair(graph, clusters, c, indices, 0, 1, mods[c]/mods_sum, verbose=verbose)
 
 	cluster_indices = [c for c in range(n) if in_range(c)]
 	mods_sum = sum([mods[c] for c in cluster_indices])
 
+	# Get scores and filter them for NaN
 	scores = [score(c) for c in cluster_indices]
-	return filter(lambda s : (not math.isnan(s)), scores)
+	filtered_scores = map(lambda s : 0 if math.isnan(s) else s, scores)
 
-
-
-def moreThanOne(partition, i, j) :
-	""" Returns true in case there are more than one vertex in a given partition
-	    input: partition [boolean vertex property] The partitioning for the graph
-	           i [int] index for a particular partition
-	           j [int] index for another partition
-	"""
-	l_i = len(filter(lambda a : a == i, partition.fa))
-	l_j = len(filter(lambda a : a == j, partition.fa))
-	return (l_i > 1 and l_j > 1)
+	return scores, cluster_indices
 
 
 

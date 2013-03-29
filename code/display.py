@@ -17,7 +17,11 @@ Jonas Toft Arnfred, 2013-03-08
 import cv2
 import pylab
 import numpy
-
+import graph_tool.all as gt
+import cluster
+from scipy.misc import imresize
+import Image
+from itertools import combinations, groupby, tee, product, combinations_with_replacement
 
 
 ####################################
@@ -191,6 +195,186 @@ def scoreHist(scores) :
 	pylab.legend()
 	pylab.xlim(x_min - margin ,x_max + margin )
 	removeDecoration
+
+
+
+####################################
+#                                  #
+#            Clusters              #
+#                                  #
+####################################
+
+def getMeanPos(graph) :
+	pos_prop = graph.vp["positions"]
+	pos = [(pos_prop[v][0], pos_prop[v][1]) for v in graph.vertices()]
+	(xs, ys) = zip(*pos)
+	return [numpy.mean(xs), numpy.mean(ys)]
+
+def getVarPos(graph) :
+	pos_prop = graph.vp["positions"]
+	pos = [(pos_prop[v][0], pos_prop[v][1]) for v in graph.vertices()]
+	(xs, ys) = zip(*pos)
+	return numpy.sqrt((numpy.var(xs) + numpy.var(ys)) / 2.0) + 3
+	
+def make_trait_graph(graph, partitions, partition_indices, scores) :
+	index_prop = graph.vp["indices"]
+	assert(len(partition_indices) == len(scores))
+	
+	# Initialize trait graph
+	trait_graph = gt.Graph(directed=False)
+	trait_partition = trait_graph.new_vertex_property("int")
+	trait_weight = trait_graph.new_edge_property("float")
+	trait_pos = trait_graph.new_vertex_property("vector<float>")
+	trait_variance = trait_graph.new_vertex_property("float")
+	trait_indices = trait_graph.new_vertex_property("int")
+	trait_class_colors = trait_graph.new_vertex_property("vector<float>")
+	trait_edge_colors = trait_graph.new_edge_property("vector<float>")
+	colors = [[0.1, 0.1, 0.1, 0.9], [0.7, 0.7, 0.7, 0.9]]
+	edge_colors = [[0.5, 0.0, 0.0, 0.9], [0.0, 0.4, 0.0, 0.9]]
+	
+	# Fill graph with vertices and edges
+	for s, c in zip(scores, partition_indices) :
+		f_c = cluster.getFilter(graph, partitions, c)
+		indices = [0,1]
+		fs = [cluster.andFilter(graph, f_c, index_prop, i) for i in indices]
+		gs = [gt.GraphView(graph, vfilt=f) for f in fs]
+		vs = [trait_graph.add_vertex() for _ in gs]
+		e = trait_graph.add_edge(vs[0], vs[1])
+		if (s < 0) :
+			trait_weight[e] = s*(-200)
+			trait_edge_colors[e] = edge_colors[0]
+		else :
+			trait_weight[e] = s*200
+			trait_edge_colors[e] = edge_colors[1]
+		for v,g,i in zip(vs,gs, indices) : 
+			trait_pos[v] = getMeanPos(g)
+			trait_variance[v] = getVarPos(g)
+			trait_partition[v] = c
+			trait_indices[v] = i
+			trait_class_colors[v] = colors[i]
+	
+	# Return finished graph
+	trait_graph.vp["partitions"] = trait_partition
+	trait_graph.ep["weights"] = trait_weight
+	trait_graph.vp["positions"] = trait_pos
+	trait_graph.vp["variance"] = trait_variance
+	trait_graph.vp["indices"] = trait_indices
+	trait_graph.vp["class_colors"] = trait_class_colors
+	trait_graph.ep["edge_colors"] = trait_edge_colors
+	return trait_graph
+
+
+
+def trait_graph(g, partitions, partition_indices, scores, images) :
+	if len(scores) > 0 : 
+		tg = make_trait_graph(g, partitions, partition_indices, scores)
+		graph_on_images(
+				tg, 
+				images, 
+				clusters=tg.vp["partitions"], 
+				path="trait_graph.png",
+				edge_color=tg.ep["edge_colors"], 
+				vertex_size=tg.vp["variance"])
+
+
+def draw_graph(g, clusters="orange", filename="graph.png") :
+	""" Show a graph with its clustering marked
+	"""
+	# Get indices
+	indices = g.vertex_properties["indices"]
+
+	# Get class colors
+	class_colors = g.vertex_properties["class_colors"]
+
+	# Get weights and positions
+	weights = g.edge_properties["weights"]
+	pos = gt.sfdp_layout(g, eweight=weights)
+
+	# Print graph to file
+	gt.graph_draw(g, pos=pos, output_size=(1000, 1000), vertex_halo=True, vertex_halo_color=class_colors, vertex_color=clusters,
+			   vertex_fill_color=clusters, vertex_size=5, edge_pen_width=weights, output=filename)
+
+
+
+def graph_partitions(g, clusters, filename="graph_clusters.png") :
+	""" Create an image where the clusters are disconnected
+	"""
+	# Prune inter cluster edges
+	intra_cluster = g.new_edge_property("bool")
+	intra_cluster.fa = [(clusters[e.source()] == clusters[e.target()]) for e in graph.edges()]
+
+	# Create graph with less edges
+	g_cluster = gt.GraphView(g, efilt=intra_cluster)
+
+	graph(g_cluster, clusters, filename=filename)
+
+
+
+def graph_on_images(graph, images, clusters = "orange", path="graph_on_images.png", vertex_size=5, edge_color=[0.0, 0.0, 0.0, 0.8]) :
+	""" Displays the feature points of the graph as they are located on the images
+	    Input: graph [Graph]
+		       images [List of images]
+	"""
+
+	def tails(it):
+		""" tails([1,2,3,4,5]) --> [[1,2,3,4,5], [2,3,4,5], [3,4,5], [4,5], [5], []] """
+		while True:
+			tail, it = tee(it)
+			yield tail
+			next(it)
+
+	# Interpolate images to double size
+	scale = 2.0
+
+	# Show in gray-scale
+	pylab.gray()
+
+	# Image paths
+	bg_path = "graph_background.png"
+	fg_path = "graph_foreground.png"
+	merge_path = path
+
+	# Put images together and resize
+	bg_small = numpy.concatenate(images, axis=1)
+	bg = imresize(bg_small, size=scale, interp='bicubic')
+	pylab.imsave(bg_path, bg)
+
+	# Calculate offsets
+	offsets = map(sum, [list(t) for t in tails(map(lambda i : i.shape[1]*scale, images))])[::-1]
+
+	# Get scaled positions
+	ind_prop = graph.vertex_properties["indices"]
+	positions = graph.vertex_properties["positions"]
+	positions_scaled = graph.new_vertex_property("vector<float>")
+	for v in graph.vertices() : positions_scaled[v] = numpy.array(positions[v]) * scale + numpy.array([offsets[ind_prop[v]], 0])
+
+	# Get weights
+	weights = graph.edge_properties["weights"]
+
+	# Draw graph
+	class_colors = graph.vertex_properties["class_colors"]
+	gt.graph_draw(graph, 
+				  pos=positions_scaled, 
+				  fit_view=False, 
+				  output_size=[bg.shape[1], bg.shape[0]],
+				  vertex_halo=True,
+				  vertex_halo_color=class_colors,
+				  vertex_size=vertex_size,
+				  vertex_fill_color=clusters,
+				  edge_color=edge_color,
+				  edge_pen_width=weights,
+				  output=fg_path
+				 )
+	
+	# Merge the graph and background images
+	background = Image.open(bg_path)
+	foreground = Image.open(fg_path)
+	background.paste(foreground, (0, 0), foreground)
+	background.save(merge_path)
+	
+	# Show resulting image
+	im = pylab.imread(merge_path)
+	pylab.imshow(im)
 
 
 
