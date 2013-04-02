@@ -16,7 +16,7 @@ import numpy
 import display
 import features
 import math
-from itertools import combinations, groupby, tee, product, combinations_with_replacement
+from itertools import combinations, groupby, tee, product, combinations_with_replacement, dropwhile
 import graph_tool.all as gt
 
 
@@ -60,8 +60,8 @@ def scoreImagePair(paths, clustering=cluster) :
 
 	# Construct graph
 	connected, weights = initGraph(descriptors, indices)
-	connected_light = prune(connected, weights, 1.4)
-	filtered = prune(connected, weights, 2.3)
+	connected_light = prune(connected, weights, edges_per_vertex=20)
+	filtered = prune(connected, weights, edges_per_vertex=5)
 
 	# Cluster graph
 	clusters, nb_clusters = clustering(filtered)
@@ -69,13 +69,16 @@ def scoreImagePair(paths, clustering=cluster) :
 	# Match the traits
 	scores, cluster_indices = scoreAll(connected_light, clusters, nb_clusters)
 
+	# Get labels
+	[l1, l2] = [features.getLabel(p) for p in paths]
+
 	# Get score
 	if len(scores) > 2 :
 		score = sum(scores)
-		print("Score: %0.4f" % score)
+		print("Score: %0.4f for %s and %s" % (score,l1,l2))
 	else :
-		score = 0
-		print("Score: 0.0 (Less than two matches)")
+		score = -0.1
+		print("Score: %0.4f for %s and %s (Less than two matches)" % (score,l1,l2))
 
 	return score
 
@@ -92,9 +95,11 @@ def getDescriptors(paths) :
 	images = map(features.loadImage, paths)
 
 	# Get feature descriptors
-	keypoints = [features.getKeypoints(feature_keypoint, im) for im in images]
+	#keypoints = [features.getKeypoints(feature_keypoint, im) for im in images]
+	keypoints = [features.getORBKeypoints(im) for im in images]
 	data = [features.getDescriptors(feature_descriptor, im, k) for (im, k) in zip(images, keypoints)]
 	keypoints, descriptors = zip(*data)
+
 	indices = [l for i,n in zip(range(len(labels)), map(len, descriptors)) for l in [i]*n]
 	return (indices, numpy.concatenate(keypoints), numpy.concatenate(descriptors))
 
@@ -114,7 +119,16 @@ def setPositions(graph, keypoints) :
 
 
 
-def initGraph(descriptors, indices) :
+def reassign(partitioning) :
+    assignments = [(i,k) for i,(k,g) in enumerate(groupby(sorted(partitioning.fa)))]
+    p_new = partitioning.copy()
+    for i,k in assignments :
+        p_new.fa[partitioning.fa == k] = i
+    return p_new
+
+
+
+def initGraph(descriptors, indices, dampener = 1.0) :
 
 	# This is a faster way to initialize a graph. It's not random.
 	N = len(descriptors)
@@ -137,7 +151,7 @@ def initGraph(descriptors, indices) :
 
 	# Set weights
 	distances = hammingDist(descriptors)
-	weights = setWeights(graph, distances)
+	weights = setWeights(graph, distances, dampener)
 
 	# Filter all zero-edges
 	weight_prop = graph.edge_properties["weights"]
@@ -151,7 +165,7 @@ def initGraph(descriptors, indices) :
 
 
 
-def setWeights(graph, distances) :
+def setWeights(graph, distances, dampener = 1.0) :
 
 	# Normalize hamming distances
 	max_d = numpy.max(distances)
@@ -165,6 +179,12 @@ def setWeights(graph, distances) :
 	# Set weights that are too high to 0
 	weights[(weights == 1)] = 0
 
+	# Boost inter-image edges
+	dampenIntraImageEdges(graph, weights, dampener)
+
+	# Update degree
+	setDegree(graph, weights)
+
 	# Set weights
 	weight_prop = graph.new_edge_property("float")
 	weight_prop.fa = [(weights[graph.vertex_index[e.target()], 
@@ -177,6 +197,21 @@ def setWeights(graph, distances) :
 
 
 
+def dampenIntraImageEdges(graph, weights, dampener = 1.0) :
+	
+	indices = graph.vp["indices"]
+	nb_keypoints_im0 = numpy.sum(indices.fa - 1)
+	length = weights.shape[0]
+
+	# Set the intra-image edges to zero
+	mask = numpy.zeros(weights.shape, dtype=numpy.bool)
+	mask[0:(nb_keypoints_im0-1), 0:(nb_keypoints_im0-1)] = True
+	mask[nb_keypoints_im0:(length-1), nb_keypoints_im0:(length-1)] = True
+
+	# Multiply the inter image edges with the boost factor
+	weights[mask] = weights[mask] / dampener
+
+
 def setDegree(graph, weights) :
 	degrees = numpy.array(map(numpy.sum, weights))
 	g_degrees = graph.new_vertex_property("float")
@@ -185,26 +220,48 @@ def setDegree(graph, weights) :
 
 
 
-def removeInterImageEdges(graph) : 
+def removeIntraImageEdges(graph, weights) : 
 	# Filter edges within images
 	indices = graph.vertex_properties["indices"]
 	inter_edges = graph.new_edge_property("bool")
+
+	#Get amount of points for each image
+	nb_keypoints_im1 = numpy.sum(indices.fa)
+	length = weights.shape[0]
+
+	# Set the intra-image edges to zero
+	weights[0:(nb_keypoints_im1-1), 0:(nb_keypoints_im1-1)] = 0
+	weights[nb_keypoints_im1:(length-1), nb_keypoints_im1:(length-1)] = 0
+
+	# Update degree
+	setDegree(graph, weights)
+
+	# Create edge_Filter
 	for e in graph.edges() : inter_edges[e] = (indices[e.source()] != indices[e.target()])
 
 	return gt.GraphView(graph, efilt=inter_edges)
 
 
 
-def prune(graph, weights, treshold = 1.0) :
+def get_treshold(weights, edges_per_vertex) :
+	n = 200
+	nb_vertices = weights.shape[0]
+	tresholds = numpy.linspace(1,0.5,n)
+	w = [numpy.sum(weights > t) / (2.0*nb_vertices) for t in tresholds]
+	q = dropwhile(lambda t : t < edges_per_vertex, w)
+	index = len(list(q))
+	return tresholds[n-index]
+
+
+def prune(graph, weights, edges_per_vertex) :
 	""" Removes all edges under a certain treshold
 	"""
-	# Find some stats about the weights
-	g_weights = graph.edge_properties["weights"]
-	u = numpy.mean(g_weights.fa)
-	sd = numpy.sqrt(numpy.var(g_weights.fa))
+	# Get treshold and weights
+	treshold = get_treshold(weights, edges_per_vertex)
+	g_weights = graph.ep["weights"]
 
 	# Set weights below a treshold to zero
-	index = (g_weights.fa > u + treshold*sd) & (g_weights.fa < 1)
+	index = (g_weights.fa > treshold) & (g_weights.fa < 1)
 
 	# Filter all zero-edges
 	g_treshold = graph.new_edge_property("bool")
@@ -214,7 +271,7 @@ def prune(graph, weights, treshold = 1.0) :
 	filtered = gt.GraphView(graph, efilt=g_treshold)
 
 	# Update degrees
-	index = (weights <= u + treshold*sd) | (weights == 1)
+	index = (weights <= treshold) | (weights == 1)
 	weights[index] = 0
 	setDegree(filtered, weights)
 
@@ -348,8 +405,8 @@ def scoreAll(graph, clusters, nb_clusters, verbose=False) :
 	indices = graph.vertex_properties["indices"]
 
 	def in_range(c) :
-		ones = (numpy.sum(indices.fa*filters[c].fa) > 2)
-		zeros = (numpy.sum((1-indices.fa)*filters[c].fa) > 2)
+		ones = (numpy.sum(indices.fa*filters[c].fa) > 0)
+		zeros = (numpy.sum((1-indices.fa)*filters[c].fa) > 0)
 		return ones and zeros
 	
 	def score(c) : 

@@ -18,6 +18,7 @@ Jonas Toft Arnfred, 2013-03-07
 
 import cv2
 import numpy
+import preprocessing
 
 
 
@@ -53,6 +54,12 @@ def getKeypoints(keypoint_type, image, params = {}) :
 	# Return feature points
 	return feature.detect(image)
 
+
+def getORBKeypoints(image) :
+	#o = cv2.ORB(nfeatures=2000, scaleFactor=1.06, nlevels=15, edgeThreshold=n, patchSize=n)
+	o = cv2.ORB(nfeatures=2000, scaleFactor=1.06, nlevels=12, edgeThreshold=42, patchSize=42)
+	#o = cv2.ORB(nfeatures=2000, scaleFactor=1.06, nlevels=12, edgeThreshold=35, patchSize=35)
+	return o.detect(image)
 
 
 def getDescriptors(descriptor_type, image, keypoints) :
@@ -221,6 +228,9 @@ def loadImage(path) :
 	# Convert to grayscale: First we convert the image to the L*u*v color space
 	# and then return the luminance channel
 	img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2LUV)[:,:,0]
+
+	# Preprocess image
+	#img_processed = preprocessing.faceNorm(img_gray)
 
 	return img_gray
 
