@@ -167,13 +167,18 @@ def barWithMask(X,Y,mask,color='blue') :
 
 def scoreHist(scores) : 
 
-	same = [score for (b, score) in scores if b]
-	diff = [score for (b, score) in scores if not b] 
+	if (len(scores[0]) == 3) :
+		same = [s for b,s,p in scores if b]
+		diff = [s for b,s,p in scores if not b] 
+	else :
+		same = [s for b,s in scores if b]
+		diff = [s for b,s in scores if not b] 
 
 	mean_same = numpy.mean(same)
 	mean_diff = numpy.mean(diff)
 	variance = numpy.mean([numpy.var(same), numpy.var(diff)])
 	sd = numpy.sqrt(variance)
+
 	print("Mean(same):\t\t{0:.3f}".format(mean_same))
 	print("Mean(diff):\t\t{0:.3f}".format(mean_diff))
 	print("Diff of means:\t\t{0:.3f}".format(numpy.abs(mean_diff - mean_same)))
@@ -188,14 +193,75 @@ def scoreHist(scores) :
 	pylab.hist(same, bins=20, label="Same", color="green", alpha=0.65)
 	pylab.legend()
 	pylab.xlim(x_min - margin ,x_max + margin )
-	removeDecoration
+	removeDecoration()
 
 	pylab.subplot(1,2,2)
 	pylab.hist(diff, bins=20,label="Diff", color="red", alpha=0.65)
 	pylab.legend()
 	pylab.xlim(x_min - margin ,x_max + margin )
-	removeDecoration
+	removeDecoration()
 
+
+
+def scoreRatioHist(rm, labels, lower_is_better=False) :
+	scores = numpy.zeros(labels.shape)
+	for i,row in enumerate(rm) :
+		equal_labels = (labels == labels[i])
+		diff_labels = (labels != labels[i])
+		print(labels[equal_labels])
+		print(row[equal_labels])
+		print(row[diff_labels])
+		mean_same = numpy.mean(row[equal_labels]) + 0.00001
+		mean_diff = numpy.mean(row[diff_labels]) + 0.00001
+		ratio = mean_diff/mean_same if lower_is_better else mean_same/mean_diff
+		scores[i] = ratio
+		
+	# Remove outliers
+	scores[scores > 3] = 3
+	print(scores)
+	below_1 = numpy.sum(scores<1)
+	above_1 = numpy.sum(scores>1)
+	equal_1 = numpy.sum(scores==1)
+	above_3 = numpy.sum(scores>3)
+	pylab.hist(scores[scores < 1],bins=numpy.linspace(0,0.95,7), color="red", alpha=0.7, label="< 1.0 (%i)" % below_1)
+	pylab.hist(scores[scores == 1],bins=numpy.linspace(0.95,1.05,2), color="grey", alpha=0.7, label="= 1.0 (%i)" % equal_1)
+	pylab.hist(scores[scores > 1],bins=numpy.linspace(1.05,3,14), color="green", alpha=0.7, label="> 1.0 (%i)" % above_1)
+	pylab.xlim(0,3.01)
+	pylab.legend(loc="best")
+	removeDecoration()
+
+
+def farPlot(scores, n = 500, lower_is_better = False) :
+
+	if (len(scores[0]) == 3) :
+		same = [s for b,s,p in scores if b]
+		diff = [s for b,s,p in scores if not b] 
+	else :
+		same = [s for b,s in scores if b]
+		diff = [s for b,s in scores if not b] 
+
+	# set compare function
+	compare = (lambda a,b : a < b) if lower_is_better else (lambda a,b : a > b)
+
+	# Create linspace
+	min_val = numpy.min(same)
+	max_val = numpy.max(same)
+	start = min_val if lower_is_better else max_val
+	end = max_val if lower_is_better else min_val
+	tresholds = numpy.linspace(start,end,n)
+
+	# Calculate x and y rows
+	sum_same = float(len(same))
+	sum_diff = float(len(diff))
+	false_positive_rate = [(len([s for s in diff if compare(s,t)]) / sum_diff)*100 for t in tresholds]
+	true_positive_rate = [len([s for s in same if compare(s,t)]) / sum_same for t in tresholds]
+
+	# Show figure
+	fig = pylab.figure()
+	ax = fig.add_subplot(1,1,1)
+	ax.plot(false_positive_rate, true_positive_rate)
+	ax.set_xscale('log')
+	removeDecoration()
 
 
 ####################################
@@ -375,6 +441,24 @@ def graph_on_images(graph, images, clusters = "orange", path="graph_on_images.pn
 	# Show resulting image
 	im = pylab.imread(merge_path)
 	pylab.imshow(im)
+
+
+
+def faceGraph(graph, partitioning, filename = "facegraph.png") :
+	pos = gt.sfdp_layout(graph, eweight=graph.ep["weights"])
+	gt.graph_draw(graph, 
+				  pos=pos, 
+				  output_size=(1000, 1000), 
+				  vertex_halo=True, 
+				  vertex_halo_color=partitioning, 
+				  #vertex_fill_color=partitioning, 
+				  vertex_anchor=0,
+				  vertex_pen_width=10,
+				  vertex_color=partitioning, 
+				  vertex_surface=graph.vp["paths"],
+				  vertex_size=40, 
+				  edge_pen_width=graph.ep["weights"], 
+				  output=filename)
 
 
 

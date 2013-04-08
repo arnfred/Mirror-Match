@@ -50,6 +50,10 @@ def deltaQ(graph, v, partition, partitions, K) :
 		return (partitions[e.target()] == partition) or (partitions[e.source()] == partition)
 	w = graph.ep["weights"]
 	k = graph.vp["degrees"]
+	v_edges = [w[e] for e in v.all_edges()]
+	v_edges_partition = [w[e] for e in v.all_edges() if toPartition(e)]
+	print(v_edges)
+	print(v_edges_partition)
 	v_weight = 2 * numpy.sum([w[e] for e in v.all_edges() if toPartition(e)])
 	k_neighbours = numpy.sum((partitions.fa == partition) * k.fa)
 	return 1.0/K * (v_weight - (k[v] * k_neighbours) / K)
@@ -71,8 +75,10 @@ def move(graph, v, partitions, K) :
 	partitions[v] = -1
 	# See how much we would gain from moving p back to orig_partition
 	old_prospect = deltaQ(graph, v, orig_partition, partitions, K)
+	print(old_prospect)
 	# What is the best gain elsewhere?
 	new_prospects = prospect_set(graph, v, orig_partition, partitions, K)
+	print(new_prospects)
 	max_prospect = max(new_prospects) if (len(new_prospects) > 0) else (-1,-1)
 	# Is it worth moving?
 	delta = max_prospect[0] - old_prospect
@@ -85,11 +91,9 @@ def move(graph, v, partitions, K) :
 
 
 
-
-
 def reassign(partitioning) :
-	assignments = [(i,k) for i,(k,g) in enumerate(groupby(sorted(partitioning.fa)))]
-	p_new = partitioning.copy()
-	for i,k in assignments :
-		p_new.fa[partitioning.fa == k] = i
-	return p_new
+    assignments = [(i,k) for i,(k,g) in enumerate(groupby(sorted(partitioning.fa)))]
+    p_new = partitioning.copy()
+    for i,k in assignments :
+        p_new.fa[partitioning.fa == k] = i
+    return p_new

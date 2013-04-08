@@ -55,9 +55,9 @@ def getKeypoints(keypoint_type, image, params = {}) :
 	return feature.detect(image)
 
 
-def getORBKeypoints(image) :
+def getORBKeypoints(image, size=32) :
 	#o = cv2.ORB(nfeatures=2000, scaleFactor=1.06, nlevels=15, edgeThreshold=n, patchSize=n)
-	o = cv2.ORB(nfeatures=2000, scaleFactor=1.06, nlevels=12, edgeThreshold=42, patchSize=42)
+	o = cv2.ORB(nfeatures=2000, scaleFactor=1.06, nlevels=12, edgeThreshold=size, patchSize=size)
 	#o = cv2.ORB(nfeatures=2000, scaleFactor=1.06, nlevels=12, edgeThreshold=35, patchSize=35)
 	return o.detect(image)
 

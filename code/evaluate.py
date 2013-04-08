@@ -27,7 +27,7 @@ from itertools import combinations
 #                                  #
 ####################################
 
-def imageToImage(images, labels, keypoint_type, descriptor_type, score_fun = lambda i,s,u : numpy.mean(s)) :
+def imageToImage(images, paths, keypoint_type, descriptor_type, score_fun = lambda i,s,u : numpy.mean(s)) :
 	""" Compare every image with every other image, generating a few different scores
 	    input: images [List of nparrays] all the images
 	           labels [List of Strings] labels of all the images
@@ -49,15 +49,11 @@ def imageToImage(images, labels, keypoint_type, descriptor_type, score_fun = lam
 	keypoints, descriptors = zip(*data)
 
 	# Return the scores labeled with a boolean to indicate if they are of same set
-	return matchDescriptors(descriptors, labels, descriptor_type, score_fun)
+	return matchDescriptors(descriptors, paths, descriptor_type, score_fun)
 
 
 
-
-
-
-
-def matchDescriptors(descriptors, labels, descriptor_type, score_fun) :
+def matchDescriptors(descriptors, paths, descriptor_type, score_fun) :
 
 	def filterNone(l) : return [i for i in l if i != None]
 	def getScore(D1, D2, i) :
@@ -67,15 +63,15 @@ def matchDescriptors(descriptors, labels, descriptor_type, score_fun) :
 		return score_fun(*noNones)
 
 	# Get all pairings of descriptors and labels
-	desc_pairs = [p for p in combinations(descriptors,2)]
-	label_pairs = [p for p in combinations(labels,2)]
+	desc_pairs = list(combinations(descriptors,2))
+	path_pairs = list(combinations(paths,2))
 
 	# Print status
-	print("=") * (int(len(label_pairs) / 100) +1)
+	print("=") * (int(len(path_pairs) / 100) +1)
 
-	score = [((l1 == l2), getScore(D1, D2, i))
-			for ((D1, D2), (l1, l2), i) 
-			in zip( desc_pairs, label_pairs, range(len(label_pairs)) )]
+	score = [((f.getLabel(p1) == f.getLabel(p2)), getScore(D1, D2, i), (p1, p2))
+			for ((D1, D2), (p1, p2), i) 
+			in zip( desc_pairs, path_pairs, range(len(path_pairs)) )]
 
 	# Add a newline
 	print("")
