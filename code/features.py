@@ -38,6 +38,30 @@ supported_descriptor_types = ["SIFT","SURF","ORB","BRISK","BRIEF","FREAK"]
 #                                  #
 ####################################
 
+
+def getFeatures(paths, size=32) :
+	""" Given a list of paths to images, the function returns a list of 
+	    descriptors and keypoints
+		Input: paths [list of strings] The paths to the images we are using
+		Out:   [pair of list of descriptors and list of keypoints]
+	"""
+	# Get all images and labels
+	labels = map(getLabel, paths)
+	images = map(loadImage, paths)
+
+	# Get feature descriptors
+	#keypoints = [features.getKeypoints(feature_keypoint, im) for im in images]
+	keypoints = [getORBKeypoints(im, size) for im in images]
+	data = [getDescriptors(feature_descriptor, im, k) for (im, k) in zip(images, keypoints)]
+	keypoints, descriptors = zip(*data)
+
+	# Check that we could get descriptors for all images
+	if sum(map(lambda d : d == None, descriptors)) > 0 : return (None, None, None)
+	indices = [l for i,n in zip(range(len(labels)), map(len, descriptors)) for l in [i]*n]
+	return (indices, numpy.concatenate(keypoints), numpy.concatenate(descriptors))
+
+
+
 def getKeypoints(keypoint_type, image, params = {}) :
 	""" Given the feature_type and an image, we return the keypoints for this image
 		input: descriptor_type [string] (The feature we are using to extract keypoints)

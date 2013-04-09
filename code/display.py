@@ -165,6 +165,56 @@ def barWithMask(X,Y,mask,color='blue') :
 	ax.yaxis.set_ticks_position('left')
 
 
+def scoreNormHist(resultMat, labels) :
+	# Normalize resultMat row by row with respect to mean and standard deviation
+	resultMat_norm = numpy.zeros(resultMat.shape)
+	for i,row in enumerate(resultMat) :
+		mean = numpy.mean(row)
+		sd = numpy.var(row)
+		resultMat_norm[i] = (row - mean) / sd
+		
+	# Make sure the diagonal is zero
+	for i in range(len(labels)) : resultMat_norm[i][i] = 0.0
+		
+	# Create mask
+	resultMask = numpy.zeros(resultMat.shape, dtype=numpy.bool)
+	label_array = numpy.array(labels)
+	for i,l in enumerate(labels) :
+		resultMask[i] = label_array == l
+
+	# Get vectors with results for same and diff
+	same = resultMat_norm[resultMask]
+	diff = resultMat_norm[numpy.invert(resultMask)]
+
+	mean_same = numpy.mean(same)
+	mean_diff = numpy.mean(diff)
+	variance = numpy.mean([numpy.var(same), numpy.var(diff)])
+	sd = numpy.sqrt(variance)
+
+	print("Mean(same):\t\t{0:.3f}".format(mean_same))
+	print("Mean(diff):\t\t{0:.3f}".format(mean_diff))
+	print("Diff of means:\t\t{0:.3f}".format(numpy.abs(mean_diff - mean_same)))
+	print("Standard deviation:\t{0:.3f}".format(sd)) 
+	print("# of sd's:\t\t{0:.3f}".format(numpy.abs(mean_diff - mean_same)/sd))
+
+	x_min = min([numpy.min(same),numpy.min(diff)]) 
+	x_max = max([numpy.max(same),numpy.max(diff)]) 
+	margin = (x_max - x_min) * 0.2
+
+	pylab.subplot(1,2,1)
+	pylab.hist(same, bins=20, label="Same", color="green", alpha=0.65)
+	pylab.legend()
+	pylab.xlim(x_min - margin ,x_max + margin )
+	removeDecoration()
+
+	pylab.subplot(1,2,2)
+	pylab.hist(diff, bins=20,label="Diff", color="red", alpha=0.65)
+	pylab.legend()
+	pylab.xlim(x_min - margin ,x_max + margin )
+	removeDecoration()
+
+
+
 def scoreHist(scores) : 
 
 	if (len(scores[0]) == 3) :
@@ -203,14 +253,11 @@ def scoreHist(scores) :
 
 
 
-def scoreRatioHist(rm, labels, lower_is_better=False) :
+def scoreRatioHist(resultMat, labels, lower_is_better=False) :
 	scores = numpy.zeros(labels.shape)
-	for i,row in enumerate(rm) :
+	for i,row in enumerate(resultMat) :
 		equal_labels = (labels == labels[i])
 		diff_labels = (labels != labels[i])
-		print(labels[equal_labels])
-		print(row[equal_labels])
-		print(row[diff_labels])
 		mean_same = numpy.mean(row[equal_labels]) + 0.00001
 		mean_diff = numpy.mean(row[diff_labels]) + 0.00001
 		ratio = mean_diff/mean_same if lower_is_better else mean_same/mean_diff
@@ -223,9 +270,15 @@ def scoreRatioHist(rm, labels, lower_is_better=False) :
 	above_1 = numpy.sum(scores>1)
 	equal_1 = numpy.sum(scores==1)
 	above_3 = numpy.sum(scores>3)
-	pylab.hist(scores[scores < 1],bins=numpy.linspace(0,0.95,7), color="red", alpha=0.7, label="< 1.0 (%i)" % below_1)
-	pylab.hist(scores[scores == 1],bins=numpy.linspace(0.95,1.05,2), color="grey", alpha=0.7, label="= 1.0 (%i)" % equal_1)
-	pylab.hist(scores[scores > 1],bins=numpy.linspace(1.05,3,14), color="green", alpha=0.7, label="> 1.0 (%i)" % above_1)
+	if equal_1 > 0 : 
+		gray_start = 0.95
+		gray_end = 1.05
+	else :
+		gray_start = 1
+		gray_end = 1
+	pylab.hist(scores[scores < 1],bins=numpy.linspace(0,gray_start,7), color="red", alpha=0.7, label="< 1.0 (%i)" % below_1)
+	if equal_1 > 0 : pylab.hist(scores[scores == 1],bins=numpy.linspace(gray_start,gray_end,2), color="grey", alpha=0.7, label="= 1.0 (%i)" % equal_1)
+	pylab.hist(scores[scores > 1],bins=numpy.linspace(gray_end,3,14), color="green", alpha=0.7, label="> 1.0 (%i)" % above_1)
 	pylab.xlim(0,3.01)
 	pylab.legend(loc="best")
 	removeDecoration()
