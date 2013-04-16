@@ -1,0 +1,103 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[stable]{footmisc}
+\usepackage{caption}
+\usepackage{adjustbox}
+\usepackage{subcaption}
+
+\begin{document}
+
+\title{Clustering feature points}
+\author{Jonas Arnfred}
+
+\maketitle
+
+\begin{abstract}
+% TODO!
+\end{abstract}
+
+\section{Project description}
+
+Traditionally the feature points of two images have been matched by 
+comparing the feature points individually and finding the best matches 
+based on their distance. This approach was originally introduced with 
+the SIFT features \cite{lowe2004sift} and has been used since then in 
+computer vision applications such as scene recognition\footnote{See for 
+example chapter 4.1.3 of \cite[pp. 226]{szeliski2010}} and image 
+alignment\footnote{An example is the gold standard algorithm in \cite[p.  
+114]{multipleView}}. In larger scale approaches where an image is 
+compared with thousands or millions of other images, the feature points 
+are usually indexed in a dictionary of visual words instead. This 
+approach makes it possible to quickly retrieve matches in a large set of 
+potential candidates, but the performance is restricted by how 
+discriminative the individual feature points are. To agument the 
+descriminative power of the feature points, \cite{wu2009bundling} 
+proposes grouping the features and use the geometrical relationships 
+between members of a group when matching two feature points. Similarly 
+\cite{das2008event} use geometrical information about the feature points 
+to cluster them before doing scene matching resulting in better matches.
+
+Both methods suffer from two shortcomings. Firstly we have that any 
+defined group in one image might not correspond to a group in another 
+image.  This means that we might end up in a situation where a good 
+match between two images is scored low because most of it's geometric 
+neighbors are in an adjecent group. Secondly if we intent to match the 
+different groups as in \cite{wu2009bundling} we might end up matching 
+two mismatching groups. To improve geometric matching I propose pooling 
+the keypoints from two images into one set and partitioning them into 
+groups together.  The advantages of this approach is that groups are 
+consistent across images, and that keypoints from one image that don't 
+have equivalents in the other image will simply be grouped in their own 
+group which can easily be discarded during the matching.
+
+\subsection{Graph Clustering}
+
+Given a set of feature points from two images, $im_1$ and $im_2$: $F_k = 
+{k_i, k_j for k_i \in im_1, k_j \in im_2}$ as well as a matching 
+function $M(k_i, k_j) \rightarrow \mathbb{N}$ that takes two feature 
+points in an image and return their matching score, we can define a 
+matrix $A$ where each element $A_ij = M(k_i, k_j)$. A can be interpreted 
+as the \emph{adjecency matrix} of the fully connected graph where each 
+vertex corresponds to a keypoint and the edge between two vertices has a 
+weight equal to the distance between the two corresponding keypoints.
+
+This representation reduces the problem of partitioning the keypoints 
+into groups reduces the problem to that of graph clustering or community 
+structure depending on the context. In the litterature there are various 
+ways of clustering a graph according to different measures of what 
+constitutes an optimal partitioning. Traditionally the most used 
+clustering algorithms have been K-means and spectral clustering, but in 
+recent years a host of new algorithms have been proposed based on both 
+Newman's concept of graph modularity\footnote{Introduced in 
+\cite{girvan2002}, discussed in \cite{brandes2007} and used in 
+\cite{blondel2008} as well as others} as well as information theoretical 
+measures\footnote{See for example \cite{rosvall2008}} and the Potts spin 
+model from physics\footnote{Used in \cite{ronhovde2009}} just to mention 
+a few approaches. Many of the new algorithms differ from K-means 
+clustering and Spectral clustering in that they don't require the number 
+of expected to clusters to be specified beforehand\footnote{Among the 
+aforementioned methods, this is true for \cite{blondel2008} and 
+\cite{rosvall2008}}.  Furthermore, on tests done using randomly 
+generated graphs with a known partitioning \cite{blondel2008}, 
+\cite{rosvall2008} and \cite{ronhovde2009} perform markedly better than 
+spectral clustering and K-means\cite{lancichinetti2009}.
+
+The performance of clustering algorithms is a complicated issue, since 
+an optimal clustering given the same graph can vary depending on the 
+application. Spectral clustering for example will usually return a 
+partitioning where each partition is roughly equal in size\footnote{As 
+mentioned in \cite{von2007}} while the Louvain 
+clustering\cite{blondel2008} might return partitions of very uneven 
+size, even if the modularity measurement has been shown to penalize very 
+small clusters\cite{brandes2007}. Both behaviours can be beneficial 
+depending on the application, but when clustering feature points, 
+maintaining clusters of an even size usually means that a few clusters 
+will be '\emph{catch-all}' clusters where the feature points that don't 
+fit anywhere else are grouped together. The necessity of specifying the 
+amount of partitions in for example Spectral clustering or Pott's model 
+clustering further exacerbates the issue since smaller partitions are 
+then combined into one to achieve the right amount of partitions.
+
+Based on these 
+
