@@ -12,6 +12,7 @@ Jonas Toft Arnfred, 2013-03-19
 ####################################
 
 import numpy
+import math
 from itertools import dropwhile
 
 
@@ -39,35 +40,59 @@ def init(descriptors) :
 
 
 
-def get_treshold(weights, edges_per_vertex) :
-	n = 300
+def get_treshold(weights, edges_per_vertex, n=300, start=0.3) :
 	nb_vertices = weights.shape[0]
-	tresholds = numpy.linspace(1,0.3,n)
+	tresholds = numpy.linspace(1,start,n)
 	w = [numpy.sum(weights > t) / (2.0*nb_vertices) for t in tresholds]
 	q = dropwhile(lambda e : e < edges_per_vertex, w)
 	index = len(list(q))
-	if (index <= 0) : return 0.3
+	if (index <= 0) : return start
 	if (index >= n) : return 1
 	return tresholds[n-index]
 
 
 
-def pruneHighest(weights, edges_per_vertex) :
+def get_fraction(weights, fraction, n=300, start=0.3) :
+	tresholds = numpy.linspace(1,start,n)
+	nb_weights = float(weights.size)
+	w = [numpy.sum(weights > t) / nb_weights for t in tresholds]
+	q = dropwhile(lambda e : e < fraction, w)
+	index = len(list(q))
+	if (index <= 0) : return start
+	if (index >= n) : return 1
+	return tresholds[n-index]
+
+
+
+def pruneFraction(weights, fraction, n=500, start=0.0) :
+	# Get treshold
+	treshold = get_fraction(weights, fraction, n=n, start=start)
+
+	# Update weight matrix
+	index = (weights <= treshold) | (weights == 1)
+	pruned_weights = weights.copy()
+	pruned_weights[index] = 0
+
+	return pruned_weights
+
+
+
+def pruneHighest(weights, edges_per_vertex,n=0,start=0) :
 	weights_triu = numpy.triu(weights)
 	new_weights = numpy.zeros(weights.shape)
-	for i,row in enumerate(weights_triu) :
+	for i,row in enumerate(weights) :
 		indices = row.argsort()[(-1*edges_per_vertex):]
 		new_weights[i,indices] = row[indices]
-	new_weights = new_weights + new_weights.T
+	new_weights[new_weights==0] += new_weights.T[new_weights==0]
 	return new_weights
 
 
 
-def pruneTreshold(weights, edges_per_vertex) :
+def pruneTreshold(weights, edges_per_vertex, n=300, start=0.3) :
 	""" Removes all edges under a certain treshold
 	"""
 	# Get treshold
-	treshold = get_treshold(weights, edges_per_vertex)
+	treshold = get_treshold(weights, edges_per_vertex, n=n, start=start)
 
 	# Update weight matrix
 	index = (weights <= treshold) | (weights == 1)
@@ -100,7 +125,7 @@ def hammingDist(descriptors) :
 def resultMatrix(paths, result) :
 
 	def resultDict(result) :
-		d = { (p1,p2) : s for _,s,(p1,p2) in result }
+		d = { (p1,p2) : s for _,s,(p1,p2) in result}
 		d.update({ (p1,p2) : s for _,s,(p2,p1) in result })
 		return d
 
@@ -109,11 +134,10 @@ def resultMatrix(paths, result) :
 	for i,p1 in enumerate(paths) :
 		for j,p2 in enumerate(paths) :
 			if (p1 != p2) :
-				m[i][j] = d[(p1,p2)]
+				if math.isnan(d[(p1,p2)]) : m[i][j] = 0
+				else : m[i][j] = d[(p1,p2)]
 
-	zeros = (m == -0.1) | (m == 0)
 	max_val = numpy.max(m)
 	min_val = numpy.min(m)
 	ret = (m - min_val) / (max_val - min_val)
-	ret[zeros] = 0
 	return ret

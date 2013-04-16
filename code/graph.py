@@ -15,7 +15,6 @@ import pylab
 import numpy
 import display
 import features
-import weightMatrix
 import math
 import louvain
 from itertools import combinations, groupby, tee, product, combinations_with_replacement, dropwhile
@@ -71,30 +70,27 @@ def getDescriptors(paths, size=32) :
 
 	# Check that we could get descriptors for all images
 	if sum(map(lambda d : d == None, descriptors)) > 0 : return (None, None, None)
-	indices = [l for i,n in zip(range(len(labels)), map(len, descriptors)) for l in [i]*n]
-	return (indices, numpy.concatenate(keypoints), numpy.concatenate(descriptors))
+	return (numpy.concatenate(keypoints), numpy.concatenate(descriptors))
 
 
 
 def setPositions(graph, keypoints) :
 
-	positions = features.getPositions(keypoints)
+	positions = display.getPositions(keypoints)
 
-	pos_x = graph.new_vertex_property("float")
-	pos_y = graph.new_vertex_property("float")
-	for v in graph.vertices() : 
-		pos_x[v] = positions[graph.vertex_index[v]][0]
-		pos_y[v] = positions[graph.vertex_index[v]][1]
+	posMap = graph.new_vertex_property("vector<float>")
+	for v in graph.vertices() : posMap[v] = positions[graph.vertex_index[v]]
 
 	# Save weights as a graph property
-	graph.vertex_properties["x"] = pos_x
-	graph.vertex_properties["y"] = pos_y
+	graph.vertex_properties["positions"] = posMap
 
 	return graph
 
 
 
-def setFeatureIndices(graph, indices) :
+def setIndices(graph, paths) :
+
+	indices = getIndices(paths)
 
 	# Create indicemap
 	ind = graph.new_vertex_property("int")
@@ -110,7 +106,7 @@ def setFeatureIndices(graph, indices) :
 
 
 
-def getImageIndices(paths) : 
+def getIndices(paths) : 
     labels = map(features.getLabel, paths)
     i = 0
     d = {}
@@ -122,7 +118,7 @@ def getImageIndices(paths) :
 
 
 
-def init(weights) :
+def initGraph(weights) :
 
 	# This is a faster way to initialize a graph. It's not random.
 	N = weights.shape[0]
@@ -135,6 +131,23 @@ def init(weights) :
 	weighted_graph = setWeights(graph, weights)
 
 	return weighted_graph
+
+
+
+def initWeights(descriptors) :
+
+	# Get all hamming distances based on the descriptors
+	distances = hammingDist(descriptors)
+
+	# Normalize distances
+	max_d = numpy.max(distances)
+	distances_normalized = numpy.array(distances, dtype=numpy.float) / numpy.array(max_d, dtype=numpy.float)
+	weights = 1 - distances_normalized
+
+	# Set the self-distances to 0
+	weights[(weights == 1)] = 0
+
+	return weights
 
 
 
@@ -165,6 +178,45 @@ def setDegree(graph, weights) :
 	g_degrees = graph.new_vertex_property("float")
 	g_degrees.fa = degrees
 	graph.vp["degrees"] = g_degrees
+
+
+
+def get_treshold(weights, edges_per_vertex) :
+	n = 300
+	nb_vertices = weights.shape[0]
+	tresholds = numpy.linspace(1,0.3,n)
+	w = [numpy.sum(weights > t) / (2.0*nb_vertices) for t in tresholds]
+	q = dropwhile(lambda e : e < edges_per_vertex, w)
+	index = len(list(q))
+	if (index <= 0) : return 0.3
+	if (index >= n) : return 1
+	return tresholds[n-index]
+
+
+
+def pruneHighest(weights, edges_per_vertex) :
+	weights_triu = numpy.triu(weights)
+	new_weights = numpy.zeros(weights.shape)
+	for i,row in enumerate(weights_triu) :
+		indices = row.argsort()[(-1*edges_per_vertex):]
+		new_weights[i,indices] = row[indices]
+	new_weights = new_weights + new_weights.T
+	return new_weights
+
+
+
+def pruneTreshold(weights, edges_per_vertex) :
+	""" Removes all edges under a certain treshold
+	"""
+	# Get treshold
+	treshold = get_treshold(weights, edges_per_vertex)
+
+	# Update weight matrix
+	index = (weights <= treshold) | (weights == 1)
+	pruned_weights = weights.copy()
+	pruned_weights[index] = 0
+
+	return pruned_weights
 
 
 
@@ -229,89 +281,22 @@ def getPartition(graph, partitioning, partition_indices) :
 
 
 
-def setPartition(graph, partition_array) :
-	p = graph.new_vertex_property("int")
-	p.fa = partition_array
-	return p
 
 
 
-def makeFaceGraph(paths, result, treshold=3, lower_is_better=False) :
-	initWeights = weightMatrix.resultMatrix(paths, result)
-	if lower_is_better : initWeights = 1 - initWeights
-	weights = weightMatrix.pruneTreshold(initWeights, treshold)
-	graph = init(weights)
-	indices = getImageIndices(paths)
-	setFeatureIndices(graph, indices)
-	path_prop = graph.new_vertex_property("string")
-	for v, p in zip(graph.vertices(), paths) : path_prop[v] = p
-	path_prop.fa = paths
-	graph.vp["paths"] = path_prop
-	return graph
+def hammingDist(descriptors) :
+	""" Returns a matrix of size n x n where n is the amount of descriptors
+		output[0][1] is equal to the hamming distance between descriptors[0] and descriptors[1]
+		where output is the matrix returned from this function
+	"""
+	# rearrange inputs
+	binary = numpy.array(numpy.unpackbits(descriptors), dtype=numpy.bool)
+	binary.shape = (descriptors.shape[0], descriptors.shape[1] * 8)
 
+	# Initialize return matrix
+	result = numpy.zeros([descriptors.shape[0], descriptors.shape[0]], dtype=numpy.uint8)
 
-
-def getMeanPos(graph) :
-	x_prop = graph.vp["x"]
-	y_prop = graph.vp["y"]
-	pos = [(x_prop[v], y_prop[v]) for v in graph.vertices()]
-	(xs, ys) = zip(*pos)
-	return (numpy.mean(xs), numpy.mean(ys))
-
-def getVarPos(graph) :
-	x_prop = graph.vp["x"]
-	y_prop = graph.vp["y"]
-	pos = [(x_prop[v], y_prop[v]) for v in graph.vertices()]
-	(xs, ys) = zip(*pos)
-	return numpy.sqrt((numpy.var(xs) + numpy.var(ys)) / 2.0) + 3
-	
-def make_trait_graph(graph, partitions, partition_indices, scores) :
-	index_prop = graph.vp["indices"]
-	assert(len(partition_indices) == len(scores))
-	
-	# Initialize trait graph
-	trait_graph = gt.Graph(directed=False)
-	trait_partition = trait_graph.new_vertex_property("int")
-	trait_weight = trait_graph.new_edge_property("float")
-	trait_x = trait_graph.new_vertex_property("float")
-	trait_y = trait_graph.new_vertex_property("float")
-	trait_variance = trait_graph.new_vertex_property("float")
-	trait_indices = trait_graph.new_vertex_property("int")
-	trait_class_colors = trait_graph.new_vertex_property("vector<float>")
-	trait_edge_colors = trait_graph.new_edge_property("vector<float>")
-	colors = [[0.1, 0.1, 0.1, 0.9], [0.7, 0.7, 0.7, 0.9]]
-	edge_colors = [[0.5, 0.0, 0.0, 0.9], [0.0, 0.4, 0.0, 0.9]]
-	
-	# Fill graph with vertices and edges
-	for s, c in zip(scores, partition_indices) :
-		f_c = getFilter(graph, partitions, c)
-		indices = [0,1]
-		fs = [andFilter(graph, f_c, index_prop, i) for i in indices]
-		gs = [gt.GraphView(graph, vfilt=f) for f in fs]
-		vs = [trait_graph.add_vertex() for _ in gs]
-		e = trait_graph.add_edge(vs[0], vs[1])
-		if (s < 0) :
-			trait_weight[e] = s*(-200)
-			trait_edge_colors[e] = edge_colors[0]
-		else :
-			trait_weight[e] = s*200
-			trait_edge_colors[e] = edge_colors[1]
-		for v,g,i in zip(vs,gs, indices) : 
-			x,y = getMeanPos(g)
-			trait_x[v] = x
-			trait_y[v] = y
-			trait_variance[v] = getVarPos(g)
-			trait_partition[v] = c
-			trait_indices[v] = i
-			trait_class_colors[v] = colors[i]
-	
-	# Return finished graph
-	trait_graph.vp["partitions"] = trait_partition
-	trait_graph.ep["weights"] = trait_weight
-	trait_graph.vp["x"] = trait_x
-	trait_graph.vp["y"] = trait_y
-	trait_graph.vp["variance"] = trait_variance
-	trait_graph.vp["indices"] = trait_indices
-	trait_graph.vp["class_colors"] = trait_class_colors
-	trait_graph.ep["edge_colors"] = trait_edge_colors
-	return trait_graph
+	# Fill result matrix and return
+	for (i, bin_row) in enumerate(binary) :
+		result[i] = numpy.sum(numpy.bitwise_xor(binary, bin_row), 1)
+	return result

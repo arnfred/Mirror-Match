@@ -39,7 +39,7 @@ supported_descriptor_types = ["SIFT","SURF","ORB","BRISK","BRIEF","FREAK"]
 ####################################
 
 
-def getFeatures(paths, size=32) :
+def getFeatures(paths, keypoint_type = "ORB", descriptor_type = "BRIEF", size=32) :
 	""" Given a list of paths to images, the function returns a list of 
 	    descriptors and keypoints
 		Input: paths [list of strings] The paths to the images we are using
@@ -50,9 +50,11 @@ def getFeatures(paths, size=32) :
 	images = map(loadImage, paths)
 
 	# Get feature descriptors
-	#keypoints = [features.getKeypoints(feature_keypoint, im) for im in images]
-	keypoints = [getORBKeypoints(im, size) for im in images]
-	data = [getDescriptors(feature_descriptor, im, k) for (im, k) in zip(images, keypoints)]
+	keypoints = [getKeypoints(keypoint_type, im) for im in images]
+	#for k in numpy.concatenate(keypoints) :
+	#	k.size = float(size)
+	#keypoints = [getORBKeypoints(im, size) for im in images]
+	data = [getDescriptors(descriptor_type, im, k) for (im, k) in zip(images, keypoints)]
 	keypoints, descriptors = zip(*data)
 
 	# Check that we could get descriptors for all images
@@ -79,11 +81,13 @@ def getKeypoints(keypoint_type, image, params = {}) :
 	return feature.detect(image)
 
 
-def getORBKeypoints(image, size=32) :
+def getORBKeypoints(image, size=[32]) :
+	if isinstance(size, (int, long)) : size = [size]
 	#o = cv2.ORB(nfeatures=2000, scaleFactor=1.06, nlevels=15, edgeThreshold=n, patchSize=n)
-	o = cv2.ORB(nfeatures=2000, scaleFactor=1.06, nlevels=12, edgeThreshold=size, patchSize=size)
+	os = [cv2.ORB(nfeatures=2000, scaleFactor=1.06, nlevels=15, edgeThreshold=s, patchSize=s) for s in size]
+	kpts = [kpt for o in os for kpt in o.detect(image)]
 	#o = cv2.ORB(nfeatures=2000, scaleFactor=1.06, nlevels=12, edgeThreshold=35, patchSize=35)
-	return o.detect(image)
+	return kpts
 
 
 def getDescriptors(descriptor_type, image, keypoints) :
@@ -197,9 +201,10 @@ def bfMatch(descriptor_type, D1, D2) :
 	#matches_tq = bf.knnMatch(train, query, k=2)
 
 	# Convert result
-	data = [(m1.trainIdx, m1.distance, m1.distance*1.0/m2.distance) 
-				for [m1,m2] in matches_qt]
-				# if matches_tq[m1.trainIdx][0].trainIdx == m1.queryIdx]
+	data = [(ms[0].trainIdx, ms[0].distance, ms[0].distance*1.0/ms[1].distance) 
+				for ms in matches_qt if len(ms) == 2]
+
+	if len(data) == 0 : return (None, None, None)
 
 	return zip(*data)
 
@@ -211,6 +216,7 @@ def angleDist(D1, D2) : return numpy.arccos(D1.dot(D2.T))
 
 
 # Compute hamming distance
+# CHECK weightMatrix.py for much faster method
 def hammingDist(D1, D2) :
 	# Fast function for computing hamming distance
 	# n and m should both be integers
@@ -261,6 +267,13 @@ def loadImage(path) :
 
 
 def getLabel(path) : return " ".join(path.split("/")[-1].split("_")[0:-1])
+
+
+def getPosition(keypoint) :
+	return (keypoint.pt[0], keypoint.pt[1])
+
+def getPositions(keypoints) : 
+	return map(getPosition, keypoints)
 
 
 ####################################

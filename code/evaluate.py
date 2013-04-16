@@ -42,11 +42,13 @@ def imageToImage(images, paths, keypoint_type, descriptor_type, score_fun = lamb
 	"""
 
 	# Get keypoints
-	keypoints = map(lambda i : f.getKeypoints(keypoint_type, i), images)
+	#keypoints = map(lambda i : f.getKeypoints(keypoint_type, i), images)
 
 	# Get descriptors
-	data = map(lambda i,k : f.getDescriptors(descriptor_type, i, k), images, keypoints)
-	keypoints, descriptors = zip(*data)
+	#data = map(lambda i,k : f.getDescriptors(descriptor_type, i, k), images, keypoints)
+	data = [f.getFeatures([p],keypoint_type, descriptor_type) for p in paths]
+	
+	indices, keypoints, descriptors = zip(*data)
 
 	# Return the scores labeled with a boolean to indicate if they are of same set
 	return matchDescriptors(descriptors, paths, descriptor_type, score_fun)
@@ -55,10 +57,21 @@ def imageToImage(images, paths, keypoint_type, descriptor_type, score_fun = lamb
 
 def matchDescriptors(descriptors, paths, descriptor_type, score_fun) :
 
+	default_map = {
+		"SIFT"   : 1,
+		"SURF"   : 1,
+		"ORB"    : 100,
+		"BRISK"  : 100,
+		"BRIEF"  : 100,
+		"FREAK"  : 100
+	}
+
 	def filterNone(l) : return [i for i in l if i != None]
 	def getScore(D1, D2, i) :
-		if (i % 100 == 0) : sys.stdout.write('#')
+		if D1 == None or D2 == None : return default_map[descriptor_type]
 		indices, scores, uniques = f.bfMatch(descriptor_type, D1, D2)
+		if indices == None : return default_map[descriptor_type]
+
 		noNones = map(filterNone, [indices, scores, uniques])
 		return score_fun(*noNones)
 

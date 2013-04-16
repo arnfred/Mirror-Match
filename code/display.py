@@ -18,10 +18,13 @@ import cv2
 import pylab
 import numpy
 import graph_tool.all as gt
-import cluster
+import math
+import louvain
+import weightMatrix
 from scipy.misc import imresize
 import Image
 from itertools import combinations, groupby, tee, product, combinations_with_replacement
+from sklearn import metrics
 
 
 ####################################
@@ -37,22 +40,13 @@ def appendimages(im1, im2) :
 
 
 
-def getPositions(keypoints) : 
-    pos = numpy.zeros([len(keypoints), 2])
-    for i in range(len(keypoints)) :
-        pos[i][0] = keypoints[i].pt[0]
-        pos[i][1] = keypoints[i].pt[1]
-    return pos
 
 
 
-def keypoints(im, locs) :
+def keypoints(im, pos) :
 	""" show image with features. input: im (image as array), 
 	    locs (row, col, scale, orientation of each feature) 
 	"""
-	# Extract positions from keypoints
-	pos = getPositions(locs)
-
 	# Plot all keypoints
 	pylab.gray()
 	pylab.imshow(im)
@@ -65,37 +59,30 @@ def compareKeypoints(im1, im2, pos1, pos2) :
 	""" Show two images next to each other with the keypoints marked
 	"""
 
-	print(pos1)
-	print(pos2)
-
 	# Construct unified image
 	im3 = appendimages(im1,im2)
 
 	# Find the offset and add it
 	offset = im1.shape[1]
-	pos2[:,1] = pos2[:,1] + offset
+	pos2_o = [(x+offset,y) for (x,y) in pos2]
 
 	# Show images
 	pylab.gray()
 	pylab.imshow(im3)
-	pylab.plot([p[1] for p in pos1], [p[0] for p in pos1], '.b')
-	pylab.plot([p[1] for p in pos2], [p[0] for p in pos2], '.b')
+	pylab.plot([x for x,y in pos1], [y for x,y in pos1], '.b')
+	pylab.plot([x for x,y in pos2_o], [y for x,y in pos2_o], '.b')
 	pylab.axis('off')
 	pylab.show()
 
 
 
-def matches(im1, im2, locs1, locs2, matchpos) :
+def matches(im1, im2, pos1, pos2, matchpos) :
 	""" show a figure with lines joining the accepted matches in im1 and im2
 	    input: im1,im2 (images as arrays), locs1,locs2 (location of features), 
 	    matchscores (as output from 'match'). 
 	"""
 
 	assert len(locs1) == len(matchpos)
-
-	# Extract positions from keypoints
-	pos1 = getPositions(locs1)
-	pos2 = getPositions(locs2)
 
 	# Construct unified image
 	im3 = appendimages(im1,im2)
@@ -168,17 +155,23 @@ def barWithMask(X,Y,mask,color='blue') :
 def scoreNormHist(resultMat, labels) :
 	# Normalize resultMat row by row with respect to mean and standard deviation
 	resultMat_norm = numpy.zeros(resultMat.shape)
-	for i,row in enumerate(resultMat) :
-		mean = numpy.mean(row)
-		sd = numpy.var(row)
-		resultMat_norm[i] = (row - mean) / sd
+	label_array = numpy.array(labels)
+	for i,(row,l) in enumerate(zip(resultMat, labels)) :
+
+		same = label_array == l
+		diff = label_array != l
+		mean_same = numpy.mean(row[same])
+		mean_diff = numpy.mean(row[diff])
+		weighted_mean = mean_same * (numpy.sum(same) / float(len(labels))) + mean_diff * (numpy.sum(diff) / float(len(labels)))
+		sd = numpy.sqrt(numpy.var(row))
+		ratio = mean_same / (mean_diff + 0.000001)
+		resultMat_norm[i] = (row - weighted_mean) / (sd + 00000.1)
 		
 	# Make sure the diagonal is zero
 	for i in range(len(labels)) : resultMat_norm[i][i] = 0.0
 		
 	# Create mask
 	resultMask = numpy.zeros(resultMat.shape, dtype=numpy.bool)
-	label_array = numpy.array(labels)
 	for i,l in enumerate(labels) :
 		resultMask[i] = label_array == l
 
@@ -218,11 +211,11 @@ def scoreNormHist(resultMat, labels) :
 def scoreHist(scores) : 
 
 	if (len(scores[0]) == 3) :
-		same = [s for b,s,p in scores if b]
-		diff = [s for b,s,p in scores if not b] 
+		same = [s for b,s,p in scores if b and not math.isnan(s) ]
+		diff = [s for b,s,p in scores if not b and not math.isnan(s)] 
 	else :
-		same = [s for b,s in scores if b]
-		diff = [s for b,s in scores if not b] 
+		same = [s for b,s in scores if b and not math.isnan(s)]
+		diff = [s for b,s in scores if not b and not math.isnan(s)] 
 
 	mean_same = numpy.mean(same)
 	mean_diff = numpy.mean(diff)
@@ -258,14 +251,13 @@ def scoreRatioHist(resultMat, labels, lower_is_better=False) :
 	for i,row in enumerate(resultMat) :
 		equal_labels = (labels == labels[i])
 		diff_labels = (labels != labels[i])
-		mean_same = numpy.mean(row[equal_labels]) + 0.00001
-		mean_diff = numpy.mean(row[diff_labels]) + 0.00001
+		mean_same = numpy.mean(row[equal_labels]) + 0.0000001
+		mean_diff = numpy.mean(row[diff_labels]) + 0.0000001
 		ratio = mean_diff/mean_same if lower_is_better else mean_same/mean_diff
 		scores[i] = ratio
 		
 	# Remove outliers
 	scores[scores > 3] = 3
-	print(scores)
 	below_1 = numpy.sum(scores<1)
 	above_1 = numpy.sum(scores>1)
 	equal_1 = numpy.sum(scores==1)
@@ -276,22 +268,24 @@ def scoreRatioHist(resultMat, labels, lower_is_better=False) :
 	else :
 		gray_start = 1
 		gray_end = 1
+	ax = pylab.subplot(1,1,1)
 	pylab.hist(scores[scores < 1],bins=numpy.linspace(0,gray_start,7), color="red", alpha=0.7, label="< 1.0 (%i)" % below_1)
 	if equal_1 > 0 : pylab.hist(scores[scores == 1],bins=numpy.linspace(gray_start,gray_end,2), color="grey", alpha=0.7, label="= 1.0 (%i)" % equal_1)
 	pylab.hist(scores[scores > 1],bins=numpy.linspace(gray_end,3,14), color="green", alpha=0.7, label="> 1.0 (%i)" % above_1)
 	pylab.xlim(0,3.01)
 	pylab.legend(loc="best")
+	#ax.set_xscale("log")
 	removeDecoration()
 
 
 def farPlot(scores, n = 500, lower_is_better = False) :
 
 	if (len(scores[0]) == 3) :
-		same = [s for b,s,p in scores if b]
-		diff = [s for b,s,p in scores if not b] 
+		same = [s for b,s,p in scores if b and not math.isnan(s) ]
+		diff = [s for b,s,p in scores if not b and not math.isnan(s)] 
 	else :
-		same = [s for b,s in scores if b]
-		diff = [s for b,s in scores if not b] 
+		same = [s for b,s in scores if b and not math.isnan(s)]
+		diff = [s for b,s in scores if not b and not math.isnan(s)] 
 
 	# set compare function
 	compare = (lambda a,b : a < b) if lower_is_better else (lambda a,b : a > b)
@@ -317,83 +311,41 @@ def farPlot(scores, n = 500, lower_is_better = False) :
 	removeDecoration()
 
 
+
+def clusterPlot(resultMat, labels, pruner, ylim=0.5, xlim=8) :
+	xs = numpy.linspace(0.001,xlim,100)
+
+	def getRandScore(l) :
+		pruned_w = pruner(resultMat, l, n=500, start=0.0)
+		p = louvain.cluster(pruned_w)
+		#ars = metrics.adjusted_rand_score(labels, p)
+		amis = metrics.adjusted_mutual_info_score(labels,p)
+		return amis
+
+	ys = [getRandScore(x) for x in xs]
+	pylab.plot(xs,ys)
+	pylab.ylim(0,ylim)
+	removeDecoration()
+
+
+
 ####################################
 #                                  #
 #            Clusters              #
 #                                  #
 ####################################
 
-def getMeanPos(graph) :
-	pos_prop = graph.vp["positions"]
-	pos = [(pos_prop[v][0], pos_prop[v][1]) for v in graph.vertices()]
-	(xs, ys) = zip(*pos)
-	return [numpy.mean(xs), numpy.mean(ys)]
-
-def getVarPos(graph) :
-	pos_prop = graph.vp["positions"]
-	pos = [(pos_prop[v][0], pos_prop[v][1]) for v in graph.vertices()]
-	(xs, ys) = zip(*pos)
-	return numpy.sqrt((numpy.var(xs) + numpy.var(ys)) / 2.0) + 3
-	
-def make_trait_graph(graph, partitions, partition_indices, scores) :
-	index_prop = graph.vp["indices"]
-	assert(len(partition_indices) == len(scores))
-	
-	# Initialize trait graph
-	trait_graph = gt.Graph(directed=False)
-	trait_partition = trait_graph.new_vertex_property("int")
-	trait_weight = trait_graph.new_edge_property("float")
-	trait_pos = trait_graph.new_vertex_property("vector<float>")
-	trait_variance = trait_graph.new_vertex_property("float")
-	trait_indices = trait_graph.new_vertex_property("int")
-	trait_class_colors = trait_graph.new_vertex_property("vector<float>")
-	trait_edge_colors = trait_graph.new_edge_property("vector<float>")
-	colors = [[0.1, 0.1, 0.1, 0.9], [0.7, 0.7, 0.7, 0.9]]
-	edge_colors = [[0.5, 0.0, 0.0, 0.9], [0.0, 0.4, 0.0, 0.9]]
-	
-	# Fill graph with vertices and edges
-	for s, c in zip(scores, partition_indices) :
-		f_c = cluster.getFilter(graph, partitions, c)
-		indices = [0,1]
-		fs = [cluster.andFilter(graph, f_c, index_prop, i) for i in indices]
-		gs = [gt.GraphView(graph, vfilt=f) for f in fs]
-		vs = [trait_graph.add_vertex() for _ in gs]
-		e = trait_graph.add_edge(vs[0], vs[1])
-		if (s < 0) :
-			trait_weight[e] = s*(-200)
-			trait_edge_colors[e] = edge_colors[0]
-		else :
-			trait_weight[e] = s*200
-			trait_edge_colors[e] = edge_colors[1]
-		for v,g,i in zip(vs,gs, indices) : 
-			trait_pos[v] = getMeanPos(g)
-			trait_variance[v] = getVarPos(g)
-			trait_partition[v] = c
-			trait_indices[v] = i
-			trait_class_colors[v] = colors[i]
-	
-	# Return finished graph
-	trait_graph.vp["partitions"] = trait_partition
-	trait_graph.ep["weights"] = trait_weight
-	trait_graph.vp["positions"] = trait_pos
-	trait_graph.vp["variance"] = trait_variance
-	trait_graph.vp["indices"] = trait_indices
-	trait_graph.vp["class_colors"] = trait_class_colors
-	trait_graph.ep["edge_colors"] = trait_edge_colors
-	return trait_graph
 
 
 
-def trait_graph(g, partitions, partition_indices, scores, images) :
-	if len(scores) > 0 : 
-		tg = make_trait_graph(g, partitions, partition_indices, scores)
-		graph_on_images(
-				tg, 
-				images, 
-				clusters=tg.vp["partitions"], 
-				path="trait_graph.png",
-				edge_color=tg.ep["edge_colors"], 
-				vertex_size=tg.vp["variance"])
+def trait_graph(tg, images) :
+	graph_on_images(
+			tg, 
+			images, 
+			clusters=tg.vp["partitions"], 
+			path="trait_graph.png",
+			edge_color=tg.ep["edge_colors"], 
+			vertex_size=tg.vp["variance"])
 
 
 def draw_graph(g, clusters="orange", filename="graph.png") :
@@ -413,6 +365,22 @@ def draw_graph(g, clusters="orange", filename="graph.png") :
 	gt.graph_draw(g, pos=pos, output_size=(1000, 1000), vertex_halo=True, vertex_halo_color=class_colors, vertex_color=clusters,
 			   vertex_fill_color=clusters, vertex_size=5, edge_pen_width=weights, output=filename)
 
+def draw_graph2(g, clusters="orange", filename="graph.png") :
+	""" Show a graph with its clustering marked
+	"""
+	# Get indices
+	indices = g.vertex_properties["indices"]
+
+	# Get class colors
+	#class_colors = g.vertex_properties["class_colors"]
+
+	# Get weights and positions
+	weights = g.edge_properties["weights"]
+	pos = gt.sfdp_layout(g, eweight=weights)
+
+	# Print graph to file
+	gt.graph_draw(g, pos=pos, output_size=(1000, 1000), vertex_halo=True, vertex_color=clusters,
+			   vertex_fill_color=clusters, vertex_size=5, edge_pen_width=weights, output=filename)
 
 
 def graph_partitions(g, clusters, filename="graph_clusters.png") :
@@ -460,12 +428,16 @@ def graph_on_images(graph, images, clusters = "orange", path="graph_on_images.pn
 
 	# Calculate offsets
 	offsets = map(sum, [list(t) for t in tails(map(lambda i : i.shape[1]*scale, images))])[::-1]
+	print(offsets)
 
 	# Get scaled positions
 	ind_prop = graph.vertex_properties["indices"]
-	positions = graph.vertex_properties["positions"]
-	positions_scaled = graph.new_vertex_property("vector<float>")
-	for v in graph.vertices() : positions_scaled[v] = numpy.array(positions[v]) * scale + numpy.array([offsets[ind_prop[v]], 0])
+	x,y = (graph.vertex_properties["x"], graph.vertex_properties["y"])
+	pos = graph.new_vertex_property("vector<float>")
+	for v in graph.vertices() : 
+		x_scaled = x[v] * scale + offsets[ind_prop[v]]
+		y_scaled = y[v] * scale
+		pos[v] = [x_scaled, y_scaled]
 
 	# Get weights
 	weights = graph.edge_properties["weights"]
@@ -473,7 +445,7 @@ def graph_on_images(graph, images, clusters = "orange", path="graph_on_images.pn
 	# Draw graph
 	class_colors = graph.vertex_properties["class_colors"]
 	gt.graph_draw(graph, 
-				  pos=positions_scaled, 
+				  pos=pos, 
 				  fit_view=False, 
 				  output_size=[bg.shape[1], bg.shape[0]],
 				  vertex_halo=True,
@@ -497,23 +469,25 @@ def graph_on_images(graph, images, clusters = "orange", path="graph_on_images.pn
 
 
 
-def faceGraph(graph, partitioning, filename = "facegraph.png") :
-	pos = gt.sfdp_layout(graph, eweight=graph.ep["weights"])
-	gt.graph_draw(graph, 
-				  pos=pos, 
-				  output_size=(1000, 1000), 
-				  vertex_halo=True, 
-				  vertex_halo_color=partitioning, 
-				  #vertex_fill_color=partitioning, 
-				  vertex_anchor=0,
-				  vertex_pen_width=10,
-				  vertex_color=partitioning, 
-				  vertex_surface=graph.vp["paths"],
-				  vertex_size=40, 
-				  edge_pen_width=graph.ep["weights"], 
-				  output=filename)
-
-
+def faceGraph(graph, partitions, paths, filename = "facegraph.png") :
+    partition_prop = graph.new_vertex_property("int")
+    partition_prop.fa = partitions
+    path_prop = graph.new_vertex_property("string")
+    for v, p in zip(graph.vertices(), paths) : path_prop[v] = p
+    pos = gt.sfdp_layout(graph, eweight=graph.ep["weights"])
+    gt.graph_draw(graph, 
+                  pos=pos, 
+                  output_size=(2000, 1400), 
+                  vertex_halo=True, 
+                  vertex_halo_color=partition_prop, 
+                  #vertex_fill_color=partitioning, 
+                  vertex_anchor=0,
+                  vertex_pen_width=10,
+                  vertex_color=partition_prop,
+                  vertex_surface=path_prop,
+                  vertex_size=40, 
+                  edge_pen_width=graph.ep["weights"], 
+                  output=filename)
 
 ####################################
 #                                  #
