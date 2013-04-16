@@ -5,6 +5,10 @@
 \usepackage{caption}
 \usepackage{adjustbox}
 \usepackage{subcaption}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{amsmath}
+\usepackage{amssymb}
 
 \begin{document}
 
@@ -49,13 +53,20 @@ the keypoints from two images into one set and partitioning them into
 groups together.  The advantages of this approach is that groups are 
 consistent across images, and that keypoints from one image that don't 
 have equivalents in the other image will simply be grouped in their own 
-group which can easily be discarded during the matching.
+group which can easily be discarded during the matching. This is 
+important for scene recognition where people might obscure details in 
+the picture. In addition the proposed method generalizes to three or 
+more images.  This makes it possible to easily assemble a set of 
+partially overlapping pictures without any required knowledge of their 
+position.  What's more, if one of the pictures in there is not part of 
+the set, the features of the odd image out will not form clusters with 
+the features of the other images and automatically be sorted out. 
 
 \subsection{Graph Clustering}
 
 Given a set of feature points from two images, $im_1$ and $im_2$: $F_k = 
-{k_i, k_j for k_i \in im_1, k_j \in im_2}$ as well as a matching 
-function $M(k_i, k_j) \rightarrow \mathbb{N}$ that takes two feature 
+\{k_i, k_j$ for $k_i \in im_1, k_j \in im_2\}$ as well as a matching 
+function $M(k_i, k_j) \rightarrow \mathbb{R}$ that takes two feature 
 points in an image and return their matching score, we can define a 
 matrix $A$ where each element $A_ij = M(k_i, k_j)$. A can be interpreted 
 as the \emph{adjecency matrix} of the fully connected graph where each 
@@ -92,12 +103,171 @@ clustering\cite{blondel2008} might return partitions of very uneven
 size, even if the modularity measurement has been shown to penalize very 
 small clusters\cite{brandes2007}. Both behaviours can be beneficial 
 depending on the application, but when clustering feature points, 
-maintaining clusters of an even size usually means that a few clusters 
+maintaining clusters of an even size usually means that some clusters 
 will be '\emph{catch-all}' clusters where the feature points that don't 
 fit anywhere else are grouped together. The necessity of specifying the 
 amount of partitions in for example Spectral clustering or Pott's model 
 clustering further exacerbates the issue since smaller partitions are 
 then combined into one to achieve the right amount of partitions.
 
-Based on these 
+Based on these observations I've decided to use Louvain clustering for 
+grouping feature points since it's fast, performs well, doesn't require 
+parameters and doesn't emphasize partitions of equal sizes.
+
+\subsection{Clustering feature points using Louvain clustering}
+
+\begin{algorithm}
+\caption{Louvain-Match Algorithm}
+\label{alg-simple}
+\begin{algorithmic}
+\Require $images$ : set of images, $n$ : int $\in \mathbb{N}$
+\State $matches\gets \varnothing$
+\ForAll{$I_i \in images$} \Comment Gather features of all images
+	\State $f_i\gets getFeatures(I_i)$
+\EndFor
+\State $A\gets getAdjecencyMatrix(f_1, f_2,\; \ldots \;, f_n)$
+\State $A_{norm}\gets 1 - normalize(A)$
+\Comment Shorter distance is higher weight
+\State $A_{pruned}\gets pruneEdges(A_{norm},\alpha)$
+\State $P\gets cluster(A_{pruned})$ 
+\Comment P is a set of partitions
+\ForAll{$p \in P$} \Comment p is a set of feature points
+	\State $trait\gets \left\{p \cap f_i \mid p \cap f_i \neq 
+\varnothing, f_i \in \left\{f_1, f_2,\; \ldots \;, f_n\right\}\right\}$
+	\If{$\left\vert trait \right\vert > 1$}
+		\State $matches\gets getPositions(trait)$
+		\Comment Position of trait in each image
+	\EndIf
+\EndFor \\
+\Return matches
+\end{algorithmic}
+\end{algorithm}
+
+Algorithm \ref{alg-simple} shows the basic steps taken to find matches 
+in two or more images. This algorithm is a simplified version of the 
+proposed method completely agnostic of the geometry of the feature 
+points in the picture. To better explain the algorithm here is an 
+overview over the inputs and functions mentioned and how they work:
+\begin{itemize}
+\item[]{\emph{images}: The images we are matching}
+\item[]{\emph{$n$}: The number of weights per row in the adjecency 
+matrix}
+\item[]{\emph{getFeatures}: Returns a set of feature points given an 
+image. The type of feature point is not theoretically important, but in 
+practice the BRIEF\cite{calonder2010brief} feature point detector and 
+descriptor has worked well} 
+% TODO: include a comparison of SURF, SIFT, etc
+\item[]{\emph{getAdjecencyMatrix}: Based on the distance measure used to 
+compare the similarity of the feature points a symmetric adjecency 
+matrix is returned}
+\item[]{\emph{pruneEdges}: The result of the Louvain clustering depends 
+on the density of the graph. To ensure an optimal number of partitions 
+we only keep the $n$ highest weights per row and column in the adjecency 
+matrix, making sure it's still symmetric afterwards. In practice setting 
+$n$ to around four or five usually yields good results}
+\item[]{\emph{cluster}: Cluster the graph corresponding to the adjecency 
+matrix given using the Louvain algorithm in \cite{blondel2008}}
+\item[]{\emph{getPositions}: Given a trait consisting of features in 
+several different images, find the positions of traits in each image and 
+return them. This could either be done by taking a mean of the feature 
+points in an image, or by returning the position of the highest matching 
+feature points within the trait. In practice ... TODO}
+\end{itemize}
+
+\begin{algorithm}
+\caption{Louvain-Match Algorithm With Geometry}
+\label{alg-geometry}
+\begin{algorithmic}
+\Require $images$ : set of images, $\alpha$ : float $\in \left[0, 
+1\right]$, $\beta$ : float $\in \left[0, 1\right]$
+\State $matches\gets \varnothing$
+\ForAll{$I_i \in images$} \Comment Gather features of all images
+	\State $f_i\gets getFeatures(I_i)$
+\EndFor
+\State $A\gets getAdjecencyMatrix(f_1, f_2,\; \ldots \;, f_n)$
+\State $B\gets getGeomDistanceMatrix(f_1, f_2,\; \ldots \;, f_n)$
+\State $M\gets getInterImageMask(f_1, f_2,\; \ldots \;, f_n)$
+\State $B_{norm}\gets 1 - normalize(G)$ \State $A_{norm}\gets 1 - 
+normalize(A)$
+\State $A_{geom}\gets A_{norm}\left[ \neg M\right] + \beta \cdot 
+B_{norm}\left[M\right]$
+\State $A_{pruned}\gets pruneEdges(A_{geom},\alpha)$
+\State $P\gets cluster(A_{pruned})$ 
+\ForAll{$p \in P$}
+	\State $trait\gets \left\{p \cap f_i \mid p \cap f_i \neq 
+\varnothing, f_i \in \left\{f_1, f_2,\; \ldots \;, f_n\right\}\right\}$
+	\If{$\left\vert trait \right\vert > 1$}
+		\State $matches\gets getPositions(trait)$
+		\Comment Position of trait in each image
+	\EndIf
+\EndFor \\
+\Return matches
+\end{algorithmic}
+\end{algorithm}
+
+While clustered feature points are often geometrically close together, 
+there might be cases where several points in the same image are similar 
+enough to all be included in one cluster despite their geometrical 
+distance.  To solve this problem we can either modify the clustering 
+algorithm to take the geometric distances into account like 
+\cite{das2008event}.  Alternatively we can modify the weight matrix to 
+penalize putting distanced feature points in the same cluster. However 
+we only know the geometrical distance between two feature points as long 
+as both belong to the same image. One way to approach this problem is to 
+replace all the weights of edges between two feature points within the 
+same image with their distance. For the case of two images the original 
+adjecency matrix is defined as follows:
+%
+$$A=
+\begin{bmatrix}
+w_{1,1}   & w_{1,2}   & \ldots & w_{1,n-1}   & w_{1,n}     \\
+w_{2,1}   & w_{2,2}   & \ldots & w_{2,n-1}   & w_{2,n}     \\
+\vdots    & \vdots    & \ddots & \vdots      & \vdots      \\
+w_{n-1,1} & w_{n-1,2} & \ldots & w_{n-1,n-1} & w_{n-1,n}   \\
+w_{n,1}   & w_{n,2}   & \ldots & w_{n,n-1}   & w_{n,n}
+\end{bmatrix}=
+\begin{bmatrix}
+A_{im1} & S       \\
+T       & A_{im2} \\
+\end{bmatrix}
+$$
+%
+In a similar manner we can define an adjecency matrix based on the 
+geometrical distance. Note how for example $d_{1,n}$ doesn't contain any 
+sensible information.
+%
+$$B=
+\begin{bmatrix}
+d_{1,1}   & d_{1,2}   & \ldots & d_{1,n-1}   & d_{1,n}     \\
+d_{2,1}   & d_{2,2}   & \ldots & d_{2,n-1}   & d_{2,n}     \\
+\vdots    & \vdots    & \ddots & \vdots      & \vdots      \\
+d_{n-1,1} & d_{n-1,2} & \ldots & d_{n-1,n-1} & d_{n-1,n}   \\
+d_{n,1}   & d_{n,2}   & \ldots & d_{n,n-1}   & d_{n,n}
+\end{bmatrix}=
+\begin{bmatrix}
+B_{im1} & R       \\
+Q       & B_{im2} \\
+\end{bmatrix}
+$$
+%
+Given these two and a weight factor $\beta$ we can construct a new 
+weight matrix as follows:
+%
+$$C=
+\begin{bmatrix}
+\beta \cdot B_{im1} & S       \\
+T       & \beta \cdot B_{im2} \\
+\end{bmatrix}
+$$
+%
+Since we prune the matrix afterwards, it's important to choose a weight 
+factor that doesn't lead to all edges being either intra image edges or 
+intra image edges, since the first would create no clusters across 
+images and the latter would mean that the geometrical information would 
+be discarded and the bipartite graph constituting of edges between 
+feature points in the two images would be used instead.
+
+\bibliographystyle{abbrv}
+\bibliography{bibliography}
+\end{document}
 
