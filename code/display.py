@@ -76,28 +76,35 @@ def compareKeypoints(im1, im2, pos1, pos2) :
 
 
 
-def matches(im1, im2, pos1, pos2, matchpos) :
+def matches(im1, im2, matches, filename = None) :
 	""" show a figure with lines joining the accepted matches in im1 and im2
-	    input: im1,im2 (images as arrays), locs1,locs2 (location of features), 
-	    matchscores (as output from 'match'). 
+		input: im1,im2 (images as arrays), locs1,locs2 (location of features), 
+		matchscores (as output from 'match'). 
 	"""
-
-	assert len(locs1) == len(matchpos)
 
 	# Construct unified image
 	im3 = appendimages(im1,im2)
 
+	# Create figure
+	fig = pylab.figure(frameon=False, figsize=(15.0, 7.0))
+	ax = pylab.Axes(fig, [0., 0., 1., 1.])
+
+	ax.set_axis_off()
+	fig.add_axes(ax)
+
 	# Display image
 	pylab.gray()
-	pylab.imshow(im3)
+	ax.imshow(im3, aspect='normal')
+
 
 	# Plot all lines
-	cols1 = im1.shape[1]
-	for i in range(len(matchpos)):
-		if matchpos[i] != None:
-			pylab.plot([pos1[i,1], pos2[int(matchpos[i]),1]+cols1], [pos1[i,0], pos2[int(matchpos[i]),0]], 'c')
+	offset_x = im1.shape[1]
+	for ((x1,y1),(x2,y2)) in matches:
+		pylab.plot([x1, x2+offset_x], [y1,y2], 'c', lw=0.8)
 	pylab.axis('off')
-	pylab.show()
+
+	if filename != None :
+		pylab.savefig(filename, bbox_inches=0, dpi=72)
 
 
 
