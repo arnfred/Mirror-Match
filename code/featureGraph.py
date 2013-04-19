@@ -42,7 +42,7 @@ N = 600
 
 
 
-def cluster(graph, nb_clusters=20, iter=100, gamma=1.0, corr="erdos", verbose=False) :
+def clusterPotts(graph, nb_clusters=20, iter=100, gamma=1.0, corr="erdos", verbose=False) :
 
 	# Get weights (throws an error if they don't exist)
 	weights = graph.edge_properties["weights"]
@@ -50,29 +50,6 @@ def cluster(graph, nb_clusters=20, iter=100, gamma=1.0, corr="erdos", verbose=Fa
 	clusters = gt.community_structure(graph, iter, nb_clusters, weight=weights, gamma=gamma, corr=corr, verbose=verbose)
 	t = [(k, len(list(g))) for k,g in groupby(sorted(clusters.fa))]
 	return clusters, len(t)
-
-
-
-def getDescriptors(paths, size=32) :
-	""" Given a list of paths to images, the function returns a list of 
-	    descriptors and keypoints
-		Input: paths [list of strings] The paths to the images we are using
-		Out:   [pair of list of descriptors and list of keypoints]
-	"""
-	# Get all images and labels
-	labels = map(features.getLabel, paths)
-	images = map(features.loadImage, paths)
-
-	# Get feature descriptors
-	#keypoints = [features.getKeypoints(feature_keypoint, im) for im in images]
-	keypoints = [features.getORBKeypoints(im, size) for im in images]
-	data = [features.getDescriptors(feature_descriptor, im, k) for (im, k) in zip(images, keypoints)]
-	keypoints, descriptors = zip(*data)
-
-	# Check that we could get descriptors for all images
-	if sum(map(lambda d : d == None, descriptors)) > 0 : return (None, None, None)
-	indices = [l for i,n in zip(range(len(labels)), map(len, descriptors)) for l in [i]*n]
-	return (indices, numpy.concatenate(keypoints), numpy.concatenate(descriptors))
 
 
 
@@ -232,6 +209,7 @@ def getPartition(graph, partitioning, partition_indices) :
 def setPartition(graph, partition_array) :
 	p = graph.new_vertex_property("int")
 	p.fa = partition_array
+	graph.vp["partitions"] = p
 	return p
 
 
@@ -263,7 +241,7 @@ def getVarPos(graph) :
 	y_prop = graph.vp["y"]
 	pos = [(x_prop[v], y_prop[v]) for v in graph.vertices()]
 	(xs, ys) = zip(*pos)
-	return numpy.sqrt((numpy.var(xs) + numpy.var(ys)) / 2.0) + 3
+	return numpy.sqrt((numpy.var(xs) + numpy.var(ys)) / 2.0) * 0.1
 	
 def make_trait_graph(graph, partitions, partition_indices, scores) :
 	index_prop = graph.vp["indices"]
@@ -297,7 +275,7 @@ def make_trait_graph(graph, partitions, partition_indices, scores) :
 			trait_weight[e] = s*200
 			trait_edge_colors[e] = edge_colors[1]
 		for v,g,i in zip(vs,gs, indices) : 
-			x,y = getMeanPos(g)
+			(x,y) = getMeanPos(g)
 			trait_x[v] = x
 			trait_y[v] = y
 			trait_variance[v] = getVarPos(g)

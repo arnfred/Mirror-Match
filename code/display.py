@@ -365,23 +365,6 @@ def draw_graph(g, clusters="orange", filename="graph.png") :
 	gt.graph_draw(g, pos=pos, output_size=(1000, 1000), vertex_halo=True, vertex_halo_color=class_colors, vertex_color=clusters,
 			   vertex_fill_color=clusters, vertex_size=5, edge_pen_width=weights, output=filename)
 
-def draw_graph2(g, clusters="orange", filename="graph.png") :
-	""" Show a graph with its clustering marked
-	"""
-	# Get indices
-	indices = g.vertex_properties["indices"]
-
-	# Get class colors
-	#class_colors = g.vertex_properties["class_colors"]
-
-	# Get weights and positions
-	weights = g.edge_properties["weights"]
-	pos = gt.sfdp_layout(g, eweight=weights)
-
-	# Print graph to file
-	gt.graph_draw(g, pos=pos, output_size=(1000, 1000), vertex_halo=True, vertex_color=clusters,
-			   vertex_fill_color=clusters, vertex_size=5, edge_pen_width=weights, output=filename)
-
 
 def graph_partitions(g, clusters, filename="graph_clusters.png") :
 	""" Create an image where the clusters are disconnected
