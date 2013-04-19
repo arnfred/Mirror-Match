@@ -58,9 +58,28 @@ important for scene recognition where people might obscure details in
 the picture. In addition the proposed method generalizes to three or 
 more images.  This makes it possible to easily assemble a set of 
 partially overlapping pictures without any required knowledge of their 
-position.  What's more, if one of the pictures in there is not part of 
-the set, the features of the odd image out will not form clusters with 
-the features of the other images and automatically be sorted out. 
+position.  What's more, if one of the pictures is not part of the set, 
+the features of the odd image out will not form clusters with the 
+features of the other images and automatically be sorted out. 
+
+\section{Literature review}
+
+Since the introduction of the SIFT\cite features{lowe2004sift}, 
+collecting feature points from an image and using the descriptors to 
+match images have been used in a plethora of different applications. The 
+development of feature points have not been standing still since Lowe 
+introduced the SIFT feature back in 2004. Various modifications and 
+improments both to how features are collected and how features are best 
+described have been suggested since then. In locating feature points in 
+an image the focus 
+
+
+To cluster similar parts in the images in to partitions we need to 
+describe these points in a way which is invariant (or close to 
+invariant) to changes in light, image quality, size, as well as 
+geometric transformations due to change in the camera position.
+
+TODO!!!! A lot more needs to be written here ...
 
 \subsection{Graph Clustering}
 
@@ -117,7 +136,7 @@ parameters and doesn't emphasize partitions of equal sizes.
 \subsection{Clustering feature points using Louvain clustering}
 
 \begin{algorithm}
-\caption{Louvain-Match Algorithm}
+\caption{Cluster-Match Algorithm}
 \label{alg-simple}
 \begin{algorithmic}
 \Require $images$ : set of images, $n$ : int $\in \mathbb{N}$
@@ -146,27 +165,27 @@ parameters and doesn't emphasize partitions of equal sizes.
 Algorithm \ref{alg-simple} shows the basic steps taken to find matches 
 in two or more images. This algorithm is a simplified version of the 
 proposed method completely agnostic of the geometry of the feature 
-points in the picture. To better explain the algorithm here is an 
-overview over the inputs and functions mentioned and how they work:
+points in the picture. To better explain the algorithm here is a step by 
+step explication of the inputs and functions mentioned:
 \begin{itemize}
 \item[]{\emph{images}: The images we are matching}
 \item[]{\emph{$n$}: The number of weights per row in the adjecency 
-matrix}
+matrix.}
 \item[]{\emph{getFeatures}: Returns a set of feature points given an 
-image. The type of feature point is not theoretically important, but in 
-practice the BRIEF\cite{calonder2010brief} feature point detector and 
-descriptor has worked well} 
+image. In practice the BRIEF\cite{calonder2010brief} feature point 
+detector and descriptor has worked well, but it could easily be replaced 
+with any other feature point type.} 
 % TODO: include a comparison of SURF, SIFT, etc
 \item[]{\emph{getAdjecencyMatrix}: Based on the distance measure used to 
 compare the similarity of the feature points a symmetric adjecency 
-matrix is returned}
+matrix is returned.}
 \item[]{\emph{pruneEdges}: The result of the Louvain clustering depends 
 on the density of the graph. To ensure an optimal number of partitions 
 we only keep the $n$ highest weights per row and column in the adjecency 
 matrix, making sure it's still symmetric afterwards. In practice setting 
-$n$ to around four or five usually yields good results}
+$n$ to around four or five yields good results.}
 \item[]{\emph{cluster}: Cluster the graph corresponding to the adjecency 
-matrix given using the Louvain algorithm in \cite{blondel2008}}
+matrix given using the Louvain algorithm in \cite{blondel2008}.}
 \item[]{\emph{getPositions}: Given a trait consisting of features in 
 several different images, find the positions of traits in each image and 
 return them. This could either be done by taking a mean of the feature 
@@ -174,8 +193,17 @@ points in an image, or by returning the position of the highest matching
 feature points within the trait. In practice ... TODO}
 \end{itemize}
 
+\subsubsection{On the subject of features}
+
+TODO: Show examples of the same image with feature points from different 
+detectors and explain the difference. Go in to why brief seems to work 
+best in practice and superficially explain how brief works compared with 
+SIFT. 
+
+
+
 \begin{algorithm}
-\caption{Louvain-Match Algorithm With Geometry}
+\caption{Cluster-Match Algorithm With Geometry}
 \label{alg-geometry}
 \begin{algorithmic}
 \Require $images$ : set of images, $\alpha$ : float $\in \left[0, 
@@ -215,10 +243,10 @@ penalize putting distanced feature points in the same cluster. However
 we only know the geometrical distance between two feature points as long 
 as both belong to the same image. One way to approach this problem is to 
 replace all the weights of edges between two feature points within the 
-same image with their distance. For the case of two images the original 
-adjecency matrix is defined as follows:
+same image with their distance. For the case of two images the 
+normalized adjecency matrix is defined as follows:
 %
-$$A=
+$$A_{norm}=
 \begin{bmatrix}
 w_{1,1}   & w_{1,2}   & \ldots & w_{1,n-1}   & w_{1,n}     \\
 w_{2,1}   & w_{2,2}   & \ldots & w_{2,n-1}   & w_{2,n}     \\
@@ -233,10 +261,11 @@ T       & A_{im2} \\
 $$
 %
 In a similar manner we can define an adjecency matrix based on the 
-geometrical distance. Note how for example $d_{1,n}$ doesn't contain any 
-sensible information.
+geometrical distance. Note for example how $d_{1,n}$ can take any value 
+as it denotes the geometric distance of feature points in two different 
+images and as such can be set to any value.
 %
-$$B=
+$$B_{norm}=
 \begin{bmatrix}
 d_{1,1}   & d_{1,2}   & \ldots & d_{1,n-1}   & d_{1,n}     \\
 d_{2,1}   & d_{2,2}   & \ldots & d_{2,n-1}   & d_{2,n}     \\
