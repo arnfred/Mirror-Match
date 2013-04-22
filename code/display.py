@@ -36,8 +36,22 @@ from sklearn import metrics
 def appendimages(im1, im2) :
 	""" return a new image that appends the two images side-by-side.
 	"""
-	return numpy.concatenate((im1,im2), axis=1)
 
+	if (im1.shape[0] == im2.shape[0]) :
+		tmp = im2
+
+	elif (im1.shape[0] > im2.shape[0]) :
+		tmp = numpy.ones((im1.shape[0], im2.shape[1]))
+		tmp[0:im2.shape[0], :] = im2
+
+	elif (im1.shape[0] < im2.shape[0]) :
+		tmp = numpy.ones((im1.shape[0], im2.shape[1]))
+		tmp[0:im1.shape[0], :] = im2[0:im1.shape[0],:]
+
+	else :
+		print("Detonating thermo-nuclear devices")
+
+	return numpy.concatenate((im1,tmp), axis=1)
 
 
 
@@ -94,7 +108,7 @@ def matches(im1, im2, matches, filename = None) :
 
 	# Display image
 	pylab.gray()
-	ax.imshow(im3, aspect='normal')
+	ax.imshow(im3)
 
 
 	# Plot all lines
@@ -216,9 +230,19 @@ def scoreNormHist(resultMat, labels) :
 
 
 def distHist(dist) :
+
+	dist_under_median = [d for d in dist if d <= (numpy.median(dist) * 2)]
+
+	pylab.subplot(1,2,1)
 	pylab.hist(dist, bins=20, label="Distances", color="blue", alpha=0.65)
 	pylab.legend()
 	removeDecoration()
+
+	pylab.subplot(1,2,2)
+	pylab.hist(dist_under_median, bins=20, label="Distances", color="blue", alpha=0.65)
+	pylab.legend()
+	removeDecoration()
+
 	print("Median distance: %.2f" % numpy.median(dist))
 	print("Number of matches: %i" % len(dist))
 

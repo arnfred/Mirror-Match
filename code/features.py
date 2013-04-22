@@ -50,7 +50,7 @@ def getFeatures(paths, keypoint_type = "ORB", descriptor_type = "BRIEF", size=32
 	images = map(loadImage, paths)
 
 	# Get feature descriptors
-	keypoints = [getKeypoints(keypoint_type, im) for im in images]
+	keypoints = [numpy.array(getKeypoints(keypoint_type, im)) for im in images]
 	#for k in numpy.concatenate(keypoints) :
 	#	k.size = float(size)
 	#keypoints = [getORBKeypoints(im, size) for im in images]
@@ -60,7 +60,8 @@ def getFeatures(paths, keypoint_type = "ORB", descriptor_type = "BRIEF", size=32
 	# Check that we could get descriptors for all images
 	if sum(map(lambda d : d == None, descriptors)) > 0 : return (None, None, None)
 	indices = [l for i,n in zip(range(len(labels)), map(len, descriptors)) for l in [i]*n]
-	return (indices, numpy.concatenate(keypoints), numpy.concatenate(descriptors))
+	ind = numpy.array(indices)
+	return (ind, numpy.concatenate(keypoints), numpy.concatenate(descriptors))
 
 
 
@@ -201,7 +202,7 @@ def bfMatch(descriptor_type, D1, D2) :
 	#matches_tq = bf.knnMatch(train, query, k=2)
 
 	# Convert result
-	data = [(ms[0].trainIdx, ms[0].distance, ms[0].distance*1.0/ms[1].distance) 
+	data = [(ms[0].trainIdx, ms[0].distance, ms[0].distance*1.0/(ms[1].distance + 0.1)) 
 				for ms in matches_qt if len(ms) == 2]
 
 	if len(data) == 0 : return (None, None, None)

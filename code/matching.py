@@ -20,10 +20,10 @@ from itertools import combinations
 
 
 
-def testClusterMatch(paths, homography, cluster_edges = 5) :
+def testMatch(paths, homography, match_fun, prune_fun = weightMatrix.pruneTreshold, prune_limit = 5, weight_limit = 0.7) :
 
 	# Get matches
-	matches = clusterMatch(paths, cluster_edges)
+	matches = match_fun(paths, prune_fun, prune_limit, weight_limit)
 
 	# Get distances
 	dist = [matchDistance(m1,m2,homography) for (m1,m2) in matches]
@@ -67,14 +67,14 @@ def getACRPaths(compare_id = 2, img_type = "graf") :
 
 
 
-def clusterMatch(paths, cluster_edges = 5) :
+def clusterMatch(paths, prune_fun = weightMatrix.pruneTreshold, prune_limit = 5, weight_limit = None) :
 
 	# Get all feature points
 	indices, ks, ds = features.getFeatures(paths)
 
 	# Calculate weight matrix (hamming distances)
 	full_weights = weightMatrix.init(ds)
-	cluster_weights = weightMatrix.pruneHighest(full_weights, cluster_edges)
+	cluster_weights = prune_fun(full_weights, prune_limit)
 
 	# Cluster graph
 	partitions = louvain.cluster(cluster_weights, verbose=True)
@@ -87,6 +87,61 @@ def clusterMatch(paths, cluster_edges = 5) :
 
 	return matches_pruned
 
+
+
+
+def clusterWeightMatch(paths, prune_fun = weightMatrix.pruneTreshold, prune_limit = 5, weight_limit = 0.7) :
+
+	# Get all feature points
+	indices, ks, ds = features.getFeatures(paths)
+
+	# Calculate weight matrix (hamming distances)
+	full_weights = weightMatrix.init(ds)
+
+	# Get geometric weights
+	geom_weights = getGeom(full_weights, ks, indices, weight_limit)
+
+	# Prune weights
+	cluster_weights = prune_fun(geom_weights, prune_limit)
+
+	# Cluster graph
+	partitions = louvain.cluster(cluster_weights, verbose=True)
+
+	# Get matches
+	matches = [(m1,m2) for (m1,m2,indices) in getPartitionMatches(partitions, cluster_weights, indices, ks)]
+
+	# Prune matches
+	matches_pruned = pruneMatches(matches)
+
+	return matches_pruned
+
+
+
+
+def standardMatch(paths, prune_fun = None, prune_limit = 100, weight_limit = None) :
+
+	# Get all feature points
+	indices, ks, ds = features.getFeatures(paths)
+
+	# Use cv2's matcher to get matching feature points
+	bfMatches = features.bfMatch("BRIEF", ds[indices == 0], ds[indices == 1])
+	#bfMatches = features.match("BRIEF", ds[ind == 0], ds[ind == 1])
+
+	# Get matches in usual format
+	def matchFromIndex(i,j) :
+		return (features.getPosition(ks[indices == 0][i]), features.getPosition(ks[indices == 1][j]))
+
+	match_score = [(matchFromIndex(j,i), s, u) for j,(i,s,u) in enumerate(zip(*bfMatches)) if i != None]
+	matches, scores, uniques = zip(*match_score)
+
+	# Take only the n best
+	top_n = numpy.argsort(scores)[0:prune_limit]
+	matches_top = numpy.array(matches)[top_n]
+
+	# Prune matches
+	matches_pruned = pruneMatches(matches_top)
+
+	return matches_pruned
 
 
 def matchDistance(p1, p2, hom) :
@@ -131,7 +186,7 @@ def pruneMatches(matches) :
 
 	def getAngle(p1, p2) :
 		# The + 1 is to avoid division with zero when positions overlap
-		return numpy.arccos((p2[0] - (p1[0] + 1)) / getLength([p1[0] + 1, p1[1]],p2))
+		return numpy.arccos((p2[0] - (p1[0] + 1)) / (getLength([p1[0] + 1, p1[1]],p2) + 0.001))
 
 	def isAcceptable(l, a) :
 		sdv = 1.5
@@ -150,3 +205,49 @@ def pruneMatches(matches) :
 	sdv_angle = numpy.sqrt(numpy.var(angles))
 
 	return [m for m,l,a in zip(matches, lengths, angles) if isAcceptable(l, a)]
+
+
+
+def getDistMat(keypoints) :
+	# Get positions
+	x_list,y_list = zip(*map(features.getPosition, keypoints))
+	x = numpy.array(x_list)
+	y = numpy.array(y_list)
+
+	# Calculate distances
+	x_outer = numpy.outer(x,x)
+	y_outer = numpy.outer(y,y)
+	x_sq = numpy.outer(x*x,numpy.ones(x.shape))
+	y_sq = numpy.outer(y*y,numpy.ones(y.shape))
+	#dist_mat = numpy.sqrt(x_sq + x_sq.T + y_sq + y_sq.T - 2*(x_outer + y_outer))
+	dist_mat = (x_sq + x_sq.T + y_sq + y_sq.T - 2*(x_outer + y_outer))
+
+	return dist_mat
+
+
+
+def getGeom(full_weights, keypoints, indices, limit = 0.7) :
+
+	# Get distance matrix
+	dist_mat = getDistMat(keypoints)
+
+	# Normalize
+	min_d = numpy.min(dist_mat)
+	max_d = numpy.max(dist_mat)
+	dist = (dist_mat-min_d) / (max_d - min_d)
+
+	# Inverse and cap
+	dist_reversed = (1 - dist)*limit
+	dist_reversed[dist==0] = 0.0
+
+	# Get image masks
+	im0_mask = indices == 0
+	im1_mask = indices == 1
+
+	# Fill in geom with distances and weights
+	geom = numpy.zeros(full_weights.shape)
+	for i,row in enumerate(geom) :
+		row[im0_mask] = dist[i][im0_mask]*im0_mask[i] + full_weights[i][im0_mask]*im1_mask[i]
+		row[im1_mask] = dist[i][im1_mask]*im1_mask[i] + full_weights[i][im1_mask]*im0_mask[i]
+
+	return geom
