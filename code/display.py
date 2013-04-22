@@ -215,6 +215,15 @@ def scoreNormHist(resultMat, labels) :
 
 
 
+def distHist(dist) :
+	pylab.hist(dist, bins=20, label="Distances", color="blue", alpha=0.65)
+	pylab.legend()
+	removeDecoration()
+	print("Median distance: %.2f" % numpy.median(dist))
+	print("Number of matches: %i" % len(dist))
+
+
+
 def scoreHist(scores) : 
 
 	if (len(scores[0]) == 3) :
