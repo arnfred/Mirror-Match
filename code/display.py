@@ -21,6 +21,7 @@ import graph_tool.all as gt
 import math
 import louvain
 import weightMatrix
+import colors
 from scipy.misc import imresize
 import Image
 from itertools import combinations, groupby, tee, product, combinations_with_replacement
@@ -367,6 +368,22 @@ def clusterPlot(resultMat, labels, pruner, ylim=0.5, xlim=8) :
 	pylab.ylim(0,ylim)
 	removeDecoration()
 
+
+
+def showPartitions(points, partitioning) :
+	max_x = numpy.max(points[:,0])
+	max_y = numpy.max(points[:,1])
+	cs = colors.get()
+	pylab.gray()
+	fig = pylab.figure()
+	ax = fig.add_subplot(1,1,1)
+	pylab.xlim(0,max_y*1.1)
+	pylab.ylim(0,max_x*1.1)
+		  
+	for pos,p in zip(points, partitioning) :
+		ax.plot(pos[1], pos[0], color=cs[p], marker='o')
+		
+	removeDecoration()
 
 
 ####################################
