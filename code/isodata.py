@@ -169,6 +169,9 @@ def mergePartitions(ds_pairs, centers, partitioning, min_distance, max_mergers) 
 		centers_new = numpy.array([(1.0 / (n_i + n_j)) * (n_i * centers[i] + n_j * centers[j])])
 		return numpy.concatenate((centers_old, centers_new))
 	
+	# Define k
+	k = len(centers)
+
 	# Find m (= max_mergers) partitions that are within min_distance of each other
 	merge_init = [d for i,d in enumerate(ds_pairs) if d[0] < min_distance and i < max_mergers]
 	

@@ -101,7 +101,7 @@ def matches(im1, im2, matches, filename = None) :
 	im3 = appendimages(im1,im2)
 
 	# Create figure
-	fig = pylab.figure(frameon=False, figsize=(15.0, 7.0))
+	fig = pylab.figure(frameon=False, figsize=(10.0, 7.0))
 	ax = pylab.Axes(fig, [0., 0., 1., 1.])
 
 	ax.set_axis_off()
@@ -114,12 +114,13 @@ def matches(im1, im2, matches, filename = None) :
 
 	# Plot all lines
 	offset_x = im1.shape[1]
-	for ((x1,y1),(x2,y2)) in matches:
-		pylab.plot([x1, x2+offset_x], [y1,y2], 'c', lw=0.8)
-	pylab.axis('off')
+	for ((x1,y1),(x2,y2)) in matches :
+		ax.plot([x1, x2+offset_x], [y1,y2], 'c', lw=0.8)
+	#pylab.axis('off')
+	fig.set_size_inches(18.5,10.5)
 
 	if filename != None :
-		pylab.savefig(filename, bbox_inches=0, dpi=72)
+		fig.savefig(filename, bbox_inches='tight', dpi=72)
 
 
 
@@ -375,13 +376,11 @@ def showPartitions(points, partitioning) :
 	max_y = numpy.max(points[:,1])
 	cs = colors.get()
 	pylab.gray()
-	fig = pylab.figure()
-	ax = fig.add_subplot(1,1,1)
 	pylab.xlim(0,max_y*1.1)
 	pylab.ylim(0,max_x*1.1)
 		  
 	for pos,p in zip(points, partitioning) :
-		ax.plot(pos[1], pos[0], color=cs[p], marker='o')
+		pylab.plot(pos[1], pos[0], color=cs[p], marker='o')
 		
 	removeDecoration()
 

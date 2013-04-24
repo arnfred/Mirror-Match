@@ -13,17 +13,19 @@ Jonas Toft Arnfred, 2013-04-22
 
 import numpy
 import louvain
+import isodata
 import features
 import weightMatrix
 import display
+import pylab
 from itertools import combinations
 
 
 
-def testMatch(paths, homography, match_fun, prune_fun = weightMatrix.pruneTreshold, prune_limit = 5, weight_limit = 0.7) :
+def testMatch(paths, homography, match_fun, options = {}) :
 
 	# Get matches
-	matches = match_fun(paths, prune_fun, prune_limit, weight_limit)
+	matches = match_fun(paths, options)
 
 	# Get distances
 	dist = [matchDistance(m1,m2,homography) for (m1,m2) in matches]
@@ -67,7 +69,10 @@ def getACRPaths(compare_id = 2, img_type = "graf") :
 
 
 
-def clusterMatch(paths, prune_fun = weightMatrix.pruneTreshold, prune_limit = 5, weight_limit = None) :
+def clusterMatch(paths, options = {}) : 
+	
+	prune_fun = options.get("prune_fun", weightMatrix.pruneTreshold)
+	prune_limit = options.get("prune_limit", 5)
 
 	# Get all feature points
 	indices, ks, ds = features.getFeatures(paths)
@@ -77,7 +82,7 @@ def clusterMatch(paths, prune_fun = weightMatrix.pruneTreshold, prune_limit = 5,
 	cluster_weights = prune_fun(full_weights, prune_limit)
 
 	# Cluster graph
-	partitions = louvain.cluster(cluster_weights, verbose=True)
+	partitions = louvain.cluster(cluster_weights, verbose=False)
 
 	# Get matches
 	matches = [(m1,m2) for (m1,m2,indices) in getPartitionMatches(partitions, cluster_weights, indices, ks)]
@@ -90,7 +95,11 @@ def clusterMatch(paths, prune_fun = weightMatrix.pruneTreshold, prune_limit = 5,
 
 
 
-def clusterWeightMatch(paths, prune_fun = weightMatrix.pruneTreshold, prune_limit = 5, weight_limit = 0.7) :
+def clusterWeightMatch(paths, options = {}) :
+
+	prune_fun = options.get("prune_fun", weightMatrix.pruneTreshold)
+	prune_limit = options.get("prune_limit", 5)
+	weight_limit = options.get("weight_limit", 0.7)
 
 	# Get all feature points
 	indices, ks, ds = features.getFeatures(paths)
@@ -105,7 +114,7 @@ def clusterWeightMatch(paths, prune_fun = weightMatrix.pruneTreshold, prune_limi
 	cluster_weights = prune_fun(geom_weights, prune_limit)
 
 	# Cluster graph
-	partitions = louvain.cluster(cluster_weights, verbose=True)
+	partitions = louvain.cluster(cluster_weights, verbose=False)
 
 	# Get matches
 	matches = [(m1,m2) for (m1,m2,indices) in getPartitionMatches(partitions, cluster_weights, indices, ks)]
@@ -117,8 +126,80 @@ def clusterWeightMatch(paths, prune_fun = weightMatrix.pruneTreshold, prune_limi
 
 
 
+def isodataMatch(paths, options = {}) :
 
-def standardMatch(paths, prune_fun = None, prune_limit = 100, weight_limit = None) :
+	# Get options
+	k_init				= options.get("k_init", 50)
+	max_iterations		= options.get("max_iterations", 20)
+	min_partition_size	= options.get("min_partitions_size", 10)
+	max_sd				= options.get("max_sd", 40)
+	min_distance		= options.get("min_distance", 25)
+	verbose				= options.get("verbose", False)
+
+	# Get all feature points
+	indices, ks, ds = features.getFeatures(paths)
+	pos = features.getPositions(ks)
+	positions = numpy.array(pos)
+
+	# Use cv2's matcher to get matching feature points
+	bfMatches = features.bfMatch("BRIEF", ds[indices == 0], ds[indices == 1])
+
+	# Get matches in usual format
+	def matchFromIndex(i,j) :
+		return (features.getPosition(ks[indices == 0][i]), features.getPosition(ks[indices == 1][j]))
+
+	# Keep relevant data
+	match_points = [(matchFromIndex(j,i), (j, i), s) for j,(i,s,u) in enumerate(zip(*bfMatches)) if i != None]
+
+	# Get matches that pertain to part_1 in image_1 and part_2 in image_2
+	def getMatchPoints(match_points, part_1_mask, part_2_mask) :
+		return [p for (p, (i,j), s) in match_points if part_1_mask[i] and part_2_mask[j]]
+
+	# Count matches that pertain to part_1 in image_1 and part_2 in image_2
+	def linkCount(match_points, part_1_mask, part_2_mask) : 
+		return len(getMatchPoints(match_points, part_1_mask, part_2_mask))
+
+	# Partition with isodata
+	part_1 = isodata.cluster(positions[indices==0], k_init=k_init, max_iterations=max_iterations, min_partition_size=min_partition_size, max_sd=max_sd, min_distance=min_distance)
+	part_2 = isodata.cluster(positions[indices==1], k_init=k_init, max_iterations=max_iterations, min_partition_size=min_partition_size, max_sd=max_sd, min_distance=min_distance)
+
+	# Show the clusters
+	if verbose :
+		pylab.figure(frameon=False, figsize=(14,5))
+		pylab.subplot(1,2,1)
+		display.showPartitions(positions[indices==0], part_1)
+		pylab.subplot(1,2,2)
+		display.showPartitions(positions[indices==1], part_2)
+		pylab.show()
+
+	# Get a matrix of the matches in between partitions
+	n = len(set(part_1))
+	m = len(set(part_2))
+	part_corr = numpy.zeros((n, m))
+	for p_1 in set(part_1) :
+		for p_2 in set(part_2) :
+			part_corr[p_1,p_2] = linkCount(match_points, part_1 == p_1, part_2 == p_2)
+
+	# For each partition figure out which partitions correspond
+	def getPartitionMatches(row) :
+		max_links = numpy.max(row)
+		return [p_2 for p_2,ls in enumerate(row) if (ls/(max_links*1.0) > 0.5 and ls > 5)]
+
+	partition_matches = [getPartitionMatches(row) for row in part_corr]
+
+	# Get all keypoint matches from the matching clusters
+	matches = []
+	for i,ms in enumerate(partition_matches) :
+		for j in ms :
+			matches.extend(getMatchPoints(match_points, part_1 == i, part_2 == j))
+
+	return pruneMatches(matches)
+
+
+
+def standardMatch(paths, options = {}) :
+
+	match_limit = options.get("match_limit", 100)
 
 	# Get all feature points
 	indices, ks, ds = features.getFeatures(paths)
@@ -135,13 +216,11 @@ def standardMatch(paths, prune_fun = None, prune_limit = 100, weight_limit = Non
 	matches, scores, uniques = zip(*match_score)
 
 	# Take only the n best
-	top_n = numpy.argsort(scores)[0:prune_limit]
+	top_n = numpy.argsort(scores)[0:match_limit]
 	matches_top = numpy.array(matches)[top_n]
 
 	# Prune matches
-	matches_pruned = pruneMatches(matches_top)
-
-	return matches_pruned
+	return pruneMatches(matches_top)
 
 
 def matchDistance(p1, p2, hom) :
@@ -186,10 +265,11 @@ def pruneMatches(matches) :
 
 	def getAngle(p1, p2) :
 		# The + 1 is to avoid division with zero when positions overlap
-		return numpy.arccos((p2[0] - (p1[0] + 1)) / (getLength([p1[0] + 1, p1[1]],p2) + 0.001))
+		x_dist = 500
+		return numpy.arccos((p2[0] - (p1[0] + x_dist)) / (getLength([p1[0] + x_dist, p1[1]],p2) + 0.001))
 
 	def isAcceptable(l, a) :
-		sdv = 1.5
+		sdv = 1
 		within_length = l < (mdn_length + sdv*sdv_length) and l > (mdn_length - sdv*sdv_length)
 		within_angle = a < (mdn_angle + sdv*sdv_angle) and a > (mdn_angle - sdv*sdv_angle)
 		return within_length and within_angle
