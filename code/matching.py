@@ -22,17 +22,20 @@ from itertools import combinations
 
 
 
-def testMatch(paths, homography, match_fun, options = {}) :
+def testMatch(paths, homography, match_fun, options = {}, distinct_treshold = 5, verbose = True) :
 
 	# Get matches
 	matches = match_fun(paths, options)
 
+	# Get distinct matches
+	matches_distinct = getDistinctMatches(matches, distinct_treshold)
+
 	# Get distances
 	dist = [matchDistance(m1,m2,homography) for (m1,m2) in matches]
+	dist_distinct = [matchDistance(m1,m2,homography) for (m1,m2) in matches_distinct]
 
 	# Display result
-	print
-	display.distHist(dist)
+	if verbose : display.distHist(dist, dist_distinct)
 
 	return matches
 
@@ -183,14 +186,15 @@ def isodataMatch(paths, options = {}) :
 	# For each partition figure out which partitions correspond
 	def getPartitionMatches(row) :
 		max_links = numpy.max(row)
-		return [p_2 for p_2,ls in enumerate(row) if (ls/(max_links*1.0) > 0.5 and ls > 5)]
+		pm = [(p_2, ls) for p_2,ls in enumerate(row) if (ls/(max_links*1.0) > 0.5 and ls > 5)]
+		return pm
 
 	partition_matches = [getPartitionMatches(row) for row in part_corr]
 
 	# Get all keypoint matches from the matching clusters
 	matches = []
 	for i,ms in enumerate(partition_matches) :
-		for j in ms :
+		for (j,s) in ms :
 			matches.extend(getMatchPoints(match_points, part_1 == i, part_2 == j))
 
 	return pruneMatches(matches)
@@ -285,6 +289,20 @@ def pruneMatches(matches) :
 	sdv_angle = numpy.sqrt(numpy.var(angles))
 
 	return [m for m,l,a in zip(matches, lengths, angles) if isAcceptable(l, a)]
+
+
+
+def getDistinctMatches(matches, treshold = 5) :
+	
+	def distinctFrom(m, head) :
+		a = numpy.linalg.norm(numpy.array(m[0]) - numpy.array(head[0]))
+		b = numpy.linalg.norm(numpy.array(m[1]) - numpy.array(head[1]))
+		return a > treshold and b > treshold
+	
+	if len(matches) < 1 : return []
+	head = matches[0]
+	tail = [m for m in matches[1:] if distinctFrom(m, head)]
+	return [head] + getDistinctMatches(tail, treshold)
 
 
 

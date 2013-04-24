@@ -231,7 +231,7 @@ def scoreNormHist(resultMat, labels) :
 
 
 
-def distHist(dist) :
+def distHist(dist, dist_distinct = None) :
 
 	dist_under_median = [d for d in dist if d <= (numpy.median(dist) * 2)]
 
@@ -245,8 +245,12 @@ def distHist(dist) :
 	pylab.legend()
 	removeDecoration()
 
-	print("Median distance: %.2f" % numpy.median(dist))
-	print("Number of matches: %i" % len(dist))
+	if dist_distinct != None :
+		print("Median distance: %.2f (distinct: %.2f)" % (numpy.median(dist), numpy.median(dist_distinct)))
+		print("Number of matches: %i (distinct: %i)" % (len(dist), len(dist_distinct)))
+	else :
+		print("Median distance: %.2f" % (numpy.median(dist)))
+		print("Number of matches: %i" % len(dist))
 
 
 
