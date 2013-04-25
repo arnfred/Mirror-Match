@@ -1,6 +1,9 @@
 """
-Python module for matching two images using louvain clustering of the
-feature points to group traits.
+Python module for matching two images using various techniques including:
+- Louvain clustering of feature points by similarity
+- Isodata clustering of feature points by geometry
+- Nearest neighbor matching of feature points by similarity
+- As above but filtering out points that aren't unique
 
 Jonas Toft Arnfred, 2013-04-22
 """
@@ -12,17 +15,26 @@ Jonas Toft Arnfred, 2013-04-22
 ####################################
 
 import numpy
-import louvain
-import isodata
+import isomatch
+import louvainmatch
 import features
 import weightMatrix
 import display
 import pylab
-from itertools import combinations
 
 
 
-def testMatch(paths, homography, match_fun, options = {}, distinct_treshold = 5, verbose = True) :
+####################################
+#                                  #
+#           Functions              #
+#                                  #
+####################################
+
+
+def testMatch(paths, homography, match_fun, options = {}, verbose = True) :
+
+	distinct_treshold = options.get("distinct_treshold", 5)
+	distance_treshold = options.get("distance_treshold", 5)
 
 	# Get matches
 	matches = match_fun(paths, options)
@@ -35,9 +47,9 @@ def testMatch(paths, homography, match_fun, options = {}, distinct_treshold = 5,
 	dist_distinct = [matchDistance(m1,m2,homography) for (m1,m2) in matches_distinct]
 
 	# Display result
-	if verbose : display.distHist(dist, dist_distinct)
+	if verbose : display.distHist(dist, distance_treshold, dist_distinct)
 
-	return matches
+	return matches, dist
 
 
 
@@ -72,138 +84,22 @@ def getACRPaths(compare_id = 2, img_type = "graf") :
 
 
 
-def clusterMatch(paths, options = {}) : 
-	
-	prune_fun = options.get("prune_fun", weightMatrix.pruneTreshold)
-	prune_limit = options.get("prune_limit", 5)
-
-	# Get all feature points
-	indices, ks, ds = features.getFeatures(paths)
-
-	# Calculate weight matrix (hamming distances)
-	full_weights = weightMatrix.init(ds)
-	cluster_weights = prune_fun(full_weights, prune_limit)
-
-	# Cluster graph
-	partitions = louvain.cluster(cluster_weights, verbose=False)
-
-	# Get matches
-	matches = [(m1,m2) for (m1,m2,indices) in getPartitionMatches(partitions, cluster_weights, indices, ks)]
-
-	# Prune matches
-	matches_pruned = pruneMatches(matches)
-
-	return matches_pruned
-
-
-
-
-def clusterWeightMatch(paths, options = {}) :
-
-	prune_fun = options.get("prune_fun", weightMatrix.pruneTreshold)
-	prune_limit = options.get("prune_limit", 5)
-	weight_limit = options.get("weight_limit", 0.7)
-
-	# Get all feature points
-	indices, ks, ds = features.getFeatures(paths)
-
-	# Calculate weight matrix (hamming distances)
-	full_weights = weightMatrix.init(ds)
-
-	# Get geometric weights
-	geom_weights = getGeom(full_weights, ks, indices, weight_limit)
-
-	# Prune weights
-	cluster_weights = prune_fun(geom_weights, prune_limit)
-
-	# Cluster graph
-	partitions = louvain.cluster(cluster_weights, verbose=False)
-
-	# Get matches
-	matches = [(m1,m2) for (m1,m2,indices) in getPartitionMatches(partitions, cluster_weights, indices, ks)]
-
-	# Prune matches
-	matches_pruned = pruneMatches(matches)
-
-	return matches_pruned
+def clusterMatch(paths, options = {}) :
+	ms = louvainmatch.match(paths, options)
+	return pruneMatches(ms)
 
 
 
 def isodataMatch(paths, options = {}) :
-
-	# Get options
-	k_init				= options.get("k_init", 50)
-	max_iterations		= options.get("max_iterations", 20)
-	min_partition_size	= options.get("min_partitions_size", 10)
-	max_sd				= options.get("max_sd", 40)
-	min_distance		= options.get("min_distance", 25)
-	verbose				= options.get("verbose", False)
-
-	# Get all feature points
-	indices, ks, ds = features.getFeatures(paths)
-	pos = features.getPositions(ks)
-	positions = numpy.array(pos)
-
-	# Use cv2's matcher to get matching feature points
-	bfMatches = features.bfMatch("BRIEF", ds[indices == 0], ds[indices == 1])
-
-	# Get matches in usual format
-	def matchFromIndex(i,j) :
-		return (features.getPosition(ks[indices == 0][i]), features.getPosition(ks[indices == 1][j]))
-
-	# Keep relevant data
-	match_points = [(matchFromIndex(j,i), (j, i), s) for j,(i,s,u) in enumerate(zip(*bfMatches)) if i != None]
-
-	# Get matches that pertain to part_1 in image_1 and part_2 in image_2
-	def getMatchPoints(match_points, part_1_mask, part_2_mask) :
-		return [p for (p, (i,j), s) in match_points if part_1_mask[i] and part_2_mask[j]]
-
-	# Count matches that pertain to part_1 in image_1 and part_2 in image_2
-	def linkCount(match_points, part_1_mask, part_2_mask) : 
-		return len(getMatchPoints(match_points, part_1_mask, part_2_mask))
-
-	# Partition with isodata
-	part_1 = isodata.cluster(positions[indices==0], k_init=k_init, max_iterations=max_iterations, min_partition_size=min_partition_size, max_sd=max_sd, min_distance=min_distance)
-	part_2 = isodata.cluster(positions[indices==1], k_init=k_init, max_iterations=max_iterations, min_partition_size=min_partition_size, max_sd=max_sd, min_distance=min_distance)
-
-	# Show the clusters
-	if verbose :
-		pylab.figure(frameon=False, figsize=(14,5))
-		pylab.subplot(1,2,1)
-		display.showPartitions(positions[indices==0], part_1)
-		pylab.subplot(1,2,2)
-		display.showPartitions(positions[indices==1], part_2)
-		pylab.show()
-
-	# Get a matrix of the matches in between partitions
-	n = len(set(part_1))
-	m = len(set(part_2))
-	part_corr = numpy.zeros((n, m))
-	for p_1 in set(part_1) :
-		for p_2 in set(part_2) :
-			part_corr[p_1,p_2] = linkCount(match_points, part_1 == p_1, part_2 == p_2)
-
-	# For each partition figure out which partitions correspond
-	def getPartitionMatches(row) :
-		max_links = numpy.max(row)
-		pm = [(p_2, ls) for p_2,ls in enumerate(row) if (ls/(max_links*1.0) > 0.5 and ls > 5)]
-		return pm
-
-	partition_matches = [getPartitionMatches(row) for row in part_corr]
-
-	# Get all keypoint matches from the matching clusters
-	matches = []
-	for i,ms in enumerate(partition_matches) :
-		for (j,s) in ms :
-			matches.extend(getMatchPoints(match_points, part_1 == i, part_2 == j))
-
-	return pruneMatches(matches)
+	ms =  isomatch.match(paths, options)
+	return pruneMatches(ms)
 
 
 
 def standardMatch(paths, options = {}) :
 
-	match_limit = options.get("match_limit", 100)
+	match_limit = options.get("match_limit", 500)
+	unique_treshold = options.get("unique_treshold", 1.0)
 
 	# Get all feature points
 	indices, ks, ds = features.getFeatures(paths)
@@ -216,7 +112,7 @@ def standardMatch(paths, options = {}) :
 	def matchFromIndex(i,j) :
 		return (features.getPosition(ks[indices == 0][i]), features.getPosition(ks[indices == 1][j]))
 
-	match_score = [(matchFromIndex(j,i), s, u) for j,(i,s,u) in enumerate(zip(*bfMatches)) if i != None]
+	match_score = [(matchFromIndex(j,i), s, u) for j,(i,s,u) in enumerate(zip(*bfMatches)) if i != None and u < unique_treshold]
 	matches, scores, uniques = zip(*match_score)
 
 	# Take only the n best
@@ -225,6 +121,7 @@ def standardMatch(paths, options = {}) :
 
 	# Prune matches
 	return pruneMatches(matches_top)
+
 
 
 def matchDistance(p1, p2, hom) :
@@ -238,26 +135,6 @@ def matchDistance(p1, p2, hom) :
 
 
 
-def getPartitionMatches(partitions, weights, indices, keypoints) :
-	
-	# Get the edges belong to partition p and image i
-	def getEdges(p,i) : 
-		return weights[p == partitions & ind == i]
-	
-	# Get numpy array of indices
-	ind = numpy.array(indices)
-	for p in set(partitions) :
-		for i,j in combinations(set(indices),2) :
-			pij_edges = numpy.zeros(weights.shape)
-			pij_edges[(p == partitions) & (ind == i)] = weights[(p == partitions) & (ind == i)]
-			pij_edges[:, (ind != j)] = 0
-			# Check if there are any edges leading to image j
-			if numpy.sum(pij_edges) > 0 :
-				# get the index of the weight between image i and j which is highest
-				m_i,m_j = numpy.unravel_index(pij_edges.argmax(), pij_edges.shape)
-				# Get the keypoints belonging to this index
-				pos = features.getPositions([keypoints[m_i], keypoints[m_j]])
-				yield (pos[0], pos[1], (i,j))
 
 
 
@@ -306,46 +183,3 @@ def getDistinctMatches(matches, treshold = 5) :
 
 
 
-def getDistMat(keypoints) :
-	# Get positions
-	x_list,y_list = zip(*map(features.getPosition, keypoints))
-	x = numpy.array(x_list)
-	y = numpy.array(y_list)
-
-	# Calculate distances
-	x_outer = numpy.outer(x,x)
-	y_outer = numpy.outer(y,y)
-	x_sq = numpy.outer(x*x,numpy.ones(x.shape))
-	y_sq = numpy.outer(y*y,numpy.ones(y.shape))
-	#dist_mat = numpy.sqrt(x_sq + x_sq.T + y_sq + y_sq.T - 2*(x_outer + y_outer))
-	dist_mat = (x_sq + x_sq.T + y_sq + y_sq.T - 2*(x_outer + y_outer))
-
-	return dist_mat
-
-
-
-def getGeom(full_weights, keypoints, indices, limit = 0.7) :
-
-	# Get distance matrix
-	dist_mat = getDistMat(keypoints)
-
-	# Normalize
-	min_d = numpy.min(dist_mat)
-	max_d = numpy.max(dist_mat)
-	dist = (dist_mat-min_d) / (max_d - min_d)
-
-	# Inverse and cap
-	dist_reversed = (1 - dist)*limit
-	dist_reversed[dist==0] = 0.0
-
-	# Get image masks
-	im0_mask = indices == 0
-	im1_mask = indices == 1
-
-	# Fill in geom with distances and weights
-	geom = numpy.zeros(full_weights.shape)
-	for i,row in enumerate(geom) :
-		row[im0_mask] = dist[i][im0_mask]*im0_mask[i] + full_weights[i][im0_mask]*im1_mask[i]
-		row[im1_mask] = dist[i][im1_mask]*im1_mask[i] + full_weights[i][im1_mask]*im0_mask[i]
-
-	return geom

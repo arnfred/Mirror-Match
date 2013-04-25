@@ -4,6 +4,9 @@ Python module for generating a list of fairly different colors
 Jonas Toft Arnfred, 2013-04-23
 """
 
+def getRedGreen(f) :
+    return '#%02x%02x11' % (int(f*255), int((1-f)*255))
+
 def get() : 
 	return [
 		#"#FFFFFF",

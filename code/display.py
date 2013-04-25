@@ -81,17 +81,22 @@ def compareKeypoints(im1, im2, pos1, pos2) :
 	offset = im1.shape[1]
 	pos2_o = [(x+offset,y) for (x,y) in pos2]
 
+	# Create figure
+	fig = pylab.figure(frameon=False, figsize=(10.0, 7.0))
+	#ax = pylab.Axes(fig, [0., 0., 1., 1.])
+
 	# Show images
 	pylab.gray()
 	pylab.imshow(im3)
-	pylab.plot([x for x,y in pos1], [y for x,y in pos1], '.b')
-	pylab.plot([x for x,y in pos2_o], [y for x,y in pos2_o], '.b')
+	pylab.plot([x for x,y in pos1], [y for x,y in pos1], marker='o', color = '#00aaff', lw=0)
+	pylab.plot([x for x,y in pos2_o], [y for x,y in pos2_o], marker='o', color = '#00aaff', lw=0)
 	pylab.axis('off')
-	pylab.show()
+
+	pylab.xlim(0,im3.shape[1])
+	pylab.ylim(im3.shape[0],0)
 
 
-
-def matches(im1, im2, matches, filename = None) :
+def matchPoints(im1, im2, matches, dist = None, filename = None, max_dist = 10000) :
 	""" show a figure with lines joining the accepted matches in im1 and im2
 		input: im1,im2 (images as arrays), locs1,locs2 (location of features), 
 		matchscores (as output from 'match'). 
@@ -111,13 +116,19 @@ def matches(im1, im2, matches, filename = None) :
 	pylab.gray()
 	ax.imshow(im3)
 
+	# Get colors
+	if dist != None and len(dist) == len(matches) :
+		cs = [colors.getRedGreen(numpy.log(d+1)/numpy.log(max_dist)) for d in dist]
+	else :
+		cs = ['#00aaff' for m in matches]
 
 	# Plot all lines
 	offset_x = im1.shape[1]
-	for ((x1,y1),(x2,y2)) in matches :
-		ax.plot([x1, x2+offset_x], [y1,y2], 'c', lw=0.8)
-	#pylab.axis('off')
-	fig.set_size_inches(18.5,10.5)
+	for i,((x1,y1),(x2,y2)) in enumerate(matches) :
+		ax.plot([x1, x2+offset_x], [y1,y2], color=cs[i], lw=0.8)
+	
+	pylab.xlim(0,im3.shape[1])
+	pylab.ylim(im3.shape[0],0)
 
 	if filename != None :
 		fig.savefig(filename, bbox_inches='tight', dpi=72)
@@ -136,7 +147,7 @@ def matchesWithMask(images, keypoints, matchPos, mask) :
 	masked_matchPos = [m if b else None for (m,b) in zip(matchPos, mask)]
 
 	# Show result
-	matches(images[0], images[1], keypoints[0], keypoints[1], masked_matchPos)
+	matchPoints(images[0], images[1], keypoints[0], keypoints[1], masked_matchPos)
 
 
 
@@ -231,9 +242,14 @@ def scoreNormHist(resultMat, labels) :
 
 
 
-def distHist(dist, dist_distinct = None) :
+def distHist(dist, dist_treshold = 5, dist_distinct = None) :
 
 	dist_under_median = [d for d in dist if d <= (numpy.median(dist) * 2)]
+	dist_under_treshold = [d for d in dist if d <= dist_treshold]
+	dist_p = float(len(dist_under_treshold)) / float(len(dist))
+	if dist_distinct != None :
+		distinct_under_treshold = [d for d in dist_distinct if d <= dist_treshold]
+		distinct_p = float(len(distinct_under_treshold)) / float(len(dist_distinct))
 
 	pylab.subplot(1,2,1)
 	pylab.hist(dist, bins=20, label="Distances", color="blue", alpha=0.65)
@@ -246,11 +262,12 @@ def distHist(dist, dist_distinct = None) :
 	removeDecoration()
 
 	if dist_distinct != None :
-		print("Median distance: %.2f (distinct: %.2f)" % (numpy.median(dist), numpy.median(dist_distinct)))
-		print("Number of matches: %i (distinct: %i)" % (len(dist), len(dist_distinct)))
+		print("Number of matches:\t%i\t(distinct: %i)" % (len(dist), len(dist_distinct)))
+		print("Correct matches:\t%i\t(distinct: %i)\t\t[under %ipx error]" % (len(dist_under_treshold), len(distinct_under_treshold), dist_treshold) )
+		print("Success Rate:\t\t%.2f%%\t(distinct: %.2f%%)" % (dist_p*100, distinct_p*100))
 	else :
-		print("Median distance: %.2f" % (numpy.median(dist)))
 		print("Number of matches: %i" % len(dist))
+		print("Under %ipx error: %.2f%%" % (dist_treshold, dist_p*100))
 
 
 
@@ -375,16 +392,21 @@ def clusterPlot(resultMat, labels, pruner, ylim=0.5, xlim=8) :
 
 
 
-def showPartitions(points, partitioning) :
+def showPartitions(points, partitioning, image = None) :
 	max_x = numpy.max(points[:,0])
 	max_y = numpy.max(points[:,1])
 	cs = colors.get()
 	pylab.gray()
-	pylab.xlim(0,max_y*1.1)
-	pylab.ylim(0,max_x*1.1)
+	if image != None :
+		pylab.imshow(image)
+		pylab.xlim(0,image.shape[1])
+		pylab.ylim(image.shape[0],0)
+	else :
+		pylab.xlim(0,max_y*1.1)
+		pylab.ylim(0,max_x*1.1)
 		  
 	for pos,p in zip(points, partitioning) :
-		pylab.plot(pos[1], pos[0], color=cs[p], marker='o')
+		pylab.plot(pos[0], pos[1], color=cs[p], marker='o')
 		
 	removeDecoration()
 
