@@ -33,6 +33,7 @@ def match(paths, options = {}) :
 	prune_limit = options.get("prune_limit", 5)
 	min_edges = options.get("min_edges", 2)
 	weight_limit = options.get("weight_limit", 0.7)
+	min_coherence = options.get("min_coherence", 1.0)
 	bipartite = options.get("bipartite", False)
 
 	# Get all feature points
@@ -52,12 +53,13 @@ def match(paths, options = {}) :
 	partitions = louvain.cluster(cluster_weights, verbose=False)
 
 	# Get matches
-	matches = [(m1,m2) for (m1,m2,indices) in getPartitionMatches(partitions, cluster_weights, indices, ks, min_edges)]
+	matches = [(m1,m2) for (m1,m2,indices) in getPartitionMatches(partitions, cluster_weights, indices, ks, min_edges=min_edges, min_coherence=min_coherence)]
 
 	return matches
 
 
-def getPartitionMatches(partitions, weights, indices, keypoints, min_edges = 1, max_variance = 10) :
+
+def getPartitionMatches(partitions, weights, indices, keypoints, min_edges = 1, min_coherence = -1.0, max_variance = 10) :
 	
 	# Get the edges belong to partition p and image i
 	def getEdges(p,i) : 
@@ -66,17 +68,27 @@ def getPartitionMatches(partitions, weights, indices, keypoints, min_edges = 1, 
 	# Get numpy array of indices
 	ind = numpy.array(indices)
 	for p in set(partitions) :
+
+		partition_mask = partitions == p
+		partition_weights = weights[partition_mask][:, partition_mask]
+		#m = modularity(weights, partition_mask)
 		for i,j in combinations(set(indices),2) :
 			pij_edges = numpy.zeros(weights.shape)
 			pij_edges[(p == partitions) & (ind == i)] = weights[(p == partitions) & (ind == i)]
 			pij_edges[:, (ind != j)] = 0
 			# Check if there are any edges leading to image j
-			if numpy.sum(pij_edges) >= min_edges :
-				# get the index of the weight between image i and j which is highest
-				m_i,m_j = numpy.unravel_index(pij_edges.argmax(), pij_edges.shape)
-				# Get the keypoints belonging to this index
-				pos = features.getPositions([keypoints[m_i], keypoints[m_j]])
-				yield (pos[0], pos[1], (i,j))
+			if numpy.sum(pij_edges) >= min_edges:
+
+				# Get coherence
+				im_masks_i = indices[partition_mask] == i
+				im_masks_j = indices[partition_mask] == j
+				c = -1 * (modularity(partition_weights, im_masks_i) + modularity(partition_weights, im_masks_j))
+
+				if c > min_coherence :
+					(m_i, m_j) = numpy.unravel_index(pij_edges.argmax(), pij_edges.shape)
+					pos = features.getPositions([keypoints[m_i], keypoints[m_j]])
+					yield (pos[0], pos[1], (i,j))
+
 
 
 def getDistMat(keypoints) :
@@ -122,3 +134,18 @@ def getGeom(full_weights, keypoints, indices, limit = 0.7) :
 		row[im1_mask] = dist[i][im1_mask]*im1_mask[i] + full_weights[i][im1_mask]*im0_mask[i]
 
 	return geom
+
+
+
+def modularity(weights, mask) :
+	""" Calculates the modularity of the partition masked by 'mask' in the weight matrix
+		Input: Weights [numpy.darray] The weightmatrix used
+			   mask [boolean numpy.darray] A mask marking the partition of vertices 
+	"""
+	K = weights.sum()
+	indices = numpy.arange(0,weights.shape[0])
+	internal_sum = weights[mask][:, mask].sum()
+	external_sum = weights[mask].sum()
+	fraction = (internal_sum / (K))
+	E_fraction = (external_sum / (K)) ** 2
+	return fraction - E_fraction

@@ -99,7 +99,7 @@ def isodataMatch(paths, options = {}) :
 def standardMatch(paths, options = {}) :
 
 	match_limit = options.get("match_limit", 500)
-	unique_treshold = options.get("unique_treshold", 1.0)
+	unique_treshold = options.get("unique_treshold", 10.0)
 
 	# Get all feature points
 	indices, ks, ds = features.getFeatures(paths)
@@ -132,9 +132,6 @@ def matchDistance(p1, p2, hom) :
 	m1to2 = hom.dot(numpy.array([p1[0], p1[1], 1]))
 	(x,y) = (m1to2[0]/m1to2[2], m1to2[1]/m1to2[2])
 	return numpy.sqrt((x - p2[0])**2 + (y - p2[1])**2)
-
-
-
 
 
 
