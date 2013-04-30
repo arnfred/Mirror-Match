@@ -86,26 +86,37 @@ def getACRPaths(compare_id = 2, img_type = "graf") :
 
 def clusterMatch(paths, options = {}) :
 	ms = louvainmatch.match(paths, options)
-	return pruneMatches(ms)
+	prune = options.get("prune", True)
+	if prune :
+		return pruneMatches(ms)
+	else :
+		return ms
 
 
 
 def isodataMatch(paths, options = {}) :
 	ms =  isomatch.match(paths, options)
-	return pruneMatches(ms)
+	prune = options.get("prune", True)
+	if prune :
+		return pruneMatches(ms)
+	else :
+		return ms
 
 
 
 def standardMatch(paths, options = {}) :
 
-	match_limit = options.get("match_limit", 500)
-	unique_treshold = options.get("unique_treshold", 10.0)
+	match_limit			= options.get("match_limit", 500)
+	unique_treshold		= options.get("unique_treshold", 10.0)
+	keypoint_type		= options.get("keypoint_type", "ORB")
+	descriptor_type		= options.get("descriptor_type", "BRIEF")
+	prune 				= options.get("prune", True)
 
 	# Get all feature points
-	indices, ks, ds = features.getFeatures(paths)
+	indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint_type, descriptor_type = descriptor_type)
 
 	# Use cv2's matcher to get matching feature points
-	bfMatches = features.bfMatch("BRIEF", ds[indices == 0], ds[indices == 1])
+	bfMatches = features.bfMatch(descriptor_type, ds[indices == 0], ds[indices == 1])
 	#bfMatches = features.match("BRIEF", ds[ind == 0], ds[ind == 1])
 
 	# Get matches in usual format
@@ -119,8 +130,10 @@ def standardMatch(paths, options = {}) :
 	top_n = numpy.argsort(scores)[0:match_limit]
 	matches_top = numpy.array(matches)[top_n]
 
-	# Prune matches
-	return pruneMatches(matches_top)
+	if prune :
+		return pruneMatches(matches_top)
+	else :
+		return matches_top
 
 
 

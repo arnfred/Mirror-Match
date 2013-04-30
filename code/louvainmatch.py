@@ -19,6 +19,14 @@ import weightMatrix
 from itertools import combinations
 
 
+dist_fun_map = {
+	"SIFT"   : weightMatrix.angleDist,
+	"SURF"   : weightMatrix.angleDist,
+	"ORB"    : weightMatrix.hammingDist,
+	"BRISK"  : weightMatrix.hammingDist,
+	"BRIEF"  : weightMatrix.hammingDist,
+	"FREAK"  : weightMatrix.hammingDist
+}
 
 ####################################
 #                                  #
@@ -29,65 +37,128 @@ from itertools import combinations
 
 def match(paths, options = {}) : 
 	
+	# Get parameters
 	prune_fun = options.get("prune_fun", weightMatrix.pruneTreshold)
-	prune_limit = options.get("prune_limit", 5)
-	min_edges = options.get("min_edges", 2)
-	weight_limit = options.get("weight_limit", 0.7)
-	min_coherence = options.get("min_coherence", 1.0)
-	bipartite = options.get("bipartite", False)
+	prune_limit = options.get("prune_limit", 4.5)
+	min_edges = options.get("min_edges", 1)
+	weight_limit = options.get("weight_limit", -1.0)
+	min_coherence = options.get("min_coherence", -1.0)
+	keypoint_type = options.get("keypoint_type", "ORB")
+	descriptor_type = options.get("descriptor_type", "BRIEF")
+	verbose = options.get("verbose", False)
+	split_limit = options.get("split_limit", 10)
+	cluster_prune_limit = options.get("cluster_prune_limit", 3)
 
 	# Get all feature points
-	indices, ks, ds = features.getFeatures(paths)
+	indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint_type, descriptor_type = descriptor_type)
 
 	# Calculate weight matrix (hamming distances)
-	full_weights = weightMatrix.init(ds)
+	full_weights = weightMatrix.init(ds, dist_fun_map[descriptor_type])
 
 	# Get geometric weights
-	if bipartite : weights = getGeom(full_weights, ks, indices, weight_limit)
+	if weight_limit != -1.0 : weights = getGeom(full_weights, ks, indices, weight_limit)
 	else : weights = full_weights
 
 	# Get cluster weights
 	cluster_weights = prune_fun(weights, prune_limit)
 
 	# Cluster graph
-	partitions = louvain.cluster(cluster_weights, verbose=False)
+	partitions = cluster(cluster_weights, indices, split_limit = split_limit, prune_limit = cluster_prune_limit, verbose=verbose)
+	print("%i partitions" % len(set(partitions)))
 
 	# Get matches
-	matches = [(m1,m2) for (m1,m2,indices) in getPartitionMatches(partitions, cluster_weights, indices, ks, min_edges=min_edges, min_coherence=min_coherence)]
+	matches = getPartitionMatches(partitions, cluster_weights, indices, min_edges, min_coherence)
 
-	return matches
+	# Get find their positions
+	matchPos = [getMatchPosition(m_i, m_j, ks) for (m_i,m_j) in matches]
+
+	return matchPos
 
 
 
-def getPartitionMatches(partitions, weights, indices, keypoints, min_edges = 1, min_coherence = -1.0, max_variance = 10) :
+def cluster(weights, indices, split_limit = 10, prune_limit = 3, verbose = False) :
+	partitions = louvain.cluster(weights, verbose=verbose)
+	p_set = set(partitions)
 	
-	# Get the edges belong to partition p and image i
-	def getEdges(p,i) : 
-		return weights[p == partitions & ind == i]
+	r = numpy.arange(0, weights.shape[0])
+	for p in p_set :
+		partition_mask = partitions == p
+		for i,j in combinations(set(indices),2) :
+			# Set up masks
+			row_mask = partition_mask & (indices == i)
+			col_mask = partition_mask & (indices == j)
+			index_row = r[row_mask]
+			index_col = r[col_mask]
 	
+			# Get weights
+			pij_edges = weights[row_mask][:,col_mask]
+			p_edges = weights[partition_mask][:,partition_mask]
+			nb_inter_edges = numpy.sum(pij_edges > 0)
+			if (nb_inter_edges > split_limit) :
+				# Prune weights
+				p_edges_pruned = weightMatrix.pruneTreshold(p_edges, prune_limit)
+				# normalizing weights
+				p_max = numpy.max(p_edges_pruned)
+				p_min = numpy.min(p_edges_pruned.nonzero())
+				p_zero = p_edges_pruned == 0
+				p_edges_norm = (p_edges_pruned - p_min) / (p_max - p_min)
+				p_edges_norm[p_zero] = 0
+				
+				# cluster
+				p_partition = cluster(p_edges_norm, indices[partition_mask], split_limit, prune_limit, verbose)
+			
+				# Update partitioning
+				partitions[partition_mask] = p_partition + numpy.max(partitions) + 1
+	return partitions
+
+
+
+def getPartitionMatches(partitions, weights, indices, min_edges = 1, min_coherence = -1.0) :
+
+	# index
+	index = numpy.arange(0, weights.shape[0])
 	# Get numpy array of indices
-	ind = numpy.array(indices)
 	for p in set(partitions) :
 
 		partition_mask = partitions == p
 		partition_weights = weights[partition_mask][:, partition_mask]
-		#m = modularity(weights, partition_mask)
 		for i,j in combinations(set(indices),2) :
-			pij_edges = numpy.zeros(weights.shape)
-			pij_edges[(p == partitions) & (ind == i)] = weights[(p == partitions) & (ind == i)]
-			pij_edges[:, (ind != j)] = 0
-			# Check if there are any edges leading to image j
-			if numpy.sum(pij_edges) >= min_edges:
 
-				# Get coherence
-				im_masks_i = indices[partition_mask] == i
-				im_masks_j = indices[partition_mask] == j
-				c = -1 * (modularity(partition_weights, im_masks_i) + modularity(partition_weights, im_masks_j))
+			# Set up masks
+			row_mask = partition_mask & (indices == i)
+			col_mask = partition_mask & (indices == j)
+			index_row = index[row_mask]
+			index_col = index[col_mask]
 
-				if c > min_coherence :
-					(m_i, m_j) = numpy.unravel_index(pij_edges.argmax(), pij_edges.shape)
-					pos = features.getPositions([keypoints[m_i], keypoints[m_j]])
-					yield (pos[0], pos[1], (i,j))
+			# Get weights
+			pij_edges = weights[row_mask][:,col_mask]
+
+			if numpy.sum(pij_edges > 0) >= min_edges and min_coherence <= getCoherence(partition_weights, partition_mask, indices, i, j) :
+				
+				# Collect uniqueness per feature point
+				(m_i, m_j) = numpy.unravel_index(pij_edges.argmax(), pij_edges.shape)
+				yield (index_row[m_i], index_col[m_j])
+
+
+def getCoherence(partition_weights, partition_mask, indices, i, j) :
+	# Get coherence
+	im_masks_i = indices[partition_mask] == i
+	im_masks_j = indices[partition_mask] == j
+	return -1 * (modularity(partition_weights, im_masks_i) + modularity(partition_weights, im_masks_j))
+
+
+
+def getUniqueness(row) :
+	nz = row[row.nonzero()]
+	max_ind = nz.argsort()
+	if (max_ind.size > 1) : return nz[max_ind[-2]] / nz[max_ind[-1]]
+	else : return 1.0
+
+
+
+def getMatchPosition(i,j, keypoints) :
+	pos = features.getPositions([keypoints[i], keypoints[j]])
+	return (pos[0], pos[1])
 
 
 
@@ -143,6 +214,7 @@ def modularity(weights, mask) :
 			   mask [boolean numpy.darray] A mask marking the partition of vertices 
 	"""
 	K = weights.sum()
+	if K == 0 : return 0
 	indices = numpy.arange(0,weights.shape[0])
 	internal_sum = weights[mask][:, mask].sum()
 	external_sum = weights[mask].sum()

@@ -20,7 +20,6 @@ import numpy
 import graph_tool.all as gt
 import math
 import louvain
-import weightMatrix
 import colors
 from scipy.misc import imresize
 import Image
@@ -246,6 +245,7 @@ def distHist(dist, dist_treshold = 5, dist_distinct = None) :
 
 	dist_under_median = [d for d in dist if d <= (numpy.median(dist) * 2)]
 	dist_under_treshold = [d for d in dist if d <= dist_treshold]
+	if (len(dist) == 0) : return
 	dist_p = float(len(dist_under_treshold)) / float(len(dist))
 	if dist_distinct != None :
 		distinct_under_treshold = [d for d in dist_distinct if d <= dist_treshold]

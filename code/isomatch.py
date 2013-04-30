@@ -35,18 +35,20 @@ def match(paths, options = {}) :
 	max_sd				= options.get("max_sd", 40)
 	min_distance		= options.get("min_distance", 25)
 	verbose				= options.get("verbose", False)
+	keypoint_type		= options.get("keypoint_type", "ORB")
+	descriptor_type		= options.get("descriptor_type", "BRIEF")
 
 	# Get images
 	images = map(features.loadImage, paths)
 
 	# Get all feature points
-	indices, ks, ds = features.getFeatures(paths)
+	indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint_type, descriptor_type = descriptor_type)
 
 	# Get positions
 	positions = numpy.array(features.getPositions(ks))
 
 	# Get matches
-	match_points = getMatchPoints(indices, ks, ds)
+	match_points = getMatchPoints(indices, ks, ds, descriptor_type = descriptor_type)
 
 	# Partition with isodata
 	part_1 = isodata.cluster(positions[indices==0], k_init=k_init, max_iterations=max_iterations, min_partition_size=min_partition_size, max_sd=max_sd, min_distance=min_distance)
@@ -95,13 +97,13 @@ def showPartitions(part_1, part_2, indices, images, positions) :
 	pylab.show()
 
 
-def getMatchPoints(indices, ks, ds) : 
+def getMatchPoints(indices, ks, ds, descriptor_type = "BRIEF") :
 	# Get matches in usual format
 	def matchFromIndex(i,j) :
 		return (features.getPosition(ks[indices == 0][i]), features.getPosition(ks[indices == 1][j]))
 
 	# Use cv2's matcher to get matching feature points
-	bfMatches = features.bfMatch("BRIEF", ds[indices == 0], ds[indices == 1])
+	bfMatches = features.bfMatch(descriptor_type, ds[indices == 0], ds[indices == 1])
 
 	# Keep relevant data
 	match_points = [(matchFromIndex(j,i), (j, i), s) for j,(i,s,u) in enumerate(zip(*bfMatches)) if i != None]

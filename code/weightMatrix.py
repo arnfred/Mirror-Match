@@ -23,10 +23,38 @@ from itertools import dropwhile
 #                                  #
 ####################################
 
-def init(descriptors) :
+
+
+def hammingDist(descriptors) :
+	""" Returns a matrix of size n x n where n is the amount of descriptors
+		output[0][1] is equal to the hamming distance between descriptors[0] and descriptors[1]
+		where output is the matrix returned from this function
+	"""
+	# rearrange inputs
+	binary = numpy.array(numpy.unpackbits(descriptors), dtype=numpy.bool)
+	binary.shape = (descriptors.shape[0], descriptors.shape[1] * 8)
+
+	# Initialize return matrix
+	result = numpy.zeros([descriptors.shape[0], descriptors.shape[0]], dtype=numpy.uint8)
+
+	# Fill result matrix and return
+	for (i, bin_row) in enumerate(binary) :
+		result[i] = numpy.sum(numpy.bitwise_xor(binary, bin_row), 1)
+	return result
+
+
+
+# Compute D1 * D2.T, and find approx dist with arccos
+def angleDist(D) : 
+	D_norm = D / numpy.linalg.norm(D)
+	return numpy.arccos(D_norm.dot(D_norm.T))
+
+
+
+def init(descriptors, dist_measure = hammingDist) :
 
 	# Get all hamming distances based on the descriptors
-	distances = hammingDist(descriptors)
+	distances = dist_measure(descriptors)
 
 	# Normalize distances
 	max_d = numpy.max(distances)
@@ -100,25 +128,6 @@ def pruneTreshold(weights, edges_per_vertex, n=300, start=0.3) :
 	pruned_weights[index] = 0
 
 	return pruned_weights
-
-
-
-def hammingDist(descriptors) :
-	""" Returns a matrix of size n x n where n is the amount of descriptors
-		output[0][1] is equal to the hamming distance between descriptors[0] and descriptors[1]
-		where output is the matrix returned from this function
-	"""
-	# rearrange inputs
-	binary = numpy.array(numpy.unpackbits(descriptors), dtype=numpy.bool)
-	binary.shape = (descriptors.shape[0], descriptors.shape[1] * 8)
-
-	# Initialize return matrix
-	result = numpy.zeros([descriptors.shape[0], descriptors.shape[0]], dtype=numpy.uint8)
-
-	# Fill result matrix and return
-	for (i, bin_row) in enumerate(binary) :
-		result[i] = numpy.sum(numpy.bitwise_xor(binary, bin_row), 1)
-	return result
 
 
 
