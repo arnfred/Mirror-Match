@@ -32,7 +32,7 @@ def cluster(weights, verbose=False) :
 	m = 0
 	while (moved > 0) :
 		deltas = [move(weights, i, partitions, K) for i in indices]
-		moved = sum([1 if d > 0 else 0 for d in deltas])
+		moved = sum([1 for d in deltas if d > 0])
 		if verbose : 
 			m_new = modularity(weights, partitions)
 			m_diff = m_new - m
@@ -72,7 +72,7 @@ def deltaQ(weights, index, partition_mask, K) :
 
 def modularity(weights, partitions) :
 	""" Calculates the modularity of the partition masked by 'mask' in the weight matrix
-		Input: Weights [numpy.darray] The weightmatrix used
+		Input: Weights [numpy.darray] Adjecency matrix of the graph
 			   mask [boolean numpy.darray] A mask marking the partition of vertices 
 	"""
 	K = weights.sum()
@@ -86,75 +86,3 @@ def modularity(weights, partitions) :
 
 	ms = [mod_part(partitions==p) for p in set(partitions)]
 	return sum(ms)
-
-
-
-# def cluster(graph, verbose=False) :
-# 	moved = 1
-# 	partitions = initL(graph)
-# 	w = graph.ep["weights"]
-# 	K = 2*numpy.sum(w.fa)
-# 	while (moved > 0) :
-# 		moved = sum([move(graph, v, partitions, K) for v in graph.vertices()])
-# 		if verbose : print("Moved %i vertices" % moved)
-# 	p = reassign(partitions)
-# 	print(partitions)
-# 	t = [(k, len(list(g))) for k,g in groupby(sorted(p.fa))]
-# 	return p,len(t)
-# 
-# 
-# def initL(graph) :
-# 	partition = graph.new_vertex_property("int")
-# 	partition.fa = numpy.arange(0,graph.num_vertices())
-# 	return partition
-# 
-# 
-# 
-# def deltaQ(graph, v, partition, partitions, K) :
-# 	def toPartition(e) : 
-# 		return (partitions[e.target()] == partition) or (partitions[e.source()] == partition)
-# 	w = graph.ep["weights"]
-# 	k = graph.vp["degrees"]
-# 	v_edges = [w[e] for e in v.all_edges()]
-# 	v_edges_partition = [w[e] for e in v.all_edges() if toPartition(e)]
-# 	v_weight = 2 * numpy.sum([w[e] for e in v.all_edges() if toPartition(e)])
-# 	k_neighbours = numpy.sum((partitions.fa == partition) * k.fa)
-# 	return 1.0/K * (v_weight - (k[v] * k_neighbours) / K)
-# 
-# 
-# def neighbour_partitions(graph, v, partitions) :
-# 	return set([partitions[n] for n in v.all_neighbours()])
-# 
-# 
-# 
-# def prospect_set(graph, v, orig_partition, partitions, K) :
-# 	return [(deltaQ(graph, v, p, partitions, K),p) for p in neighbour_partitions(graph, v, partitions) if p != orig_partition]
-# 
-# 
-# 
-# def move(graph, v, partitions, K) :
-# 	orig_partition = partitions[v]
-# 	# move v out of orig_partition
-# 	partitions[v] = -1
-# 	# See how much we would gain from moving p back to orig_partition
-# 	old_prospect = deltaQ(graph, v, orig_partition, partitions, K)
-# 	# What is the best gain elsewhere?
-# 	new_prospects = prospect_set(graph, v, orig_partition, partitions, K)
-# 	max_prospect = max(new_prospects) if (len(new_prospects) > 0) else (-1,-1)
-# 	# Is it worth moving?
-# 	delta = max_prospect[0] - old_prospect
-# 	if (delta > 0) : 
-# 		partitions[v] = max_prospect[1]
-# 		return 1
-# 	else : 
-# 		partitions[v] = orig_partition
-# 		return 0
-# 
-# 
-# 
-# def reassign(partitioning) :
-#     assignments = [(i,k) for i,(k,g) in enumerate(groupby(sorted(partitioning.fa)))]
-#     p_new = partitioning.copy()
-#     for i,k in assignments :
-#         p_new.fa[partitioning.fa == k] = i
-#     return p_new

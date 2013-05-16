@@ -47,13 +47,13 @@ def match(paths, options = {}) :
 	descriptor_type = options.get("descriptor_type", "BRIEF")
 	verbose = options.get("verbose", False)
 	split_limit = options.get("split_limit", 10)
-	cluster_prune_limit = options.get("cluster_prune_limit", 3)
+	cluster_prune_limit = options.get("cluster_prune_limit", 1.5)
 
 	# Get all feature points
 	indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint_type, descriptor_type = descriptor_type)
 
 	# Calculate weight matrix (hamming distances)
-	full_weights = weightMatrix.init(ds, dist_fun_map[descriptor_type])
+	full_weights = weightMatrix.init(ds, descriptor_type)
 
 	# Get geometric weights
 	if weight_limit != -1.0 : weights = getGeom(full_weights, ks, indices, weight_limit)
@@ -64,7 +64,7 @@ def match(paths, options = {}) :
 
 	# Cluster graph
 	partitions = cluster(cluster_weights, indices, split_limit = split_limit, prune_limit = cluster_prune_limit, verbose=verbose)
-	print("%i partitions" % len(set(partitions)))
+	if verbose : print("%i partitions" % len(set(partitions)))
 
 	# Get matches
 	matches = getPartitionMatches(partitions, cluster_weights, indices, min_edges, min_coherence)
@@ -76,8 +76,9 @@ def match(paths, options = {}) :
 
 
 
-def cluster(weights, indices, split_limit = 10, prune_limit = 3, verbose = False) :
+def cluster(weights, indices, split_limit = 10, prune_limit = 3, verbose = False, rec_level = 0) :
 	partitions = louvain.cluster(weights, verbose=verbose)
+	if rec_level > 10 : return partitions
 	p_set = set(partitions)
 	
 	r = numpy.arange(0, weights.shape[0])
@@ -94,18 +95,22 @@ def cluster(weights, indices, split_limit = 10, prune_limit = 3, verbose = False
 			pij_edges = weights[row_mask][:,col_mask]
 			p_edges = weights[partition_mask][:,partition_mask]
 			nb_inter_edges = numpy.sum(pij_edges > 0)
-			if (nb_inter_edges > split_limit) :
+			if (numpy.sum(partition_mask) > split_limit) :
 				# Prune weights
 				p_edges_pruned = weightMatrix.pruneTreshold(p_edges, prune_limit)
+
+				# If there are no edges left, then skip
+				if numpy.sum(p_edges_pruned) == 0 : continue
+
 				# normalizing weights
 				p_max = numpy.max(p_edges_pruned)
-				p_min = numpy.min(p_edges_pruned.nonzero())
+				p_min = numpy.min(p_edges_pruned[p_edges_pruned.nonzero()])
 				p_zero = p_edges_pruned == 0
 				p_edges_norm = (p_edges_pruned - p_min) / (p_max - p_min)
 				p_edges_norm[p_zero] = 0
 				
 				# cluster
-				p_partition = cluster(p_edges_norm, indices[partition_mask], split_limit, prune_limit, verbose)
+				p_partition = cluster(p_edges_norm, indices[partition_mask], split_limit, prune_limit, verbose, rec_level + 1)
 			
 				# Update partitioning
 				partitions[partition_mask] = p_partition + numpy.max(partitions) + 1

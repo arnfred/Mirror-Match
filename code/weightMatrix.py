@@ -13,6 +13,7 @@ Jonas Toft Arnfred, 2013-03-19
 
 import numpy
 import math
+import features
 from itertools import dropwhile
 
 
@@ -22,7 +23,6 @@ from itertools import dropwhile
 #           Functions              #
 #                                  #
 ####################################
-
 
 
 def hammingDist(descriptors) :
@@ -46,29 +46,56 @@ def hammingDist(descriptors) :
 
 # Compute D1 * D2.T, and find approx dist with arccos
 def angleDist(D) : 
-	D_norm = D / numpy.linalg.norm(D)
-	return numpy.arccos(D_norm.dot(D_norm.T))
+	norms = numpy.array([numpy.linalg.norm(row) for row in D])
+	D_n = D / norms[:, numpy.newaxis]
+	dotted = D_n.dot(D_n.T)
+	dotted = dotted / numpy.max(dotted)
+	return numpy.arccos(dotted)
 
 
 
-def init(descriptors, dist_measure = hammingDist) :
+def init(descriptors, descriptor_type) :
+
+	dist_fun_map = {
+		"SIFT"   : angleDist,
+		"SURF"   : angleDist,
+		"ORB"    : hammingDist,
+		"BRISK"  : hammingDist,
+		"BRIEF"  : hammingDist,
+		"FREAK"  : hammingDist
+	}
+
+	dist_max_map = {
+		"SIFT"   : numpy.pi,
+		"SURF"   : numpy.pi,
+		"ORB"    : 255,
+		"BRISK"  : 255,
+		"BRIEF"  : 255,
+		"FREAK"  : 255
+	}
+	
+	dist_measure = dist_fun_map.get(descriptor_type, hammingDist)
+	dist_max = dist_max_map.get(descriptor_type, 255.0)
 
 	# Get all hamming distances based on the descriptors
 	distances = dist_measure(descriptors)
 
 	# Normalize distances
-	max_d = numpy.max(distances)
-	distances_normalized = numpy.array(distances, dtype=numpy.float) / numpy.array(max_d, dtype=numpy.float)
+	#max_d = float(numpy.max(distances))
+	#min_d = float(numpy.min(distances))
+	min_d = 0
+	max_d = dist_max
+	distances_normalized = (distances - min_d) / float(max_d - min_d)
 	weights = 1 - distances_normalized
 
 	# Set the self-distances to 0
-	weights[(weights == 1)] = 0
+	numpy.fill_diagonal(weights, 0)
 
 	return weights
 
 
 
-def get_treshold(weights, edges_per_vertex, n=300, start=0.3) :
+def get_treshold(weights, edges_per_vertex, n=600, start=0.0) :
 	nb_vertices = weights.shape[0]
 	tresholds = numpy.linspace(1,start,n)
 	w = [numpy.sum(weights > t) / (2.0*nb_vertices) for t in tresholds]
@@ -80,9 +107,28 @@ def get_treshold(weights, edges_per_vertex, n=300, start=0.3) :
 
 
 
-def get_fraction(weights, fraction, n=300, start=0.3) :
-	tresholds = numpy.linspace(1,start,n)
+def pruneRows(weights, fraction, n = 1000) :
+	def getTres() :
+		row_max = numpy.max(weights, axis=0)
+		tresholds = numpy.linspace(numpy.max(row_max),numpy.min(row_max),n)
+		w = [numpy.sum(row_max > t) / float(row_max.size) for t in tresholds]
+		q = dropwhile(lambda e : e < fraction, w)
+		index = len(list(q))
+		return tresholds[n-index]
+	
+	treshold = getTres()
+
+	# Update weight matrix
+	index = (weights <= treshold) | (weights == 1)
+	pruned_weights = weights.copy()
+	pruned_weights[index] = 0
+
+	return pruned_weights
+
+
+def get_fraction(weights, fraction, n=600, start=0.0) :
 	nb_weights = float(weights.size)
+	tresholds = numpy.linspace(1,start,n)
 	w = [numpy.sum(weights > t) / nb_weights for t in tresholds]
 	q = dropwhile(lambda e : e < fraction, w)
 	index = len(list(q))
@@ -116,7 +162,7 @@ def pruneHighest(weights, edges_per_vertex,n=0,start=0) :
 
 
 
-def pruneTreshold(weights, edges_per_vertex, n=300, start=0.3) :
+def pruneTreshold(weights, edges_per_vertex, n=600, start=0.0) :
 	""" Removes all edges under a certain treshold
 	"""
 	# Get treshold

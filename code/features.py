@@ -165,7 +165,7 @@ def match(descriptor_type, D1, D2) :
 
 
 
-def bfMatch(descriptor_type, D1, D2) :
+def bfMatch(descriptor_type, D1, D2, matchSame = False) :
 
 	# Map for the type of distance measure to use
 	dist_map = {
@@ -198,12 +198,15 @@ def bfMatch(descriptor_type, D1, D2) :
 	train = numpy.array(D2, dtype = dtype)
 
 	# Find nearest neighbor
-	matches_qt = matcher.knnMatch(query, train, k=2)
+	matches_qt = matcher.knnMatch(query, train, k=3)
 	#matches_tq = bf.knnMatch(train, query, k=2)
 
+	first = 1 if matchSame else 0
+	second = 2 if matchSame else 1
+
 	# Convert result
-	data = [(ms[0].trainIdx, ms[0].distance, ms[0].distance*1.0/(ms[1].distance + 0.1)) 
-				for ms in matches_qt if len(ms) == 2]
+	data = [(ms[first].trainIdx, ms[first].distance, ms[first].distance*1.0/(ms[second].distance + 0.1)) 
+				for ms in matches_qt if len(ms) == 3]
 
 	if len(data) == 0 : return (None, None, None)
 
