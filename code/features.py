@@ -165,7 +165,7 @@ def match(descriptor_type, D1, D2) :
 
 
 
-def bfMatch(descriptor_type, D1, D2, matchSame = False) :
+def bfMatch(descriptor_type, D1, D2, match_same = False) :
 
 	# Map for the type of distance measure to use
 	dist_map = {
@@ -201,8 +201,8 @@ def bfMatch(descriptor_type, D1, D2, matchSame = False) :
 	matches_qt = matcher.knnMatch(query, train, k=3)
 	#matches_tq = bf.knnMatch(train, query, k=2)
 
-	first = 1 if matchSame else 0
-	second = 2 if matchSame else 1
+	first = 1 if match_same else 0
+	second = 2 if match_same else 1
 
 	# Convert result
 	data = [(ms[first].trainIdx, ms[first].distance, ms[first].distance*1.0/(ms[second].distance + 0.1)) 

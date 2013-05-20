@@ -39,25 +39,20 @@ def match(paths, options = {}) :
 	
 	# Get parameters
 	prune_fun = options.get("prune_fun", weightMatrix.pruneTreshold)
-	prune_limit = options.get("prune_limit", 4.5)
+	prune_limit = options.get("prune_limit", 3)
 	min_edges = options.get("min_edges", 1)
-	weight_limit = options.get("weight_limit", -1.0)
 	min_coherence = options.get("min_coherence", -1.0)
 	keypoint_type = options.get("keypoint_type", "ORB")
 	descriptor_type = options.get("descriptor_type", "BRIEF")
 	verbose = options.get("verbose", False)
-	split_limit = options.get("split_limit", 10)
+	split_limit = options.get("split_limit", 999999)
 	cluster_prune_limit = options.get("cluster_prune_limit", 1.5)
 
 	# Get all feature points
 	indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint_type, descriptor_type = descriptor_type)
 
 	# Calculate weight matrix (hamming distances)
-	full_weights = weightMatrix.init(ds, descriptor_type)
-
-	# Get geometric weights
-	if weight_limit != -1.0 : weights = getGeom(full_weights, ks, indices, weight_limit)
-	else : weights = full_weights
+	weights = weightMatrix.init(ds, descriptor_type)
 
 	# Get cluster weights
 	cluster_weights = prune_fun(weights, prune_limit)

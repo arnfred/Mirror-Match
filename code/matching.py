@@ -24,6 +24,7 @@ import pylab
 import fnmatch
 import os
 import re
+import itertools
 
 
 
@@ -55,8 +56,44 @@ def testMatch(paths, homography, match_fun, options = {}, verbose = True) :
 	return matches, dist, dist_distinct
 
 
+
+def folderMatch(directory, dt, match_fun) : 
+	# Load all files
+	def getImagePairs(directory) :
+		dir_path = "../../images/testsets/%s/" % directory
+		pairs = [dir_path + p for p in os.listdir(dir_path) if len(p) <= 6]
+		homographies = [getHomography(p) for p in pairs]
+		return [([p + "_1.jpg", p + "_2.jpg"], h) for (p,h) in zip(pairs, homographies)]
+
+	def flatten(l) :
+		return list(itertools.chain.from_iterable(l))
+
+	def nb_correct_matches(distances) :
+		return len([d for d in distances if d <= dt])
+
+	# Get image pairs of folder
+	imagePairs = getImagePairs(directory)
+
+	# Get matches
+	matches_t, distances_t, distances_distinct_t = zip(*[match_fun(dt, p, h) for p, h in imagePairs])
+
+	accuracity = [(nb_correct_matches(d)+0.0001)/(float(len(d)+0.0001)) for d in distances_t]
+	
+	# matches is a list of lists, so we flatten it
+	distances = flatten(distances_t)
+	distances_distinct = flatten(distances_distinct_t)
+	
+	# display result
+	#pylab.subplot(1,2,2)
+	display.distHist(distances, dt, distances_distinct, accuracity)
+	
+	return accuracity
+
+
 def getHomography(hom_path) :
 	return numpy.array([map(lambda s : float(s.strip()), line.strip().split()) for i,line in enumerate(open(hom_path)) if i < 3])
+
+
 
 def getPaths(orig_id = None, compare_id = 2, img_type = "graf", folder = "inria") :
 
@@ -108,6 +145,7 @@ def getPaths(orig_id = None, compare_id = 2, img_type = "graf", folder = "inria"
 	return paths, hom
 
 
+
 def getACRPaths(orig_id = None, compare_id = 2, img_type = "graf") :
 	return getPaths(orig_id, compare_id, img_type, "acr")
 
@@ -145,20 +183,65 @@ def standardMatch(paths, options = {}) :
 	indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint_type, descriptor_type = descriptor_type)
 
 	# Use cv2's matcher to get matching feature points
-	bfMatches = features.bfMatch(descriptor_type, ds[indices == 0], ds[indices == 1])
+	jj, ss_j, uu_j = features.bfMatch(descriptor_type, ds[indices == 0], ds[indices == 1])
+	ii, ss_i, uu_i = features.bfMatch(descriptor_type, ds[indices == 1], ds[indices == 0])
 	#bfMatches = features.match("BRIEF", ds[ind == 0], ds[ind == 1])
 
 	# Get matches in usual format
 	def matchFromIndex(i,j) :
 		return (features.getPosition(ks[indices == 0][i]), features.getPosition(ks[indices == 1][j]))
 
-	match_score = [(matchFromIndex(j,i), s, u) for j,(i,s,u) in enumerate(zip(*bfMatches)) if i != None and u < unique_treshold]
+	# See if matches go both ways
+	bothways = [(i,j) for i,j in enumerate(jj) if ii[j] == i]
+
+	match_score = [(matchFromIndex(i,j),ss_j[i],uu_j[i]) for i,j in bothways if uu_j[i] < unique_treshold]
 
 	# Return empty list if there weren't any matches
 	if len(match_score) == 0 : return []
 
 	matches, scores, uniques = zip(*match_score)
 
+	# Take only the n best
+	top_n = numpy.argsort(scores)[0:match_limit]
+	matches_top = numpy.array(matches)[top_n]
+
+	if prune :
+		return pruneMatches(matches_top)
+	else :
+		return matches_top
+
+
+
+def bothMatch(paths, options = {}) :
+
+	# Returns the position of a match
+	def matchPos(i,j) :
+		return (features.getPosition(ks[i]), features.getPosition(ks[j]))
+	
+	# Get options
+	match_limit			= options.get("match_limit", 500)
+	unique_treshold		= options.get("unique_treshold", 1.0)
+	keypoint_type		  = options.get("keypoint_type", "ORB")
+	descriptor_type		= options.get("descriptor_type", "BRIEF")
+	prune 				 = options.get("prune", False)
+
+	# Get all feature points
+	indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint_type, descriptor_type = descriptor_type)
+
+	# Use cv2's matcher to get matching feature points
+	jj,ss,uu = features.bfMatch(descriptor_type, ds, ds, match_same=True)
+	
+	# See if matches go both ways
+	bothways = [(i,j) for i,j in enumerate(jj) if indices[i] == 0 and indices[j] == 1 and jj[j] == i]
+
+	match_score = [(matchPos(i,j),ss[i],uu[i]) for i,j in bothways if uu[i] < unique_treshold]
+
+	# Return empty list if there weren't any matches
+	if len(match_score) == 0 : return []
+
+	# unpack
+	matches, scores, uniques = zip(*match_score)
+	
 	# Take only the n best
 	top_n = numpy.argsort(scores)[0:match_limit]
 	matches_top = numpy.array(matches)[top_n]
@@ -219,7 +302,7 @@ def getDistinctMatches(matches, treshold = 5) :
 	def distinctFrom(m, head) :
 		a = numpy.linalg.norm(numpy.array(m[0]) - numpy.array(head[0]))
 		b = numpy.linalg.norm(numpy.array(m[1]) - numpy.array(head[1]))
-		return a > treshold and b > treshold
+		return a > treshold or b > treshold
 	
 	if len(matches) < 1 : return []
 	head = matches[0]
@@ -228,3 +311,96 @@ def getDistinctMatches(matches, treshold = 5) :
 
 
 
+# Standard parameters for cluster match with BRIEF descriptors
+def clusterMatchBRIEF(distance_treshold, paths, homography) :
+	return testMatch(
+		paths, 
+		homography, 
+		clusterMatch,
+		verbose = False,
+		options = {
+			"prune_fun" : weightMatrix.pruneTreshold, 
+			"prune_limit" : 3,
+			"min_coherence" : 0.02,
+			"split_limit" : 10,
+			"cluster_prune_limit" : 1.5,
+			"distance_treshold" : distance_treshold,
+			"descriptor_type" : "BRIEF",
+			"keypoint_type" : "ORB",
+		})
+
+def clusterMatchSIFT(distance_treshold, paths, homography) :
+	return testMatch(
+		paths, 
+		homography, 
+		clusterMatch,
+		verbose = False,
+		options = {
+			"prune_fun" : weightMatrix.pruneRows, 
+			"prune_limit" : 0.15,
+			"min_coherence" : 0.3,
+			"split_limit" : 10000,
+			"cluster_prune_limit" : 1.5,
+			"distance_treshold" : distance_treshold,
+			"descriptor_type" : "SIFT",
+			"keypoint_type" : "SIFT",
+		})
+
+def uniqueMatchBRIEF(distance_treshold, paths, homography) :
+	return testMatch(
+		paths,
+		homography, 
+		standardMatch,
+		verbose = False,
+		options = {
+			"match_limit" : 1000,
+			"unique_treshold": 0.8,
+			"distance_treshold" : distance_treshold,
+			"descriptor_type" : "BRIEF",
+			"keypoint_type" : "ORB",
+		})
+
+
+def uniqueMatchSIFT(distance_treshold, paths, homography) :
+	return testMatch(
+		paths,
+		homography, 
+		standardMatch,
+		verbose = False,
+		options = {
+			"match_limit" : 1000,
+			"unique_treshold": 0.6,
+			"distance_treshold" : distance_treshold,
+			"descriptor_type" : "SIFT",
+			"keypoint_type" : "SIFT",
+		})
+
+
+def bothMatchSIFT(distance_treshold, paths, homography) :
+	return testMatch(
+		paths,
+		homography, 
+		bothMatch,
+		verbose = False,
+		options = {
+			"match_limit" : 1000,
+			"unique_treshold": 0.64,
+			"distance_treshold" : distance_treshold,
+			"descriptor_type" : "SIFT",
+			"keypoint_type" : "SIFT",
+		})
+
+
+def bothMatchBRIEF(distance_treshold, paths, homography) :
+	return testMatch(
+		paths,
+		homography, 
+		bothMatch,
+		verbose = False,
+		options = {
+			"match_limit" : 1000,
+			"unique_treshold": 0.95,
+			"distance_treshold" : distance_treshold,
+			"descriptor_type" : "BRIEF",
+			"keypoint_type" : "ORB",
+		})

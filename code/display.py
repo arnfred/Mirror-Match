@@ -241,8 +241,9 @@ def scoreNormHist(resultMat, labels) :
 
 
 
-def distHist(dist, dist_treshold = 5, dist_distinct = None) :
+def distHist(dist, dist_treshold = 5, dist_distinct = None, accuracity = None, accu_y_lim = 100) :
 
+	plots = 2 if accuracity == None else 3
 	dist_under_median = [d for d in dist if d <= (numpy.median(dist) * 2)]
 	dist_under_treshold = [d for d in dist if d <= dist_treshold]
 	if (len(dist) == 0) : return
@@ -251,15 +252,26 @@ def distHist(dist, dist_treshold = 5, dist_distinct = None) :
 		distinct_under_treshold = [d for d in dist_distinct if d <= dist_treshold]
 		distinct_p = float(len(distinct_under_treshold)) / float(len(dist_distinct))
 
-	pylab.subplot(1,2,1)
+	pylab.figure(figsize=(10, 5))
+
+	pylab.subplot(1,plots,1)
 	pylab.hist(dist, bins=20, label="Distances", color="blue", alpha=0.65)
 	pylab.legend()
 	removeDecoration()
 
-	pylab.subplot(1,2,2)
-	pylab.hist(dist_under_median, bins=20, label="Distances", color="blue", alpha=0.65)
+	pylab.subplot(1,plots,2)
+	pylab.hist(dist_under_median, bins=20, label="Distances", color="cyan", alpha=0.65)
 	pylab.legend()
 	removeDecoration()
+
+	if accuracity != None :
+		pylab.subplot(1,plots,3)
+		pylab.hist(accuracity, bins=20, label="Accuracity", color="green", alpha=0.65)
+		pylab.legend()
+		pylab.xlim(0,1.01)
+		pylab.ylim(0,accu_y_lim)
+		removeDecoration()
+
 
 	if dist_distinct != None :
 		print("Number of matches:\t%i\t(distinct: %i)" % (len(dist), len(dist_distinct)))
