@@ -21,7 +21,8 @@ import graph_tool.all as gt
 import math
 import louvain
 import colors
-from scipy.misc import imresize
+import pylab
+from scipy.misc import imresize, imread
 import Image
 from itertools import combinations, groupby, tee, product, combinations_with_replacement
 from sklearn import metrics
@@ -95,7 +96,7 @@ def compareKeypoints(im1, im2, pos1, pos2) :
 	pylab.ylim(im3.shape[0],0)
 
 
-def matchPoints(im1, im2, matches, dist = None, filename = None, max_dist = 10000) :
+def matchPoints(im1, im2, matches, dist = None, filename = None, max_dist = 100000) :
 	""" show a figure with lines joining the accepted matches in im1 and im2
 		input: im1,im2 (images as arrays), locs1,locs2 (location of features), 
 		matchscores (as output from 'match'). 
@@ -442,7 +443,7 @@ def trait_graph(tg, images) :
 			vertex_size=tg.vp["variance"])
 
 
-def draw_graph(g, clusters="orange", filename="graph.png") :
+def draw_graph(g, clusters="orange", filename="graph.png", size=(1000,1000)) :
 	""" Show a graph with its clustering marked
 	"""
 	# Get indices
@@ -456,8 +457,12 @@ def draw_graph(g, clusters="orange", filename="graph.png") :
 	pos = gt.sfdp_layout(g, eweight=weights)
 
 	# Print graph to file
-	gt.graph_draw(g, pos=pos, output_size=(1000, 1000), vertex_halo=True, vertex_halo_color=class_colors, vertex_color=clusters,
+	gt.graph_draw(g, pos=pos, output_size=size, vertex_halo=True, vertex_halo_color=class_colors, vertex_color=clusters,
 			   vertex_fill_color=clusters, vertex_size=5, edge_pen_width=weights, output=filename)
+
+	g_img = imread(filename)
+	pylab.imshow(g_img)
+
 
 
 def graph_partitions(g, clusters, filename="graph_clusters.png") :

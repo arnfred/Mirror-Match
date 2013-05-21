@@ -16,6 +16,7 @@ import isodata
 import features
 import louvain
 import weightMatrix
+import scoring
 from itertools import combinations
 
 
@@ -113,7 +114,7 @@ def cluster(weights, indices, split_limit = 10, prune_limit = 3, verbose = False
 
 
 
-def getPartitionMatches(partitions, weights, indices, min_edges = 1, min_coherence = -1.0) :
+def getPartitionMatches(partitions, weights, indices, min_edges = 1, min_coherence = -1.0, verbose = False, ks = None, homography = None) :
 
 	# index
 	index = numpy.arange(0, weights.shape[0])
@@ -132,11 +133,17 @@ def getPartitionMatches(partitions, weights, indices, min_edges = 1, min_coheren
 
 			# Get weights
 			pij_edges = weights[row_mask][:,col_mask]
+			c = getCoherence(partition_weights, partition_mask, indices, i, j)
+			nb_e = numpy.sum(pij_edges > 0)
 
-			if numpy.sum(pij_edges > 0) >= min_edges and min_coherence <= getCoherence(partition_weights, partition_mask, indices, i, j) :
+			if nb_e >= min_edges and min_coherence <= getCoherence(partition_weights, partition_mask, indices, i, j) :
 				
 				# Collect uniqueness per feature point
 				(m_i, m_j) = numpy.unravel_index(pij_edges.argmax(), pij_edges.shape)
+				if verbose : 
+					if ks != None : sd0,sd1 = scoring.getPartitionDeviation(partition_mask, (indices == i, indices == j), ks)
+					distance = matchDistance(ks[index_row[m_i]].pt, ks[index_col[m_j]].pt, homography)
+					print("%4i\tsd0: %.2f\tsd1: %.2f\tch: %.3f\tEdges: %i\tDistance: %.2f" % (p, sd0, sd1, c, nb_e, distance))
 				yield (index_row[m_i], index_col[m_j])
 
 
@@ -221,3 +228,16 @@ def modularity(weights, mask) :
 	fraction = (internal_sum / (K))
 	E_fraction = (external_sum / (K)) ** 2
 	return fraction - E_fraction
+
+
+
+def matchDistance(p1, p2, hom) :
+	""" Given a homography matrix and two points this function calculates
+	    the geometric distance between the first point transformed by the
+	    homography matrix and the second point
+	"""
+	m1to2 = hom.dot(numpy.array([p1[0], p1[1], 1]))
+	m2to1 = numpy.linalg.inv(hom).dot(numpy.array([p2[0], p2[1], 1]))
+	p2_n = m1to2[0:2]/m1to2[2]
+	p1_n = m2to1[0:2]/m2to1[2]
+	return numpy.linalg.norm(p2_n - p2) + numpy.linalg.norm(p1_n - p1)

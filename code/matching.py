@@ -57,7 +57,7 @@ def testMatch(paths, homography, match_fun, options = {}, verbose = True) :
 
 
 
-def folderMatch(directory, dt, match_fun) : 
+def folderMatch(directory, dt, match_fun, treshold, keypoint, descriptor) : 
 	# Load all files
 	def getImagePairs(directory) :
 		dir_path = "../../images/testsets/%s/" % directory
@@ -75,7 +75,7 @@ def folderMatch(directory, dt, match_fun) :
 	imagePairs = getImagePairs(directory)
 
 	# Get matches
-	matches_t, distances_t, distances_distinct_t = zip(*[match_fun(dt, p, h) for p, h in imagePairs])
+	matches_t, distances_t, distances_distinct_t = zip(*[match_fun(dt, p, h, treshold, keypoint, descriptor) for p, h in imagePairs])
 
 	accuracity = [(nb_correct_matches(d)+0.0001)/(float(len(d)+0.0001)) for d in distances_t]
 	
@@ -186,6 +186,9 @@ def standardMatch(paths, options = {}) :
 	jj, ss_j, uu_j = features.bfMatch(descriptor_type, ds[indices == 0], ds[indices == 1])
 	ii, ss_i, uu_i = features.bfMatch(descriptor_type, ds[indices == 1], ds[indices == 0])
 	#bfMatches = features.match("BRIEF", ds[ind == 0], ds[ind == 1])
+	
+	# Check that we have keypoints:
+	if ss_j == None or ss_i == None : return []
 
 	# Get matches in usual format
 	def matchFromIndex(i,j) :
@@ -311,8 +314,7 @@ def getDistinctMatches(matches, treshold = 5) :
 
 
 
-# Standard parameters for cluster match with BRIEF descriptors
-def clusterMatchBRIEF(distance_treshold, paths, homography) :
+def clusterMatchFun(distance_treshold, paths, homography, treshold, keypoint, descriptor) :
 	return testMatch(
 		paths, 
 		homography, 
@@ -321,32 +323,16 @@ def clusterMatchBRIEF(distance_treshold, paths, homography) :
 		options = {
 			"prune_fun" : weightMatrix.pruneTreshold, 
 			"prune_limit" : 3,
-			"min_coherence" : 0.02,
-			"split_limit" : 10,
-			"cluster_prune_limit" : 1.5,
-			"distance_treshold" : distance_treshold,
-			"descriptor_type" : "BRIEF",
-			"keypoint_type" : "ORB",
-		})
-
-def clusterMatchSIFT(distance_treshold, paths, homography) :
-	return testMatch(
-		paths, 
-		homography, 
-		clusterMatch,
-		verbose = False,
-		options = {
-			"prune_fun" : weightMatrix.pruneRows, 
-			"prune_limit" : 0.15,
-			"min_coherence" : 0.3,
+			"min_coherence" : treshold,
 			"split_limit" : 10000,
 			"cluster_prune_limit" : 1.5,
 			"distance_treshold" : distance_treshold,
-			"descriptor_type" : "SIFT",
-			"keypoint_type" : "SIFT",
+			"keypoint_type" : keypoint,
+			"descriptor_type" : descriptor,
 		})
 
-def uniqueMatchBRIEF(distance_treshold, paths, homography) :
+
+def uniqueMatchFun(distance_treshold, paths, homography, treshold, keypoint, descriptor) :
 	return testMatch(
 		paths,
 		homography, 
@@ -354,29 +340,14 @@ def uniqueMatchBRIEF(distance_treshold, paths, homography) :
 		verbose = False,
 		options = {
 			"match_limit" : 1000,
-			"unique_treshold": 0.8,
+			"unique_treshold": treshold,
 			"distance_treshold" : distance_treshold,
-			"descriptor_type" : "BRIEF",
-			"keypoint_type" : "ORB",
+			"keypoint_type" : keypoint,
+			"descriptor_type" : descriptor,
 		})
 
 
-def uniqueMatchSIFT(distance_treshold, paths, homography) :
-	return testMatch(
-		paths,
-		homography, 
-		standardMatch,
-		verbose = False,
-		options = {
-			"match_limit" : 1000,
-			"unique_treshold": 0.6,
-			"distance_treshold" : distance_treshold,
-			"descriptor_type" : "SIFT",
-			"keypoint_type" : "SIFT",
-		})
-
-
-def bothMatchSIFT(distance_treshold, paths, homography) :
+def bothMatchFun(distance_treshold, paths, homography, treshold, keypoint, descriptor) :
 	return testMatch(
 		paths,
 		homography, 
@@ -384,23 +355,8 @@ def bothMatchSIFT(distance_treshold, paths, homography) :
 		verbose = False,
 		options = {
 			"match_limit" : 1000,
-			"unique_treshold": 0.64,
+			"unique_treshold": treshold,
 			"distance_treshold" : distance_treshold,
-			"descriptor_type" : "SIFT",
-			"keypoint_type" : "SIFT",
-		})
-
-
-def bothMatchBRIEF(distance_treshold, paths, homography) :
-	return testMatch(
-		paths,
-		homography, 
-		bothMatch,
-		verbose = False,
-		options = {
-			"match_limit" : 1000,
-			"unique_treshold": 0.95,
-			"distance_treshold" : distance_treshold,
-			"descriptor_type" : "BRIEF",
-			"keypoint_type" : "ORB",
+			"keypoint_type" : keypoint,
+			"descriptor_type" : descriptor,
 		})
