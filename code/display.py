@@ -241,6 +241,17 @@ def scoreNormHist(resultMat, labels) :
 	removeDecoration()
 
 
+def accuHist(accu_list, labels, colors = ["blue", "cyan", "green", "orange", "red"], ylim = 100) :
+	n = len(accu_list)
+	pylab.figure(figsize=(10, 3))
+	for i,(a,l,c) in enumerate(zip(accu_list, labels, colors)) :
+		pylab.subplot(1,n,(i+1))
+		pylab.hist(a, bins=20, label=l, color=c, alpha=0.65)
+		pylab.legend()
+		pylab.xlim(0,1.01)
+		pylab.ylim(0,ylim)
+		removeDecoration()
+
 
 def distHist(dist, dist_treshold = 5, dist_distinct = None, accuracity = None, accu_y_lim = 100) :
 
@@ -253,7 +264,7 @@ def distHist(dist, dist_treshold = 5, dist_distinct = None, accuracity = None, a
 		distinct_under_treshold = [d for d in dist_distinct if d <= dist_treshold]
 		distinct_p = float(len(distinct_under_treshold)) / float(len(dist_distinct))
 
-	pylab.figure(figsize=(10, 5))
+	pylab.figure(figsize=(10, 3))
 
 	pylab.subplot(1,plots,1)
 	pylab.hist(dist, bins=20, label="Distances", color="blue", alpha=0.65)
