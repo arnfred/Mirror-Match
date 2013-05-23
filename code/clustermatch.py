@@ -1,8 +1,7 @@
 """
-Python module for matching two images using louvain match
-points by geometry
+Python module for matching two images using proposed algorithm. This is an improved version of louvainmatch
 
-Jonas Toft Arnfred, 2013-04-25
+Jonas Toft Arnfred, 2013-05-22
 """
 
 ####################################
@@ -36,23 +35,21 @@ dist_fun_map = {
 ####################################
 
 
-def match(paths, options = {}) : 
+def match(paths, tresholds, options = {}) : 
 	
 	# Get parameters
 	prune_fun = options.get("prune_fun", weightMatrix.pruneTreshold)
-	prune_limit = options.get("prune_limit", 3)
-	min_edges = options.get("min_edges", 1)
-	min_coherence = options.get("min_coherence", -1.0)
-	keypoint_type = options.get("keypoint_type", "ORB")
-	descriptor_type = options.get("descriptor_type", "BRIEF")
+	prune_limit = options.get("prune_limit", 2.5)
+	keypoint_type = options.get("keypoint_type", "SIFT")
+	descriptor_type = options.get("descriptor_type", "SIFT")
 	verbose = options.get("verbose", False)
-	split_limit = options.get("split_limit", 999999)
+	split_limit = options.get("split_limit", 50)
 	cluster_prune_limit = options.get("cluster_prune_limit", 1.5)
 
 	# Get all feature points
 	indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint_type, descriptor_type = descriptor_type)
 
-	# Calculate weight matrix (hamming distances)
+	# Calculate weight matrix
 	weights = weightMatrix.init(ds, descriptor_type)
 
 	# Get cluster weights
@@ -62,13 +59,32 @@ def match(paths, options = {}) :
 	partitions = cluster(cluster_weights, indices, split_limit = split_limit, prune_limit = cluster_prune_limit, verbose=verbose)
 	if verbose : print("%i partitions" % len(set(partitions)))
 
-	# Get matches
-	matches = getPartitionMatches(partitions, cluster_weights, indices, min_edges, min_coherence)
+	# For each treshold, get partition matches
+	p = lambda t : getPartitionMatches(partitions, cluster_weights, weights, indices, t)
+	match_set = [p(t) for t in tresholds]
 
-	# Get find their positions
-	matchPos = [getMatchPosition(m_i, m_j, ks) for (m_i,m_j) in matches]
+	# Get positions
+	get_pos = lambda (m_i, m_j) : getMatchPosition(m_i, m_j, ks)
+	match_pos_set = [map(get_pos, ms) for ms in match_set]
+	
+	return match_pos_set
 
-	return matchPos
+
+
+def getMatches(m, ind, treshold) :
+
+	def getMaxMatch(m) :
+		for i,row in enumerate(m) :
+			s = numpy.argsort(row)
+			u = row[s[-2]] / row[s[-1]]
+			if u < treshold : yield (i,s[-1])
+	
+	# Get best matches for rows and columns
+	matches = list(getMaxMatch(m))
+	
+	# Check that matches are both ways
+	matches = [(i,m) for i,m in matches if (m,i) in matches and ind[i] == 0 and ind[m] != 0]
+	return matches
 
 
 
@@ -113,8 +129,7 @@ def cluster(weights, indices, split_limit = 10, prune_limit = 3, verbose = False
 	return partitions
 
 
-
-def getPartitionMatches(partitions, weights, indices, min_edges = 1, min_coherence = -1.0, verbose = False, ks = None, homography = None) :
+def getPartitionMatches(partitions, weights, full_weights, indices, treshold, verbose = False, ks = None, homography = None) :
 
 	# index
 	index = numpy.arange(0, weights.shape[0])
@@ -126,25 +141,51 @@ def getPartitionMatches(partitions, weights, indices, min_edges = 1, min_coheren
 		for i,j in combinations(set(indices),2) :
 
 			# Set up masks
-			row_mask = partition_mask & (indices == i)
-			col_mask = partition_mask & (indices == j)
-			index_row = index[row_mask]
-			index_col = index[col_mask]
+			mask_row = partition_mask & (indices == i)
+			mask_col = partition_mask & (indices == j)
+			mask_both = mask_row | mask_col
+			index_row = index[mask_row]
+			index_col = index[mask_col]
+			index_both = index[mask_row | mask_col]
 
 			# Get weights
-			pij_edges = weights[row_mask][:,col_mask]
-			c = getCoherence(partition_weights, partition_mask, indices, i, j)
+			pij_edges = weights[mask_row][:,mask_col]
+			pij_edges_both = weights[mask_both][:,mask_both]
 			nb_e = numpy.sum(pij_edges > 0)
 
-			if nb_e >= min_edges and min_coherence <= getCoherence(partition_weights, partition_mask, indices, i, j) :
-				
-				# Collect uniqueness per feature point
+			# If the cluster as only one edge going from one image to the other
+			if nb_e == 1 :
+				# Get weight
 				(m_i, m_j) = numpy.unravel_index(pij_edges.argmax(), pij_edges.shape)
-				if verbose : 
-					if ks != None : sd0,sd1 = scoring.getPartitionDeviation(partition_mask, (indices == i, indices == j), ks)
-					distance = matchDistance(ks[index_row[m_i]].pt, ks[index_col[m_j]].pt, homography)
-					print("%4i\tsd0: %.2f\tsd1: %.2f\tch: %.3f\tEdges: %i\tDistance: %.2f" % (p, sd0, sd1, c, nb_e, distance))
-				yield (index_row[m_i], index_col[m_j])
+				w = pij_edges[m_i, m_j]
+				
+				# Get second largest row and col weight
+				sort_row = numpy.sort(full_weights[index_row[m_i],:])
+				sort_col = numpy.sort(full_weights[:,index_col[m_j]])
+				
+				# Test if the maximum match is the both for row and col
+				bothways_p = sort_row[-1] == sort_col[-1]
+				ratio_row = sort_row[-2] / w
+				ratio_col = sort_col[-2] / w
+
+				if bothways_p and (ratio_row < treshold and ratio_col < treshold) :
+					(p_i, p_j) = (index_row[m_i], index_col[m_j])
+					if verbose : 
+						distance = matchDistance(ks[p_i].pt, ks[p_j].pt, homography)
+						print("%4i\tEdges: %i\tDistance: %.2f" % (p, nb_e, distance))
+					yield (p_i, p_j)
+
+			# If there are several edges
+			elif nb_e >= 2 :
+
+				# Collect matches and check if they are beyond treshold
+				matches = getMatches(pij_edges_both, indices[mask_both], treshold)
+				for m_i,m in matches :
+					(p_i, p_j) = (index_both[m_i], index_both[m])
+					if verbose :
+						distance = matchDistance(ks[p_i].pt, ks[p_j].pt, homography)
+						print("%4i\tch: %.3f\tEdges: %i\tDistance: %.2f" % (p, c, nb_e, distance))
+					yield (p_i, p_j)
 
 
 def getCoherence(partition_weights, partition_mask, indices, i, j) :

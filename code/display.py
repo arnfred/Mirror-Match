@@ -253,6 +253,24 @@ def accuHist(accu_list, labels, colors = ["blue", "cyan", "green", "orange", "re
 		removeDecoration()
 
 
+def accuDetail(correct, total, legend, ylim = 100, index=0) :
+	for c,t,l in zip(correct, total, legend) :
+		print("%s:\t%i of %i\t(%.2f%%)" % (l, sum(c[index]), sum(t[index]), sum(c[index])/float(sum(t[index]))))        
+	get_accu = lambda ts,cs : [1 if t == 0 else c/float(t) for t,c in zip(ts[index], cs[index])]
+	accu = [get_accu(ts, cs) for ts,cs in zip(total, correct)]
+	accuHist(accu, legend, ylim=ylim)
+
+
+def accuPlot(correct, total, legends) :
+	for ts,cs,l,color in zip(total, correct, legends, ["blue", "cyan", "green", "orange", "red"]) :
+		xs = [sum(c) for c in cs]
+		ys = [1 if sum(t) == 0 else sum(c)/float(sum(t)) for (c, t) in zip(cs, ts)]
+		pylab.plot(xs, ys, '-', label=l, color=color, alpha=0.65)
+		pylab.legend()
+	removeDecoration()
+	pylab.ylim(0.1,1.01)
+
+
 def distHist(dist, dist_treshold = 5, dist_distinct = None, accuracity = None, accu_y_lim = 100) :
 
 	plots = 2 if accuracity == None else 3
@@ -290,8 +308,9 @@ def distHist(dist, dist_treshold = 5, dist_distinct = None, accuracity = None, a
 		print("Correct matches:\t%i\t(distinct: %i)\t\t[under %ipx error]" % (len(dist_under_treshold), len(distinct_under_treshold), dist_treshold) )
 		print("Success Rate:\t\t%.2f%%\t(distinct: %.2f%%)" % (dist_p*100, distinct_p*100))
 	else :
-		print("Number of matches: %i" % len(dist))
-		print("Under %ipx error: %.2f%%" % (dist_treshold, dist_p*100))
+		print("Number of matches:\t%i" % len(dist))
+		print("Correct matches:\t%i\t[under %ipx error]" % (len(dist_under_treshold), dist_treshold) )
+		print("Under %ipx error:\t%.2f%%" % (dist_treshold, dist_p*100))
 
 
 
@@ -428,11 +447,12 @@ def showPartitions(points, partitioning, image = None) :
 	else :
 		pylab.xlim(0,max_y*1.1)
 		pylab.ylim(0,max_x*1.1)
-		  
+
 	for pos,p in zip(points, partitioning) :
 		pylab.plot(pos[0], pos[1], color=cs[p], marker='o')
-		
+
 	removeDecoration()
+
 
 
 ####################################
@@ -440,7 +460,6 @@ def showPartitions(points, partitioning, image = None) :
 #            Clusters              #
 #                                  #
 ####################################
-
 
 
 

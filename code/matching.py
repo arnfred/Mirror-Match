@@ -16,7 +16,8 @@ Jonas Toft Arnfred, 2013-04-22
 
 import numpy
 import isomatch
-import louvainmatch
+import clustermatch
+import mirrormatch
 import features
 import weightMatrix
 import display
@@ -25,6 +26,7 @@ import fnmatch
 import os
 import re
 import itertools
+import random
 
 
 
@@ -35,35 +37,34 @@ import itertools
 ####################################
 
 
-def testMatch(paths, homography, match_fun, options = {}, verbose = True) :
+def testMatch(paths, homography, match_fun, options = {}, verbose = False) :
 
 	distinct_treshold = options.get("distinct_treshold", 5)
 	distance_treshold = options.get("distance_treshold", 5)
+	tresholds = options["tresholds"]
 
-	# Get matches
-	matches = match_fun(paths, options)
-
-	# Get distinct matches
-	matches_distinct = getDistinctMatches(matches, distinct_treshold)
+	# Get matches over tresholds
+	match_pos_set = match_fun(paths, tresholds, options)
 
 	# Get distances
-	dist = [matchDistance(m1,m2,homography) for (m1,m2) in matches]
-	dist_distinct = [matchDistance(m1,m2,homography) for (m1,m2) in matches_distinct]
+	getDist = lambda ms : [matchDistance(m1,m2,homography) for (m1,m2) in ms]
+	match_dist_set = [getDist(ms) for ms in match_pos_set]
 
-	# Display result
-	if verbose : display.distHist(dist, distance_treshold, dist_distinct)
+	if len(tresholds) == 1 and verbose :
+		display.distHist(match_dist_set[0], distance_treshold)
 
-	return matches, dist, dist_distinct
+	return match_dist_set
 
 
+# Load all files
+def getImagePairs(directory) :
+	dir_path = "../../images/testsets/%s/" % directory
+	pairs = [dir_path + p for p in os.listdir(dir_path) if len(p) <= 6]
+	homographies = [getHomography(p) for p in pairs]
+	return [([p + "_1.jpg", p + "_2.jpg"], h) for (p,h) in zip(pairs, homographies)]
 
-def folderMatch(directory, dt, match_fun, treshold, keypoint, descriptor) : 
-	# Load all files
-	def getImagePairs(directory) :
-		dir_path = "../../images/testsets/%s/" % directory
-		pairs = [dir_path + p for p in os.listdir(dir_path) if len(p) <= 6]
-		homographies = [getHomography(p) for p in pairs]
-		return [([p + "_1.jpg", p + "_2.jpg"], h) for (p,h) in zip(pairs, homographies)]
+
+def folderMatch(directory, dt, match_fun, tresholds, keypoint, descriptor) : 
 
 	def flatten(l) :
 		return list(itertools.chain.from_iterable(l))
@@ -74,24 +75,30 @@ def folderMatch(directory, dt, match_fun, treshold, keypoint, descriptor) :
 	# Get image pairs of folder
 	imagePairs = getImagePairs(directory)
 
-	# Get matches
-	matches_t, distances_t, distances_distinct_t = zip(*[match_fun(dt, p, h, treshold, keypoint, descriptor) for p, h in imagePairs])
+	# Get a set of matches varied over image pairs (matrix of size N x T where N
+	# is amount of image pairs and T is the amount of tresholds. Each element in
+	# the matrix is a zipped list of matches and distances
+	match_sets = numpy.array([match_fun(dt, p, h, tresholds, keypoint, descriptor) for p, h in imagePairs]).T
 
-	accuracity = [(nb_correct_matches(d)+0.0001)/(float(len(d)+0.0001)) for d in distances_t]
-	
-	# matches is a list of lists, so we flatten it
-	distances = flatten(distances_t)
-	distances_distinct = flatten(distances_distinct_t)
-	
-	# display result
-	#pylab.subplot(1,2,2)
-	display.distHist(distances, dt, distances_distinct, accuracity)
-	
-	return accuracity
+	# Now collect an x axis with nb correct matches per treshold
+	get_correct_matches = lambda match_row : [nb_correct_matches(d) for d in match_row]
+	nb_correct_set = [get_correct_matches(row) for row in match_sets]
+
+	# Now collect an x axis with nb correct matches per treshold
+	get_total = lambda match_row : [len(d) for d in match_row]
+	nb_total_set = [get_total(row) for row in match_sets]
+
+	return nb_correct_set, nb_total_set
 
 
 def getHomography(hom_path) :
 	return numpy.array([map(lambda s : float(s.strip()), line.strip().split()) for i,line in enumerate(open(hom_path)) if i < 3])
+
+
+def getTestsetPaths(collection, index = None) :
+	pairs = getImagePairs(collection)
+	if index == None : return random.choice(pairs)
+	else : return pairs[index]
 
 
 
@@ -151,33 +158,10 @@ def getACRPaths(orig_id = None, compare_id = 2, img_type = "graf") :
 
 
 
-def clusterMatch(paths, options = {}) :
-	ms = louvainmatch.match(paths, options)
-	prune = options.get("prune", False)
-	if prune :
-		return pruneMatches(ms)
-	else :
-		return ms
+def standardMatch(paths, tresholds, options = {}) :
 
-
-
-def isodataMatch(paths, options = {}) :
-	ms =  isomatch.match(paths, options)
-	prune = options.get("prune", False)
-	if prune :
-		return pruneMatches(ms)
-	else :
-		return ms
-
-
-
-def standardMatch(paths, options = {}) :
-
-	match_limit			= options.get("match_limit", 500)
-	unique_treshold		= options.get("unique_treshold", 1.0)
 	keypoint_type		= options.get("keypoint_type", "ORB")
 	descriptor_type		= options.get("descriptor_type", "BRIEF")
-	prune 				= options.get("prune", False)
 
 	# Get all feature points
 	indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint_type, descriptor_type = descriptor_type)
@@ -197,62 +181,14 @@ def standardMatch(paths, options = {}) :
 	# See if matches go both ways
 	bothways = [(i,j) for i,j in enumerate(jj) if ii[j] == i]
 
-	match_score = [(matchFromIndex(i,j),ss_j[i],uu_j[i]) for i,j in bothways if uu_j[i] < unique_treshold]
+	# Now for each treshold test the uniqueness of the matches
+	p = lambda t : [matchFromIndex(i,j) for i,j in bothways if uu_j[i] < t] 
+	match_set = [p(t) for t in tresholds]
 
-	# Return empty list if there weren't any matches
-	if len(match_score) == 0 : return []
-
-	matches, scores, uniques = zip(*match_score)
-
-	# Take only the n best
-	top_n = numpy.argsort(scores)[0:match_limit]
-	matches_top = numpy.array(matches)[top_n]
-
-	if prune :
-		return pruneMatches(matches_top)
-	else :
-		return matches_top
+	return match_set
 
 
 
-def bothMatch(paths, options = {}) :
-
-	# Returns the position of a match
-	def matchPos(i,j) :
-		return (features.getPosition(ks[i]), features.getPosition(ks[j]))
-	
-	# Get options
-	match_limit			= options.get("match_limit", 500)
-	unique_treshold		= options.get("unique_treshold", 1.0)
-	keypoint_type		  = options.get("keypoint_type", "ORB")
-	descriptor_type		= options.get("descriptor_type", "BRIEF")
-	prune 				 = options.get("prune", False)
-
-	# Get all feature points
-	indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint_type, descriptor_type = descriptor_type)
-
-	# Use cv2's matcher to get matching feature points
-	jj,ss,uu = features.bfMatch(descriptor_type, ds, ds, match_same=True)
-	
-	# See if matches go both ways
-	bothways = [(i,j) for i,j in enumerate(jj) if indices[i] == 0 and indices[j] == 1 and jj[j] == i]
-
-	match_score = [(matchPos(i,j),ss[i],uu[i]) for i,j in bothways if uu[i] < unique_treshold]
-
-	# Return empty list if there weren't any matches
-	if len(match_score) == 0 : return []
-
-	# unpack
-	matches, scores, uniques = zip(*match_score)
-	
-	# Take only the n best
-	top_n = numpy.argsort(scores)[0:match_limit]
-	matches_top = numpy.array(matches)[top_n]
-
-	if prune :
-		return pruneMatches(matches_top)
-	else :
-		return matches_top
 
 
 
@@ -314,17 +250,18 @@ def getDistinctMatches(matches, treshold = 5) :
 
 
 
-def clusterMatchFun(distance_treshold, paths, homography, treshold, keypoint, descriptor) :
+def clusterMatch(distance_treshold, paths, homography, tresholds, keypoint, descriptor) :
 	return testMatch(
 		paths, 
 		homography, 
-		clusterMatch,
+		clustermatch.match,
 		verbose = False,
 		options = {
 			"prune_fun" : weightMatrix.pruneTreshold, 
-			"prune_limit" : 3,
-			"min_coherence" : treshold,
-			"split_limit" : 10000,
+			"prune_limit" : 2.5,
+			"min_coherence" : 0.0,
+			"tresholds" : tresholds,
+			"split_limit" : 50,
 			"cluster_prune_limit" : 1.5,
 			"distance_treshold" : distance_treshold,
 			"keypoint_type" : keypoint,
@@ -332,30 +269,28 @@ def clusterMatchFun(distance_treshold, paths, homography, treshold, keypoint, de
 		})
 
 
-def uniqueMatchFun(distance_treshold, paths, homography, treshold, keypoint, descriptor) :
+def uniqueMatch(distance_treshold, paths, homography, tresholds, keypoint, descriptor) :
 	return testMatch(
 		paths,
 		homography, 
 		standardMatch,
 		verbose = False,
 		options = {
-			"match_limit" : 1000,
-			"unique_treshold": treshold,
+			"tresholds" : tresholds,
 			"distance_treshold" : distance_treshold,
 			"keypoint_type" : keypoint,
 			"descriptor_type" : descriptor,
 		})
 
 
-def bothMatchFun(distance_treshold, paths, homography, treshold, keypoint, descriptor) :
+def mirrorMatch(distance_treshold, paths, homography, tresholds, keypoint, descriptor) :
 	return testMatch(
 		paths,
 		homography, 
-		bothMatch,
+		mirrormatch.match,
 		verbose = False,
 		options = {
-			"match_limit" : 1000,
-			"unique_treshold": treshold,
+			"tresholds" : tresholds,
 			"distance_treshold" : distance_treshold,
 			"keypoint_type" : keypoint,
 			"descriptor_type" : descriptor,
