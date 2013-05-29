@@ -48,7 +48,7 @@ example an angular and distance constraint between matches as considered
 by \cite{kim2008efficient} performs well in situations where no camera 
 rotation occurs between the two images but will likely fail in other 
 cases. Various scenarios have been proposed to improve on this simple 
-assumption, such as epipolar constraints (\cite{torr2000mlesac}, 
+assumption such as epipolar constraints (\cite{torr2000mlesac}, 
 \cite{chum2005matching}) and pairwise constraints 
 (\cite{choi2009robust}, \cite{leordenanu2005spectral}). The Epipolar 
 constraint carries the assumption that the two images matched are 
@@ -68,7 +68,16 @@ proposed in \cite{choi2009robust} and \cite{leordeanu2005spectral}.
 This approach provides more robustness because assumptions that might 
 not be true globally often still holds on a local level.
 
-A similar approach is to pick out different zones in each image and 
+Another approach proposed in the literature is to pick out different 
+zones in each image and find a pairing of zones where feature points are 
+only matched within the same zone. \cite{das2008event} proposes 
+clustering the feature points using their geometric position and 
+matching only feature points between groups that have a certain amount 
+of matchings between them. A more sophisticated approach is introduced 
+in \cite{wu2011robust} where the zones are created by surrounding MSER 
+feature points by an ellipse and grouping the SIFT or SURF feature 
+points that fall within the ellipse together. These points can then be 
+matched according to epipolar constraints.
 
 In practice there are many situations where using the geometry of the 
 image to filter correspondences is not possible. This situation most 
@@ -83,7 +92,9 @@ of the geometric matching will be both faster and more accurate. Finally
 some use cases might require a performance that can't be achieved by a 
 more complex geometric method where simple non geometric methods might 
 be able to provide additional matching accuracy with a smaller 
-performance penalty.
+performance penalty. This approach is inspired by \cite{wu2009bundling} 
+where bundling of feature points was used to enhance the search results 
+in large scale partial-duplicate web image search.
 
 There are a relatively small number of algorithms proposed to solve the 
 matching problem without involving geometric constraints. Traditionally 
@@ -99,7 +110,7 @@ correspondences that are distinctly matched across the two images. In
 the book Multiple View Geometry \cite[p.  114]{multipleView}, the gold 
 standard algorithm is introduced which ranks correspondences by 
 similarity and further filters them by making sure that the map of 
-matches is reflective, i.e. that for every feature point $f_i$ matching 
+matches is symmetric, i.e. that for every feature point $f_i$ matching 
 $f_j$ we also have that $f_j$ matches $f_i$.
 
 In turn the two methods proposed in this report are inspired by a simple 
@@ -114,82 +125,60 @@ other geometric solutions when appropriate.
 Based on this idea the two proposed methods find reliable matches as 
 follows:
 \begin{itemize}
-\item{\emph{Mirror Match}: Take any traditional way of matching feature 
-but extend it to match any given feature with the combined set of 
-features from both images, filtering out all matches that are within the 
-same image.}
-\item{\emph{Cluster Match}: Take the combined set of feature points from 
-both images and cluster these points according to their
-descriptors. Given a resulting partition of points, no matches are 
+\item{\emph{Mirror Match}: Match features using the gold standard 
+algorithm\cite[p. 114]{multipleView} ranked by similarity and thresheld 
+by uniqueness\cite{lowe2004sift}. However instead of matching features 
+from one image with features in another, we match every feature with all 
+other features of the two images combined. Only matches from one image 
+to the other are returned.}
+\item{\emph{Mirror Match with Clustering}: Take the combined set of 
+feature points from both images and cluster these points according to 
+their descriptors. Given a resulting partition of points, no matches are 
 returned if it contains only feature points from one image. If the 
 partition contains points from both images, \emph{Mirror Match} is used 
 to find the best matches within the partition.
 \end{itemize}
-The 
+
+Matching feature points against the entire set of points from both 
+images ensures that the distinctiveness of a returned correspondence is 
+higher. In almost all cases\footnote{Exceptions would include cases 
+where we want to find all particular points in a pattern and other use 
+cases where the correspondence isn't assumed to be unique}, a good match 
+between two images is unambiguous in the sense that there are no other 
+equally (or almost equally) good potential matches to the same point.  
+This is the key insight behind the algorithm presented by Lowe in 
+\cite{lowe2004sift}. However the implication doesn't follow the other 
+way around. In the case that a feature point don't have any actual 
+correspondence in the other image, there is no guarantee that this 
+feature point might not still be uniquely matched to a feature point in 
+the other image. The issue is particularly pronounced if we compare two 
+images that don't correspond. For any proposed correspondence it is 
+entirely probable that this correspondence is unique even if it isn't 
+correct. With Mirror Match this ambiguity is avoided by incorporating 
+the feature points of both images when a match is made. When the two 
+images have nothing to do with each other, chances are that a feature 
+point will match better with another feature point from the same image 
+in which case it is easily discarded.
+
+Often images will contain repetitive patterns that are difficult to 
+match\footnote{In fact this particular problem has been given attention 
+before by for example \cite{fan2011towards}} because the feature points 
+covering these patterns will look very similar. If we threshold by 
+uniqueness like in Mirror Match this means that these points will often 
+be discarded even if they might have good correspondences. To solve this 
+problem the enhanced Mirror Match with Clustering makes it possible to 
+look at groups of similar feature points one at a time and within each 
+group finding the best matches. This is done by taking the set of 
+feature points from both images and clustering. The resulting partitions 
+will each contain feature points that are similar to each other. In some 
+cases the clustering will end up grouping feature points of only one 
+image together which can then easily be discarded in the matching 
+process. In other cases partitions will contain feature points from both 
+images that can then be matched using Mirror Match but with lower 
+thresholds.
 
 
 
-%Given two sets of feature points, $A$ and $B$ corresponding to two 
-%images $i_A$ and $i_B$, and a feature point $f_A^i$ in set $A$ is more 
-%closely related to one or more other feature points in set $A$ than 
-%feature points in set $B$ then the potential matches between $f_A^i$ 
-%and feature points in $B$ is deemed \emph{unreliable}.
-
- This approach was originally introduced with the SIFT features and has 
-been used since then in computer vision applications such as scene 
-recognition\footnote{See for example chapter 4.1.3 of \cite[pp.  
-226]{szeliski2010}} and image alignment\footnote{An example is the gold 
-standard algorithm in \cite[p.  114]{multipleView}}.  In larger scale 
-approaches where an image is compared with thousands or millions of 
-other images, the feature points are usually indexed in a dictionary of 
-visual words instead. This approach makes it possible to quickly 
-retrieve matches in a large set of potential candidates, but the 
-performance is restricted by how discriminative the individual feature 
-points are. To agument the descriminative power of the feature points, 
-\cite{wu2009bundling} proposes grouping the features and use the 
-geometrical relationships between members of a group when matching two 
-feature points. Similarly \cite{das2008event} use geometrical 
-information about the feature points to cluster them before doing scene 
-matching resulting in better matches.
-
-Both methods suffer from two shortcomings. Firstly we have that any 
-defined group in one image might not correspond to a group in another 
-image.  This means that we might end up in a situation where a good 
-match between two images is scored low because most of it's geometric 
-neighbors are in an adjecent group. Secondly if we intent to match the 
-different groups as in \cite{wu2009bundling} we might end up matching 
-two mismatching groups. To improve geometric matching I propose pooling 
-the keypoints from two images into one set and partitioning them into 
-groups together.  The advantages of this approach is that groups are 
-consistent across images, and that keypoints from one image that don't 
-have equivalents in the other image will simply be grouped in their own 
-group which can easily be discarded during the matching. This is 
-important for scene recognition where people might obscure details in 
-the picture. In addition the proposed method generalizes to three or 
-more images.  This makes it possible to easily assemble a set of 
-partially overlapping pictures without any required knowledge of their 
-position.  What's more, if one of the pictures is not part of the set, 
-the features of the odd image out will not form clusters with the 
-features of the other images and automatically be sorted out. 
-
-\section{Literature review}
-
-Since the introduction of the SIFT features\cite{lowe2004sift}, 
-collecting feature points from an image and using the descriptors to 
-match images have been used in a plethora of different applications. The 
-development of feature points have not been standing still since Lowe 
-introduced the SIFT feature back in 2004. Various modifications and 
-improments both to how features are collected and how features are best 
-described have been suggested since then. In locating feature points in 
-an image the focus 
-
-
-To cluster similar parts in the images in to partitions we need to 
-describe these points in a way which is invariant (or close to 
-invariant) to changes in light, image quality, size, as well as 
-geometric transformations due to change in the camera position.
-
-TODO!!!! A lot more needs to be written here ...
 
 \subsection{Graph Clustering}
 
@@ -204,7 +193,7 @@ weight equal to the distance between the two corresponding keypoints.
 
 This representation reduces the problem of partitioning the keypoints 
 into groups reduces the problem to that of graph clustering or community 
-structure depending on the context. In the litterature there are various 
+structure depending on the context. In the literature there are various 
 ways of clustering a graph according to different measures of what 
 constitutes an optimal partitioning. Traditionally the most used 
 clustering algorithms have been K-means and spectral clustering, but in 
