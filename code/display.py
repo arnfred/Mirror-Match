@@ -24,7 +24,7 @@ import colors
 import pylab
 from scipy.misc import imresize, imread
 import Image
-from itertools import combinations, groupby, tee, product, combinations_with_replacement
+from itertools import combinations, groupby, tee, product, combinations_with_replacement, dropwhile
 from sklearn import metrics
 
 
@@ -96,7 +96,7 @@ def compareKeypoints(im1, im2, pos1, pos2) :
 	pylab.ylim(im3.shape[0],0)
 
 
-def matchPoints(im1, im2, matches, dist = None, filename = None, max_dist = 100000) :
+def matchPoints(im1, im2, matches, dist = None, filename = None, max_dist = 100) :
 	""" show a figure with lines joining the accepted matches in im1 and im2
 		input: im1,im2 (images as arrays), locs1,locs2 (location of features), 
 		matchscores (as output from 'match'). 
@@ -253,22 +253,27 @@ def accuHist(accu_list, labels, colors = ["blue", "cyan", "green", "orange", "re
 		removeDecoration()
 
 
-def accuDetail(correct, total, legend, ylim = 100, index=0) :
-	for c,t,l in zip(correct, total, legend) :
-		print("%s:\t%i of %i\t(%.2f%%)" % (l, sum(c[index]), sum(t[index]), sum(c[index])/float(sum(t[index]))))        
-	get_accu = lambda ts,cs : [1 if t == 0 else c/float(t) for t,c in zip(ts[index], cs[index])]
-	accu = [get_accu(ts, cs) for ts,cs in zip(total, correct)]
+def accuDetail(correct, total, legend, ylim = 100, treshold=1000) :
+	get_index = lambda cs : list(dropwhile(lambda (i,c) : sum(c) < treshold,enumerate(cs)))[0][0]
+	indices = [get_index(cs) for cs in correct]
+	print(indices)
+	
+	for c,t,l,i in zip(correct, total, legend, indices) :
+		print("%s:\t%i of %i\t(%.2f%%)" % (l, sum(c[i]), sum(t[i]), 100*sum(c[i])/float(sum(t[i]))))
+		
+	get_accu = lambda ts,cs,index : [1 if t == 0 else c/float(t) for t,c in zip(ts[index], cs[index])]
+	accu = [get_accu(ts, cs, index) for ts,cs,index in zip(total, correct, indices)]
 	accuHist(accu, legend, ylim=ylim)
 
 
-def accuPlot(correct, total, legends) :
+def accuPlot(correct, total, legends, ylim=0.0) :
 	for ts,cs,l,color in zip(total, correct, legends, ["blue", "cyan", "green", "orange", "red"]) :
 		xs = [sum(c) for c in cs]
 		ys = [1 if sum(t) == 0 else sum(c)/float(sum(t)) for (c, t) in zip(cs, ts)]
 		pylab.plot(xs, ys, '-', label=l, color=color, alpha=0.65)
-		pylab.legend()
+		pylab.legend(loc="best")
 	removeDecoration()
-	pylab.ylim(0.1,1.01)
+	pylab.ylim(ylim,1.01)
 
 
 def distHist(dist, dist_treshold = 5, dist_distinct = None, accuracity = None, accu_y_lim = 100) :

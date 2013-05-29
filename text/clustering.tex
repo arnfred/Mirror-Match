@@ -21,26 +21,136 @@
 % TODO!
 \end{abstract}
 
-\section{Project description}
+\section{Introduction}
 
-Traditionally the feature points of two images have been matched by 
-comparing the feature points individually and finding the best matches 
-based on their distance. This approach was originally introduced with 
-the SIFT features \cite{lowe2004sift} and has been used since then in 
-computer vision applications such as scene recognition\footnote{See for 
-example chapter 4.1.3 of \cite[pp. 226]{szeliski2010}} and image 
-alignment\footnote{An example is the gold standard algorithm in \cite[p.  
-114]{multipleView}}. In larger scale approaches where an image is 
-compared with thousands or millions of other images, the feature points 
-are usually indexed in a dictionary of visual words instead. This 
-approach makes it possible to quickly retrieve matches in a large set of 
-potential candidates, but the performance is restricted by how 
-discriminative the individual feature points are. To agument the 
-descriminative power of the feature points, \cite{wu2009bundling} 
-proposes grouping the features and use the geometrical relationships 
-between members of a group when matching two feature points. Similarly 
-\cite{das2008event} use geometrical information about the feature points 
-to cluster them before doing scene matching resulting in better matches.
+Since the introduction of feature points, several methods for matching 
+them across images have been proposed in order to maximize the amount of 
+correct matches. In this part of the project I introduce two methods to 
+reliably match feature points. The word 'reliable' covers that matches 
+only are returned if they are judged as sound. That is, matches should 
+only be returned if there are objects or scenes that appear in both 
+images.
+
+When matching feature points between two images we are often faced with 
+a dilemma between making the feature descriptor more discriminative to 
+make sure only correct matches are made, and making it less 
+discriminative to increase the robustness of the descriptor over 
+different changes such as illumination, perspective and image quality.  
+Any feature type aiming for robustness will have cases where it isn't 
+possible to generate reliable matches if we only look at the pairwise 
+correspondence of the descriptors. 
+
+To get around this limitation several methods have been proposed in the 
+literature. One of the most fruitful approaches have been to look at the 
+geometric configuration of the feature points and match them with 
+respect to assumptions concerning the variance between images. For 
+example an angular and distance constraint between matches as considered 
+by \cite{kim2008efficient} performs well in situations where no camera 
+rotation occurs between the two images but will likely fail in other 
+cases. Various scenarios have been proposed to improve on this simple 
+assumption, such as epipolar constraints (\cite{torr2000mlesac}, 
+\cite{chum2005matching}) and pairwise constraints 
+(\cite{choi2009robust}, \cite{leordenanu2005spectral}). The Epipolar 
+constraint carries the assumption that the two images matched are 
+related by an affine transformation. That is, there is no relative 
+movement of objects in between images and either the viewpoint is fixed 
+or the image resides entirely on a plane. In practice this assumption 
+largely holds true when all objects we are interested in matching are 
+roughly the same distance from the camera and when we don't expect to 
+match objects that aren't consistently positioned across images.  
+Pairwise constraints provide a more robust approach to this problem by 
+looking at a set of proposed correspondences and defining a pairwise 
+error between any two matches usually based on the assumption that two 
+neighboring correspondences will usually have similar angles and 
+distances. We can then convert the problem to an optimization problem 
+and return a set of correspondences that minimizes this error such as 
+proposed in \cite{choi2009robust} and \cite{leordeanu2005spectral}.  
+This approach provides more robustness because assumptions that might 
+not be true globally often still holds on a local level.
+
+A similar approach is to pick out different zones in each image and 
+
+In practice there are many situations where using the geometry of the 
+image to filter correspondences is not possible. This situation most 
+often arise when the assumptions made by a geometric method turns out 
+not to hold in a particular use case. This could matchings between 
+images where the content has been scrambled or with so little 
+consistency that even the geometric assumptions break down even on a 
+local level. In addition the geometric methods all require a set of 
+correspondences to begin with. If this set of correspondences is 
+narrowed down to a smaller set with a higher ratio of inliers the result 
+of the geometric matching will be both faster and more accurate. Finally 
+some use cases might require a performance that can't be achieved by a 
+more complex geometric method where simple non geometric methods might 
+be able to provide additional matching accuracy with a smaller 
+performance penalty.
+
+There are a relatively small number of algorithms proposed to solve the 
+matching problem without involving geometric constraints. Traditionally 
+the feature points of two images have been matched by comparing the 
+every feature point of one image with all feature points of the other 
+and finding the best matches based on the similarity of the descriptors.  
+With the introduction of the SIFT features \cite{lowe2004sift}, Lowe 
+proposes an alternative measure where the uniqueness of a given match is 
+found by looking at the two nearest neighbors of each feature point and 
+calculating a match score by the ratio of similarities. By ranking the 
+scores by their uniqueness and picking the $n$ best we get a set of 
+correspondences that are distinctly matched across the two images. In 
+the book Multiple View Geometry \cite[p.  114]{multipleView}, the gold 
+standard algorithm is introduced which ranks correspondences by 
+similarity and further filters them by making sure that the map of 
+matches is reflective, i.e. that for every feature point $f_i$ matching 
+$f_j$ we also have that $f_j$ matches $f_i$.
+
+In turn the two methods proposed in this report are inspired by a simple 
+but novel idea. If we have two images and a given feature point in the 
+first image is better matched with other feature points from the 
+\emph{same} image than points in the other image, then any matches of 
+this feature point to points in the other image is deemed unreliable and 
+discarded.  This approach carries no implicit assumptions about the 
+geometric consistency of matches and can as such easily be extended with 
+other geometric solutions when appropriate.
+
+Based on this idea the two proposed methods find reliable matches as 
+follows:
+\begin{itemize}
+\item{\emph{Mirror Match}: Take any traditional way of matching feature 
+but extend it to match any given feature with the combined set of 
+features from both images, filtering out all matches that are within the 
+same image.}
+\item{\emph{Cluster Match}: Take the combined set of feature points from 
+both images and cluster these points according to their
+descriptors. Given a resulting partition of points, no matches are 
+returned if it contains only feature points from one image. If the 
+partition contains points from both images, \emph{Mirror Match} is used 
+to find the best matches within the partition.
+\end{itemize}
+The 
+
+
+
+%Given two sets of feature points, $A$ and $B$ corresponding to two 
+%images $i_A$ and $i_B$, and a feature point $f_A^i$ in set $A$ is more 
+%closely related to one or more other feature points in set $A$ than 
+%feature points in set $B$ then the potential matches between $f_A^i$ 
+%and feature points in $B$ is deemed \emph{unreliable}.
+
+ This approach was originally introduced with the SIFT features and has 
+been used since then in computer vision applications such as scene 
+recognition\footnote{See for example chapter 4.1.3 of \cite[pp.  
+226]{szeliski2010}} and image alignment\footnote{An example is the gold 
+standard algorithm in \cite[p.  114]{multipleView}}.  In larger scale 
+approaches where an image is compared with thousands or millions of 
+other images, the feature points are usually indexed in a dictionary of 
+visual words instead. This approach makes it possible to quickly 
+retrieve matches in a large set of potential candidates, but the 
+performance is restricted by how discriminative the individual feature 
+points are. To agument the descriminative power of the feature points, 
+\cite{wu2009bundling} proposes grouping the features and use the 
+geometrical relationships between members of a group when matching two 
+feature points. Similarly \cite{das2008event} use geometrical 
+information about the feature points to cluster them before doing scene 
+matching resulting in better matches.
 
 Both methods suffer from two shortcomings. Firstly we have that any 
 defined group in one image might not correspond to a group in another 
@@ -64,7 +174,7 @@ features of the other images and automatically be sorted out.
 
 \section{Literature review}
 
-Since the introduction of the SIFT\cite features{lowe2004sift}, 
+Since the introduction of the SIFT features\cite{lowe2004sift}, 
 collecting feature points from an image and using the descriptors to 
 match images have been used in a plethora of different applications. The 
 development of feature points have not been standing still since Lowe 

@@ -184,7 +184,7 @@ def getPartitionMatches(partitions, weights, full_weights, indices, treshold, ve
 					(p_i, p_j) = (index_both[m_i], index_both[m])
 					if verbose :
 						distance = matchDistance(ks[p_i].pt, ks[p_j].pt, homography)
-						print("%4i\tch: %.3f\tEdges: %i\tDistance: %.2f" % (p, c, nb_e, distance))
+						print("%4i\tEdges: %i\tDistance: %.2f" % (p, nb_e, distance))
 					yield (p_i, p_j)
 
 

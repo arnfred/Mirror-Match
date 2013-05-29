@@ -5,7 +5,9 @@ Jonas Toft Arnfred, 2013-04-23
 """
 
 def getRedGreen(f) :
-    return '#%02x%02x11' % (int(f*255), int((1-f)*255))
+	if f > 1 : f = 1
+	c = '#%02x%02x11' % (int(f*255), int((1-f)*255))
+	return c
 
 def get() : 
 	return [

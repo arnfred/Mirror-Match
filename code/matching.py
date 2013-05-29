@@ -37,10 +37,9 @@ import random
 ####################################
 
 
-def testMatch(paths, homography, match_fun, options = {}, verbose = False) :
+def testMatch(paths, homography, match_fun, options = {}, return_matches = False, verbose = False) :
 
 	distinct_treshold = options.get("distinct_treshold", 5)
-	distance_treshold = options.get("distance_treshold", 5)
 	tresholds = options["tresholds"]
 
 	# Get matches over tresholds
@@ -48,12 +47,13 @@ def testMatch(paths, homography, match_fun, options = {}, verbose = False) :
 
 	# Get distances
 	getDist = lambda ms : [matchDistance(m1,m2,homography) for (m1,m2) in ms]
-	match_dist_set = [getDist(ms) for ms in match_pos_set]
+	match_dist = [getDist(ms) for ms in match_pos_set]
 
 	if len(tresholds) == 1 and verbose :
-		display.distHist(match_dist_set[0], distance_treshold)
+		display.distHist(match_dist[0], tresholds[0])
 
-	return match_dist_set
+	if return_matches : return match_pos_set, match_dist
+	else : return match_dist
 
 
 # Load all files
@@ -78,7 +78,7 @@ def folderMatch(directory, dt, match_fun, tresholds, keypoint, descriptor) :
 	# Get a set of matches varied over image pairs (matrix of size N x T where N
 	# is amount of image pairs and T is the amount of tresholds. Each element in
 	# the matrix is a zipped list of matches and distances
-	match_sets = numpy.array([match_fun(dt, p, h, tresholds, keypoint, descriptor) for p, h in imagePairs]).T
+	match_sets = numpy.array([numpy.array(match_fun(dt, p, h, tresholds, keypoint, descriptor)) for p, h in imagePairs]).T
 
 	# Now collect an x axis with nb correct matches per treshold
 	get_correct_matches = lambda match_row : [nb_correct_matches(d) for d in match_row]
@@ -92,7 +92,8 @@ def folderMatch(directory, dt, match_fun, tresholds, keypoint, descriptor) :
 
 
 def getHomography(hom_path) :
-	return numpy.array([map(lambda s : float(s.strip()), line.strip().split()) for i,line in enumerate(open(hom_path)) if i < 3])
+	h = numpy.loadtxt(hom_path)
+	return h
 
 
 def getTestsetPaths(collection, index = None) :
@@ -172,7 +173,7 @@ def standardMatch(paths, tresholds, options = {}) :
 	#bfMatches = features.match("BRIEF", ds[ind == 0], ds[ind == 1])
 	
 	# Check that we have keypoints:
-	if ss_j == None or ss_i == None : return []
+	if ss_j == None or ss_i == None : return [[] for _ in tresholds]
 
 	# Get matches in usual format
 	def matchFromIndex(i,j) :
@@ -185,7 +186,7 @@ def standardMatch(paths, tresholds, options = {}) :
 	p = lambda t : [matchFromIndex(i,j) for i,j in bothways if uu_j[i] < t] 
 	match_set = [p(t) for t in tresholds]
 
-	return match_set
+	return numpy.array(match_set)
 
 
 
@@ -261,7 +262,7 @@ def clusterMatch(distance_treshold, paths, homography, tresholds, keypoint, desc
 			"prune_limit" : 2.5,
 			"min_coherence" : 0.0,
 			"tresholds" : tresholds,
-			"split_limit" : 50,
+			"split_limit" : 500,
 			"cluster_prune_limit" : 1.5,
 			"distance_treshold" : distance_treshold,
 			"keypoint_type" : keypoint,
