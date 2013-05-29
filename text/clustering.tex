@@ -50,7 +50,7 @@ rotation occurs between the two images but will likely fail in other
 cases. Various scenarios have been proposed to improve on this simple 
 assumption such as epipolar constraints (\cite{torr2000mlesac}, 
 \cite{chum2005matching}) and pairwise constraints 
-(\cite{choi2009robust}, \cite{leordenanu2005spectral}). The Epipolar 
+(\cite{choi2009robust}, \cite{leordeanu2005spectral}). The Epipolar 
 constraint carries the assumption that the two images matched are 
 related by an affine transformation. That is, there is no relative 
 movement of objects in between images and either the viewpoint is fixed 
@@ -109,9 +109,9 @@ scores by their uniqueness and picking the $n$ best we get a set of
 correspondences that are distinctly matched across the two images. In 
 the book Multiple View Geometry \cite[p.  114]{multipleView}, the gold 
 standard algorithm is introduced which ranks correspondences by 
-similarity and further filters them by making sure that the map of 
-matches is symmetric, i.e. that for every feature point $f_i$ matching 
-$f_j$ we also have that $f_j$ matches $f_i$.
+similarity and further filters them by discarding matches that aren't 
+symmetric, i.e. that for every feature point $f_i$ matching $f_j$ we 
+also have that $f_j$ matches $f_i$.
 
 In turn the two methods proposed in this report are inspired by a simple 
 but novel idea. If we have two images and a given feature point in the 
@@ -125,18 +125,18 @@ other geometric solutions when appropriate.
 Based on this idea the two proposed methods find reliable matches as 
 follows:
 \begin{itemize}
-\item{\emph{Mirror Match}: Match features using the gold standard 
+\item{\emph{Mirror Match (MM)}: Match features using the gold standard 
 algorithm\cite[p. 114]{multipleView} ranked by similarity and thresheld 
 by uniqueness\cite{lowe2004sift}. However instead of matching features 
 from one image with features in another, we match every feature with all 
 other features of the two images combined. Only matches from one image 
 to the other are returned.}
-\item{\emph{Mirror Match with Clustering}: Take the combined set of 
-feature points from both images and cluster these points according to 
+\item{\emph{Mirror Match with Clustering (MMC)}: Take the combined set 
+of feature points from both images and cluster these points according to 
 their descriptors. Given a resulting partition of points, no matches are 
 returned if it contains only feature points from one image. If the 
 partition contains points from both images, \emph{Mirror Match} is used 
-to find the best matches within the partition.
+to find the best matches within the partition.}
 \end{itemize}
 
 Matching feature points against the entire set of points from both 
@@ -174,12 +174,60 @@ will each contain feature points that are similar to each other. In some
 cases the clustering will end up grouping feature points of only one 
 image together which can then easily be discarded in the matching 
 process. In other cases partitions will contain feature points from both 
-images that can then be matched using Mirror Match but with lower 
+images that can then be matched using \emph{MM} but with lower 
 thresholds.
 
+The report is organized as follows. In section \ref{algorithms} I will 
+describe the two algorithms. Section \ref{experiment} will cover the 
+experimental set up and introduce the image set that is used in testing.  
+In section \ref{results} I will go through the results and conclude.
+
+\section{Algorithms}
+\label{algorithms}
+
+\begin{algorithm}
+\caption{Mirror Match Algorithm}
+\label{alg-mm}
+\begin{algorithmic}
+\Require $images$ : set of images, $t$ : float $\in \mathbb{R}$
+\State $matches_{init}\gets \varnothing$
+\State $matches_{final}\gets \varnothing$
+\State $features\gets \varnothing$
+\ForAll{$I_i \in images$} \Comment Gather features of all images
+	\State $features\gets features \cup getFeatures(I_i)$
+\EndFor
+\ForAll{$f_i \in features$} \Comment Get best match for all features
+	\State $f_m,f_n \gets getTwoNearestNeighbors(features \ {f_i})$
+	\State $ratio \gets getSimilarity(f_i, f_n) / getSimilarity(f_i, 
+f_m)$
+	\If{$ratio < t$}
+		\State $matches_{init}\gets \left(f_i, f_m\right)$
+	\EndIf
+\EndFor
+\ForAll{$\left(f_i, f_j \right) \in matches_{init}$} \Comment Filter 
+matches
+\If{$\left(f_j, f_i \right) \in matches_{init} \wedge getImg(f_i) \neq 
+getImg(f_j)$}
+		\State $matches_{final} \gets (f_i, f_j)$
+		\State $matches_{init} \gets matches_{init} \ (f_j, f_i)$
+	\EndIf
+\EndFor \\
+\Return $matches_{final}$
+\end{algorithmic}
+\end{algorithm}
+
+In this report I propose two algorithms for better matching feature 
+points without any geometric assumptions about the images matched. The 
+two algorithms are complementary in the sense that the first, Mirror 
+Match (\emph{MM}) is less complex but performs slightly worse than 
+Mirror Match with Clustering (\emph{MMC}). In cases where high 
 
 
+\section{Experiments and Image Set}
+\label{experiment}
 
+\section{Results}
+\label{results}
 \subsection{Graph Clustering}
 
 Given a set of feature points from two images, $im_1$ and $im_2$: $F_k = 
