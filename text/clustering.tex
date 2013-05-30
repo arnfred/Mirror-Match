@@ -185,11 +185,22 @@ In section \ref{results} I will go through the results and conclude.
 \section{Algorithms}
 \label{algorithms}
 
+To discuss the implementation of \emph{MM} and \emph{MMC} a few notes on 
+notation will be helpful. BLAH BLAH!
+
+\subsection{Mirror Match (\emph{MM})}
+
+The central idea behind \emph{MM} is to match features of $n$ images by 
+taking every feature from all $n$ images and matching it against every 
+other feature from the same set. We can then discard the correspondences 
+that match two points within the same image. In algorithm \ref{alg-mm} 
+the actual implementation of \emph{MM} is shown.
+
 \begin{algorithm}
-\caption{Mirror Match Algorithm}
+\caption{Mirror Match Algorithm (\emph{MM})}
 \label{alg-mm}
 \begin{algorithmic}
-\Require $images$ : set of images, $t$ : float $\in \mathbb{R}$
+\Require $images$ : set of images, $threshold$ : float $\in \mathbb{R}$
 \State $matches_{init}\gets \varnothing$
 \State $matches_{final}\gets \varnothing$
 \State $features\gets \varnothing$
@@ -197,10 +208,11 @@ In section \ref{results} I will go through the results and conclude.
 	\State $features\gets features \cup getFeatures(I_i)$
 \EndFor
 \ForAll{$f_i \in features$} \Comment Get best match for all features
-	\State $f_m,f_n \gets getTwoNearestNeighbors(features \ {f_i})$
+	\State $f_m,f_n \gets getTwoNearestNeighbors(f_i, features ~ 
+\backslash ~ \left\{f_i\right\})$
 	\State $ratio \gets getSimilarity(f_i, f_n) / getSimilarity(f_i, 
 f_m)$
-	\If{$ratio < t$}
+	\If{$ratio < threshold$}
 		\State $matches_{init}\gets \left(f_i, f_m\right)$
 	\EndIf
 \EndFor
@@ -216,19 +228,74 @@ getImg(f_j)$}
 \end{algorithmic}
 \end{algorithm}
 
-In this report I propose two algorithms for better matching feature 
-points without any geometric assumptions about the images matched. The 
-two algorithms are complementary in the sense that the first, Mirror 
-Match (\emph{MM}) is less complex but performs slightly worse than 
-Mirror Match with Clustering (\emph{MMC}). In cases where high 
+This algorithm passes over three states: An acquisition state where 
+feature points are gathered, a matching state where the initial set of 
+correspondences are found and a filtering state where correspondences 
+within the same image are removed. In the acquisition state the function 
+\emph{getFeatures($I_i$)} returns a set of feature points given an 
+image.  In practice the feature used for the experiments have been 
+SIFT\cite{lowe2004sift}, but there aren't any reason why other features 
+such as SURF\cite{bay2006surf} or BRIEF\cite{calonder2010brief} couldn't 
+be used just as well. The matching state uses K-Nearest Neighbors to 
+return the two closest neighbors in the set of features for any given 
+feature $f_i$ and calculates the ratio between the correspondences as 
+proposed in \cite{lowe2004sift}.  Any correspondence with a ratio below 
+the threshold supplied will be discarded. Finally in the filter the 
+function \emph{getImg($f_i$)} returns the parent image of the feature 
+$f_i$ and discards both correspondences that aren't symmetric as well as 
+those that match two points in the same image.
 
+\begin{figure}
+	\makebox[\textwidth][c]{%
+		\begin{subfigure}[t]{0.45\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/mirror_match_off}
+			\caption{Baseline Result}
+			\label{fig:unique}
+		\end{subfigure}%
+		%~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.45\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/mirror_match_with_pruned}
+			\caption{\emph{MM} with intra image matches}
+			\label{fig:within}
+		\end{subfigure}%
+		%~ %add desired spacing between images, e. g. ~, \quad, \qquad
+		  %(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.45\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/mirror_match}
+			\caption{\emph{MM}}
+			\label{fig:without}
+		\end{subfigure}%
+	}%
+	\label{fig:compare_mirror}
+	\caption{Illustration of matches filtered by \emph{MM}}
+\end{figure}
 
-\section{Experiments and Image Set}
-\label{experiment}
+Figure \ref{fig:compare_mirror} shows an example of the performance of 
+\emph{MM}. In sub figure \ref{fig:unique} the result of a normal 
+matching of two images is shown. The two images appear side by side and 
+for each correspondence between them, a line has been drawn from one 
+image to the other. The color of the line indicates if the 
+correspondence is accurate. Sub figure \ref{fig:within} shows the 
+correspondences found by mirror match using the same threshold before 
+the matches within the same image has been filtered out. In particular 
+the fence by the bottom of the image admits correspondences that can 
+conveniently be removed as done in sub figure \ref{fig:without} where 
+only the actual correspondences returned by the algorithm are shown.
 
-\section{Results}
-\label{results}
-\subsection{Graph Clustering}
+\subsection{Mirror Match with Clustering (\emph{MMC})}
+
+As opposed to \emph{MM}, \emph{MMC} diverges from traditional 
+non-geometric feature matching by clustering the feature points by 
+similarity. This process yields partitions of fairly similar feature 
+points that we can match using the same approach as \emph{MM}. Before I 
+introduce the implementation details I will go over the problem of graph 
+clustering and how it relates to feature matching.
+
+\subsubsection{Graph Clustering}
 
 Given a set of feature points from two images, $im_1$ and $im_2$: $F_k = 
 \{k_i, k_j$ for $k_i \in im_1, k_j \in im_2\}$ as well as a matching 
@@ -240,25 +307,25 @@ vertex corresponds to a keypoint and the edge between two vertices has a
 weight equal to the distance between the two corresponding keypoints.
 
 This representation reduces the problem of partitioning the keypoints 
-into groups reduces the problem to that of graph clustering or community 
-structure depending on the context. In the literature there are various 
-ways of clustering a graph according to different measures of what 
-constitutes an optimal partitioning. Traditionally the most used 
-clustering algorithms have been K-means and spectral clustering, but in 
-recent years a host of new algorithms have been proposed based on both 
-Newman's concept of graph modularity\footnote{Introduced in 
-\cite{girvan2002}, discussed in \cite{brandes2007} and used in 
-\cite{blondel2008} as well as others} as well as information theoretical 
-measures\footnote{See for example \cite{rosvall2008}} and the Potts spin 
-model from physics\footnote{Used in \cite{ronhovde2009}} just to mention 
-a few approaches. Many of the new algorithms differ from K-means 
-clustering and Spectral clustering in that they don't require the number 
-of expected to clusters to be specified beforehand\footnote{Among the 
-aforementioned methods, this is true for \cite{blondel2008} and 
-\cite{rosvall2008}}.  Furthermore, on tests done using randomly 
-generated graphs with a known partitioning \cite{blondel2008}, 
-\cite{rosvall2008} and \cite{ronhovde2009} perform markedly better than 
-spectral clustering and K-means\cite{lancichinetti2009}.
+into groups to that of graph clustering or community structure depending 
+on the context. In the literature there are various ways of clustering a 
+graph according to different measures of what constitutes an optimal 
+partitioning. Traditionally the most used clustering algorithms have 
+been K-means and spectral clustering, but in recent years a host of new 
+algorithms have been proposed based on both Newman's concept of graph 
+modularity\footnote{Introduced in \cite{girvan2002}, discussed in 
+\cite{brandes2007} and used in \cite{blondel2008} as well as others} as 
+well as information theoretical measures\footnote{See for example 
+\cite{rosvall2008}} and the Potts spin model from physics\footnote{Used 
+in \cite{ronhovde2009}} just to mention a few approaches. Many of the 
+new algorithms differ from K-means clustering and Spectral clustering in 
+that they don't require the number of expected to clusters to be 
+specified beforehand\footnote{Among the aforementioned methods, this is 
+true for \cite{blondel2008} and \cite{rosvall2008}}.  Furthermore, on 
+tests done using randomly generated graphs with a known partitioning 
+\cite{blondel2008}, \cite{rosvall2008} and \cite{ronhovde2009} perform 
+markedly better than spectral clustering and 
+K-means\cite{lancichinetti2009}.
 
 The performance of clustering algorithms is a complicated issue, since 
 an optimal clustering given the same graph can vary depending on the 
@@ -280,40 +347,156 @@ Based on these observations I've decided to use Louvain clustering for
 grouping feature points since it's fast, performs well, doesn't require 
 parameters and doesn't emphasize partitions of equal sizes.
 
-\subsection{Clustering feature points using Louvain clustering}
+\subsubsection{Clustering feature points using Louvain clustering}
 
 \begin{algorithm}
-\caption{Cluster-Match Algorithm}
-\label{alg-simple}
+\caption{Mirror Match with Clustering Algorithm (\emph{MMC})}
+\label{alg-mmc}
 \begin{algorithmic}
-\Require $images$ : set of images, $n$ : int $\in \mathbb{N}$
+\Require $images$ : set of images, $threshold \in \mathbb{R}$
 \State $matches\gets \varnothing$
+\State $features\gets \varnothing$
 \ForAll{$I_i \in images$} \Comment Gather features of all images
 	\State $f_i\gets getFeatures(I_i)$
+	\State $features\gets features \cup f_i$
 \EndFor
 \State $A\gets getAdjecencyMatrix(f_1, f_2,\; \ldots \;, f_n)$
 \State $A_{norm}\gets 1 - normalize(A)$
 \Comment Shorter distance is higher weight
 \State $A_{pruned}\gets pruneEdges(A_{norm},\alpha)$
-\State $P\gets cluster(A_{pruned})$ 
-\Comment P is a set of partitions
-\ForAll{$p \in P$} \Comment p is a set of feature points
-	\State $trait\gets \left\{p \cap f_i \mid p \cap f_i \neq 
-\varnothing, f_i \in \left\{f_1, f_2,\; \ldots \;, f_n\right\}\right\}$
-	\If{$\left\vert trait \right\vert > 1$}
-		\State $matches\gets getPositions(trait)$
-		\Comment Position of trait in each image
-	\EndIf
+\State $Partitions\gets cluster(A_{pruned})$
+\ForAll{$p \in Partitions$} \Comment p is a set of feature points
+	\State $matches\gets matches \cup getMatches(p, threshold, 
+features)$
 \EndFor \\
 \Return matches
 \end{algorithmic}
 \end{algorithm}
 
-Algorithm \ref{alg-simple} shows the basic steps taken to find matches 
-in two or more images. This algorithm is a simplified version of the 
-proposed method completely agnostic of the geometry of the feature 
-points in the picture. To better explain the algorithm here is a step by 
-step explication of the inputs and functions mentioned:
+Unlike the \emph{MM} algorithm the feature points are partitioned before 
+the matching stage. While the louvain clustering algorithm doesn't 
+require any parameters in itself, it tends towards clustering all 
+feature points together in the same partition if the graph is fully 
+connected or close. To ensure that the graph is well clustered, the 
+adjacency matrix is pruned so only edges above a certain threshold is 
+kept. From empirical analysis keeping around 2.5\% of edges seems to 
+work well. Figure \ref{fig:graph} shows the result of clustering the 
+feature points displayed as a graph where each node correspond to a 
+feature point. Here the border of nodes signifies the original image 
+while the color of the node is decided by what partition it belongs to.  
+Notice that since a limited amount of colors are used disconnected 
+subgraphs of the same color can be assumed to belong to separate 
+partitions. The sub figure \ref{fig:cropped_graph} shows a detailed 
+section of the graph where the interplay between small clusters 
+consisting of two or three nodes as well as larger clusters consisting 
+of several hundred nodes can be seen.
+
+\begin{figure}
+	\makebox[\textwidth][c]{%
+		\begin{subfigure}[t]{0.60\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/MMC_graph_full}
+			\caption{Full Graph}
+			\label{fig:full_graph}
+		\end{subfigure}%
+		%~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.60\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/MMC_graph_cropped}
+			\caption{Cropped Section of Graph}
+			\label{fig:cropped_graph}
+		\end{subfigure}%
+	}%
+	\label{fig:graph}
+	\caption{The partitioned feature graph. Every color signifies a 
+partition while the edge color of each node signifies which image it 
+belongs to}
+\end{figure}
+
+The clusters 
+\begin{figure}
+	\makebox[\textwidth][c]{%
+		\begin{subfigure}[t]{0.60\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/MMC_pitts_source}
+			\caption{Source image}
+			\label{fig:pitts_source}
+		\end{subfigure}%
+		%~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.60\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/MMC_pitts_keypoints}
+			\caption{Keypoints Displayed}
+			\label{fig:pitts_keypoints}
+		\end{subfigure}%
+	}%
+	\\
+	\makebox[\textwidth][c]{
+		%~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		
+		\begin{subfigure}[t]{1.16\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/MMC_partition}
+			\caption{A Partition Example}
+			\label{fig:pitts_partition}
+		\end{subfigure}%
+	}%
+	\label{fig:compare_mirror}
+	\caption{Example of partitioning of keypoints in an image}
+\end{figure}
+
+
+\begin{algorithm}
+\caption{Impl. of GetMatches (\emph{from MMC algorithm})}
+\label{alg-getmatches}
+\begin{algorithmic}
+\Require $p$ : set of features, $threshold \in \mathbb{R}$, $features$ : 
+Set of all features
+\State $matches \gets \varnothing$
+\State $edges \gets \left\{getSimilarity(f_i, f_j) \mid getImg(f_i) \neq 
+getImg(f_j) \wedge f_i, f_j \in p \right\}$
+\If{$\left\vert edges \right\vert = 1$} \Comment If $\exists$ one edge 
+between images
+	\State $f_i,f_j \gets getInterImageFeatures(edges_{inter}, p)$
+	\State $f_m,f_n \gets getTwoNearestNeighbors(f_i, features ~ 
+\backslash ~ \left\{f_i\right\})$
+	\State $f_s,f_t \gets getTwoNearestNeighbors(f_j, features ~ 
+\backslash ~ \left\{f_j\right\})$
+	\State $ratio_i \gets getSimilarity(f_i, f_n) / getSimilarity(f_i, 
+f_j)$
+	\State $ratio_j \gets getSimilarity(f_j, f_t) / getSimilarity(f_j, 
+f_i)$
+	\If{$ratio_i < threshold \wedge ratio_j < threshold$}
+		\State $matches \gets matches \cup (f_i, f_j)$
+	\EndIf
+\ElsIf{$\left\vert edges \right\vert > 1$} \Comment If $\exists$ more 
+than one edge between images
+	\ForAll{$f_i \in p$}
+		\State $f_m,f_n \gets getTwoNearestNeighbors(f_i, p ~ \backslash 
+~ \left\{f_i\right\})$
+		\State $ratio \gets getSimilarity(f_i, f_n) / getSimilarity(f_i, 
+f_m)$
+		\If{$getImg(f_i) \neq getImg(f_m) \wedge ratio < threshold 
+\wedge (f_m, f_i) \not\in matches$}
+			\State $matches \gets matches \cup (f_i, f_m)$
+		\EndIf
+	\EndFor
+\EndIf
+
+\Return matches
+\end{algorithmic}
+\end{algorithm}
+
+Algorithm \ref{alg-mmc} shows the basic steps taken to find matches in 
+two or more images. 
+
+This algorithm is a simplified version of the proposed method completely 
+agnostic of the geometry of the feature points in the picture. To better 
+explain the algorithm here is a step by step explication of the inputs 
+and functions mentioned:
 \begin{itemize}
 \item[]{\emph{images}: The images we are matching}
 \item[]{\emph{$n$}: The number of weights per row in the adjecency 
@@ -339,6 +522,27 @@ return them. This could either be done by taking a mean of the feature
 points in an image, or by returning the position of the highest matching 
 feature points within the trait. In practice ... TODO}
 \end{itemize}
+
+The two algorithms introduced in this report are designed to work with 
+feature points such as ,  or similar. While the experimental results 
+have all been done with the SIFT descriptor, there aren't any 
+theoretical or practical issues with using other types of feature 
+points. 
+
+In this report I propose two algorithms for better matching feature 
+points without any geometric assumptions about the images matched. The 
+two algorithms are complementary in the sense that the first, Mirror 
+Match (\emph{MM}) is less complex but performs slightly worse than 
+Mirror Match with Clustering (\emph{MMC}). In cases where high 
+
+
+\section{Experiments and Image Set}
+\label{experiment}
+
+\section{Results}
+\label{results}
+\subsection{Graph Clustering}
+
 
 \subsubsection{On the subject of features}
 
