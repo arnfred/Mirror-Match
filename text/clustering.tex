@@ -213,15 +213,14 @@ the actual implementation of \emph{MM} is shown.
 	\State $ratio \gets getSimilarity(f_i, f_n) / getSimilarity(f_i, 
 f_m)$
 	\If{$ratio < threshold$}
-		\State $matches_{init}\gets \left(f_i, f_m\right)$
+		\State $matches_{init} \gets \left(f_i, f_m\right)$
 	\EndIf
 \EndFor
 \ForAll{$\left(f_i, f_j \right) \in matches_{init}$} \Comment Filter 
 matches
 \If{$\left(f_j, f_i \right) \in matches_{init} \wedge getImg(f_i) \neq 
-getImg(f_j)$}
+getImg(f_j) \wedge \left(f_j, f_i\right) \not\in matches_{final}$}
 		\State $matches_{final} \gets (f_i, f_j)$
-		\State $matches_{init} \gets matches_{init} \ (f_j, f_i)$
 	\EndIf
 \EndFor \\
 \Return $matches_{final}$
@@ -387,8 +386,8 @@ while the color of the node is decided by what partition it belongs to.
 Notice that since a limited amount of colors are used disconnected 
 subgraphs of the same color can be assumed to belong to separate 
 partitions. The sub figure \ref{fig:cropped_graph} shows a detailed 
-section of the graph where the interplay between small clusters 
-consisting of two or three nodes as well as larger clusters consisting 
+section of the graph where the interplay between small partitions 
+consisting of two or three nodes as well as larger partitions consisting 
 of several hundred nodes can be seen.
 
 \begin{figure}
@@ -414,7 +413,14 @@ partition while the edge color of each node signifies which image it
 belongs to}
 \end{figure}
 
-The clusters 
+The partitions group feature points by similarity which means that 
+repetitive structures such as buildings often feature in larger 
+partitions as exemplified in figure \ref{fig:compare_mirror}. Here the 
+cluster shown in part \ref{fig:pitts_partition} contains left window 
+corners from two buildings across both images. This is an example of 
+feature points that are hard to match correctly since each point will 
+have several similar potential matches.
+
 \begin{figure}
 	\makebox[\textwidth][c]{%
 		\begin{subfigure}[t]{0.60\textwidth}
@@ -445,12 +451,33 @@ The clusters
 		\end{subfigure}%
 	}%
 	\label{fig:compare_mirror}
-	\caption{Example of partitioning of keypoints in an image}
+	\caption{Example of a partition of keypoints in an image}
 \end{figure}
 
+The matching algorithm for \emph{MMC} (algorithm \ref{alg-getmatches}) 
+goes through the partitions one by one and selects matches in the 
+following way: If the partition has no edges going from a feature point 
+in one image to a feature point in another image, the partition is 
+discarded. If we have more than one edge going between images then 
+$getMatches$ will behave as \emph{MM} and make sure that a 
+correspondence is symmetric, that it has a ratio above the desired 
+threshold and that it isn't matching two feature points from the same 
+image. Since feature points are all guaranteed to be fairly similar this 
+means that we can set the ratio threshold much higher than in \emph{MM} 
+and include matches that would normally have been discarded for not 
+being sufficiently unique.
+However as can be seen in the example in figure \ref{fig:cropped_graph} 
+many of the partitions contain only two feature points from different 
+images linked by one edge. This is often the case if all edges below a 
+certain similarity threshold have been removed in the graph, in which 
+case it's probable that some nodes will end up with only one outgoing 
+edge. This doesn't necessarily imply that the correspondence represented 
+by the edge is unique, but the only way to figure out if it is, is by 
+checking the similarity scores of the nearest neighbor as proposed in 
+\cite{lowe2004sift}.
 
 \begin{algorithm}
-\caption{Impl. of GetMatches (\emph{from MMC algorithm})}
+\caption{Impl. of getMatches (\emph{from MMC algorithm})}
 \label{alg-getmatches}
 \begin{algorithmic}
 \Require $p$ : set of features, $threshold \in \mathbb{R}$, $features$ : 
@@ -490,38 +517,6 @@ f_m)$
 \end{algorithmic}
 \end{algorithm}
 
-Algorithm \ref{alg-mmc} shows the basic steps taken to find matches in 
-two or more images. 
-
-This algorithm is a simplified version of the proposed method completely 
-agnostic of the geometry of the feature points in the picture. To better 
-explain the algorithm here is a step by step explication of the inputs 
-and functions mentioned:
-\begin{itemize}
-\item[]{\emph{images}: The images we are matching}
-\item[]{\emph{$n$}: The number of weights per row in the adjecency 
-matrix.}
-\item[]{\emph{getFeatures}: Returns a set of feature points given an 
-image. In practice the BRIEF\cite{calonder2010brief} feature point 
-detector and descriptor has worked well, but it could easily be replaced 
-with any other feature point type.} 
-% TODO: include a comparison of SURF, SIFT, etc
-\item[]{\emph{getAdjecencyMatrix}: Based on the distance measure used to 
-compare the similarity of the feature points a symmetric adjecency 
-matrix is returned.}
-\item[]{\emph{pruneEdges}: The result of the Louvain clustering depends 
-on the density of the graph. To ensure an optimal number of partitions 
-we only keep the $n$ highest weights per row and column in the adjecency 
-matrix, making sure it's still symmetric afterwards. In practice setting 
-$n$ to around four or five yields good results.}
-\item[]{\emph{cluster}: Cluster the graph corresponding to the adjecency 
-matrix given using the Louvain algorithm in \cite{blondel2008}.}
-\item[]{\emph{getPositions}: Given a trait consisting of features in 
-several different images, find the positions of traits in each image and 
-return them. This could either be done by taking a mean of the feature 
-points in an image, or by returning the position of the highest matching 
-feature points within the trait. In practice ... TODO}
-\end{itemize}
 
 The two algorithms introduced in this report are designed to work with 
 feature points such as ,  or similar. While the experimental results 
@@ -536,116 +531,53 @@ Match (\emph{MM}) is less complex but performs slightly worse than
 Mirror Match with Clustering (\emph{MMC}). In cases where high 
 
 
-\section{Experiments and Image Set}
+\section{Experimental Setup}
 \label{experiment}
+
+To reliably measure the accuracity of a matching method on real images 
+we either need a set of image pairs tied by a homography or manually 
+count the number of inliers. The latter poses becomes unfeasable the 
+moment we attempt to test a non-trivial set of images, but has the 
+advantage of working with any image pair. Using a homography between 
+image pairs reduces the test cases to images where the matched areas lie 
+on a plane, or alternatively that there is no viewpoint change. This 
+greatly reduces the body of image pairs we can use to reliably test 
+matching methods. In \cite{mikolaczyk2005performance} Mikolajczyk and 
+Schmid introduces a set of images to compare the performance of feature 
+detectors. The test set looks at different feature descriptors 
+invariance faced with different lighting, blur, rotation as well as 
+viewpoint change. However in practice the image used for the view point 
+change featuring a wall of graffiti\footnote{To ensure that all points 
+lie on the same plane} has gone on to be used the most for later tests 
+given that most of the other test pairs have since become relatively 
+trivial\footnote{see \cite{wu2011robust} or \cite{delponte2006svd} for 
+examples}.
+
+Inspired by this I have collected a set of image pairs featuring murals 
+of a few famous artists\footnote{Including Banksy, Blu and Shepard 
+Fairey among others}. Each pair consist of images of the same motif 
+taken from different angles, often including repetitive patterns and 
+texture. Based on this image set the two algorithms are tested on a 
+series of image patches from each pair. In order to test if a matching 
+is reliable we of course need correct matches when the image pair we are 
+testing on indeed features the same scene, but we also need to make sure 
+that we don't get any matches when the two images have nothing in 
+common. This means that it isn't enough just testing against pairs of 
+images that we know match. We also need to test against pairs that might 
+look like they could match but in fact don't.
+
+With this in mind I have created a test suite by cropping out $300$ 
+pixel by $300$ pixel patches of the original pair with a random vertical 
+and horizontal offset. Given an image pair I can obtain $n$ pairs of 
+patches where the two patches in any pair might or might not overlap.  
+This ensures that the patch pairs where there is no overlap still retain 
+a basic similarity to each other, while the patches that do overlap 
+often only overlap on a small part of their surface.
 
 \section{Results}
 \label{results}
-\subsection{Graph Clustering}
 
 
-\subsubsection{On the subject of features}
-
-TODO: Show examples of the same image with feature points from different 
-detectors and explain the difference. Go in to why brief seems to work 
-best in practice and superficially explain how brief works compared with 
-SIFT. 
-
-
-
-\begin{algorithm}
-\caption{Cluster-Match Algorithm With Geometry}
-\label{alg-geometry}
-\begin{algorithmic}
-\Require $images$ : set of images, $\alpha$ : float $\in \left[0, 
-1\right]$, $\beta$ : float $\in \left[0, 1\right]$
-\State $matches\gets \varnothing$
-\ForAll{$I_i \in images$} \Comment Gather features of all images
-	\State $f_i\gets getFeatures(I_i)$
-\EndFor
-\State $A\gets getAdjecencyMatrix(f_1, f_2,\; \ldots \;, f_n)$
-\State $B\gets getGeomDistanceMatrix(f_1, f_2,\; \ldots \;, f_n)$
-\State $M\gets getInterImageMask(f_1, f_2,\; \ldots \;, f_n)$
-\State $B_{norm}\gets 1 - normalize(G)$ \State $A_{norm}\gets 1 - 
-normalize(A)$
-\State $A_{geom}\gets A_{norm}\left[ \neg M\right] + \beta \cdot 
-B_{norm}\left[M\right]$
-\State $A_{pruned}\gets pruneEdges(A_{geom},\alpha)$
-\State $P\gets cluster(A_{pruned})$ 
-\ForAll{$p \in P$}
-	\State $trait\gets \left\{p \cap f_i \mid p \cap f_i \neq 
-\varnothing, f_i \in \left\{f_1, f_2,\; \ldots \;, f_n\right\}\right\}$
-	\If{$\left\vert trait \right\vert > 1$}
-		\State $matches\gets getPositions(trait)$
-		\Comment Position of trait in each image
-	\EndIf
-\EndFor \\
-\Return matches
-\end{algorithmic}
-\end{algorithm}
-
-While clustered feature points are often geometrically close together, 
-there might be cases where several points in the same image are similar 
-enough to all be included in one cluster despite their geometrical 
-distance.  To solve this problem we can either modify the clustering 
-algorithm to take the geometric distances into account like 
-\cite{das2008event}.  Alternatively we can modify the weight matrix to 
-penalize putting distanced feature points in the same cluster. However 
-we only know the geometrical distance between two feature points as long 
-as both belong to the same image. One way to approach this problem is to 
-replace all the weights of edges between two feature points within the 
-same image with their distance. For the case of two images the 
-normalized adjecency matrix is defined as follows:
-%
-$$A_{norm}=
-\begin{bmatrix}
-w_{1,1}   & w_{1,2}   & \ldots & w_{1,n-1}   & w_{1,n}     \\
-w_{2,1}   & w_{2,2}   & \ldots & w_{2,n-1}   & w_{2,n}     \\
-\vdots    & \vdots    & \ddots & \vdots      & \vdots      \\
-w_{n-1,1} & w_{n-1,2} & \ldots & w_{n-1,n-1} & w_{n-1,n}   \\
-w_{n,1}   & w_{n,2}   & \ldots & w_{n,n-1}   & w_{n,n}
-\end{bmatrix}=
-\begin{bmatrix}
-A_{im1} & S       \\
-T       & A_{im2} \\
-\end{bmatrix}
-$$
-%
-In a similar manner we can define an adjecency matrix based on the 
-geometrical distance. Note for example how $d_{1,n}$ can take any value 
-as it denotes the geometric distance of feature points in two different 
-images and as such can be set to any value.
-%
-$$B_{norm}=
-\begin{bmatrix}
-d_{1,1}   & d_{1,2}   & \ldots & d_{1,n-1}   & d_{1,n}     \\
-d_{2,1}   & d_{2,2}   & \ldots & d_{2,n-1}   & d_{2,n}     \\
-\vdots    & \vdots    & \ddots & \vdots      & \vdots      \\
-d_{n-1,1} & d_{n-1,2} & \ldots & d_{n-1,n-1} & d_{n-1,n}   \\
-d_{n,1}   & d_{n,2}   & \ldots & d_{n,n-1}   & d_{n,n}
-\end{bmatrix}=
-\begin{bmatrix}
-B_{im1} & R       \\
-Q       & B_{im2} \\
-\end{bmatrix}
-$$
-%
-Given these two and a weight factor $\beta$ we can construct a new 
-weight matrix as follows:
-%
-$$C=
-\begin{bmatrix}
-\beta \cdot B_{im1} & S       \\
-T       & \beta \cdot B_{im2} \\
-\end{bmatrix}
-$$
-%
-Since we prune the matrix afterwards, it's important to choose a weight 
-factor that doesn't lead to all edges being either intra image edges or 
-intra image edges, since the first would create no clusters across 
-images and the latter would mean that the geometrical information would 
-be discarded and the bipartite graph constituting of edges between 
-feature points in the two images would be used instead.
 
 \bibliographystyle{abbrv}
 \bibliography{bibliography}
