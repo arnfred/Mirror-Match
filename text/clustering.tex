@@ -1,5 +1,7 @@
+%\documentclass[12pt,journal,compsoc]{IEEEtran}
 \documentclass{article}
 \usepackage{graphicx}
+\usepackage{cite}
 \usepackage{hyperref}
 \usepackage[stable]{footmisc}
 \usepackage{caption}
@@ -12,13 +14,30 @@
 
 \begin{document}
 
-\title{Clustering feature points}
+\title{Reliable feature point matching without the use of geometric 
+constraints}
 \author{Jonas Arnfred}
 
 \maketitle
 
 \begin{abstract}
-% TODO!
+Many algorithms have been proposed to solve the problem of matching 
+feature points in two or more images using geometric assumptions to 
+increase the robustness of the matching. However very little work 
+addresses the case where these assumptions might not hold true. In 
+particular few methods address the problem of reliable matching in cases 
+where we don't know if two images have any corresponding areas or 
+objects. In this paper we propose two algorithms for matching feature 
+points without the use of geometric constraints. The first makes use of 
+the fact that any match between two images should be better than all 
+possible matches within the image itself. The second algorithm extends 
+this idea by using the community structure in the similarity graph of 
+feature points to reliably find correspondences. To evaluate the 
+algorithms experimentally we introduce an image set of 8 image pairs all 
+containing view port changes and a simple method to generate a large 
+amount of test cases based on these 8 pairs. The experimental results 
+show that the proposed algorithm, overall, is superior to traditional 
+approaches in finding correct correspondences.
 \end{abstract}
 
 \section{Introduction}
@@ -531,7 +550,7 @@ Match (\emph{MM}) is less complex but performs slightly worse than
 Mirror Match with Clustering (\emph{MMC}). In cases where high 
 
 
-\section{Experimental Setup}
+\section{Experiments}
 \label{experiment}
 
 To reliably measure the accuracity of a matching method on real images 
@@ -572,14 +591,387 @@ and horizontal offset. Given an image pair I can obtain $n$ pairs of
 patches where the two patches in any pair might or might not overlap.  
 This ensures that the patch pairs where there is no overlap still retain 
 a basic similarity to each other, while the patches that do overlap 
-often only overlap on a small part of their surface.
+often only overlap on a small part of their surface. Figure 
+\ref{fig:fairey} shows an example of possible pairs of test images 
+(\ref{fig:fairey_crop}) produced from two source images 
+(\ref{fig:fairey1} and \ref{fig:fairey2}). Producing $n$ such pairs 
+allows us to test not just how well the matching algorithm performs on 
+corresponding images, but also how many false positives we get on 
+similar images that don't overlap.
+
+The set of source images and homographies as well as the a script to 
+generate the cropped test sets based on them have been published. The 
+actual testsets used for testing in this paper are also available 
+online\footnote{They can be found on INSERT URL HERE}.
+
+\begin{figure}
+	\makebox[\textwidth][c]{%
+		\begin{subfigure}[t]{0.50\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/pair_example1}
+			\caption{Mural by Fairey (1)}
+			\label{fig:fairey1}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.50\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/pair_example2}
+			\caption{Mural by Fairey (2)}
+			\label{fig:fairey2}
+		\end{subfigure}%
+	}%
+	\\
+	\makebox[\textwidth][c]{
+		%~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		
+		\begin{subfigure}[t]{1.16\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/crop_examples}
+			\caption{Image pairs}
+			\label{fig:fairey_crop}
+		\end{subfigure}%
+	}%
+	\label{fig:fairey}
+	\caption{Example of test set produced by pair of images}
+\end{figure}
+
+\subsection{Experimental setup}
+
+Using the image test sets described above, the \emph{MM} and \emph{MMC} 
+algorithms have been tested against a baseline algorithm incorporating 
+ideas from the algorithm Lowe proposed in \cite{lowe2004sift} as well as 
+the gold standard algorithm for calculating homographies proposed in 
+\cite{multipleView}. For reference the algorithm can be seen in 
+\ref{alg:baseline}.
+
+\begin{algorithm}
+\caption{Baseline Match Algorithm (\emph{BM})}
+\label{alg:baseline}
+\begin{algorithmic}
+\Require $image_1$ : image, $image_2$ : image, $threshold$ : float $\in 
+\mathbb{R}$
+\State $matches_{init}\gets \varnothing$
+\State $matches_{final}\gets \varnothing$
+\State $features_1 \gets getFeatures(image_1)$
+\State $features_2 \gets getFeatures(image_2)$
+\ForAll{$f_i \in features_1$} \Comment Get best match for all features 
+in $image_1$
+	\State $f_m,f_n \gets getTwoNearestNeighbors(f_i, features_2)$
+	\State $ratio \gets getSimilarity(f_i, f_n) / getSimilarity(f_i, 
+	f_m)$
+	\If{$ratio < threshold$}
+		\State $matches_{init} \gets \left(f_i, f_m\right)$
+	\EndIf
+\EndFor
+%
+\ForAll{$f_i \in features_2$} \Comment Get best match for all features 
+in $image_2$
+	\State $f_m,f_n \gets getTwoNearestNeighbors(f_i, features_1)$
+	\State $ratio \gets getSimilarity(f_i, f_n) / getSimilarity(f_i, 
+	f_m)$
+	\If{$ratio < threshold$}
+		\State $matches_{init} \gets \left(f_i, f_m\right)$
+	\EndIf
+\EndFor
+%
+\ForAll{$\left(f_i, f_j \right) \in matches_{init}$} \Comment Filter 
+matches
+\If{$\left(f_j, f_i \right) \in matches_{init} \wedge \left(f_j, 
+f_i\right) \not\in matches_{final}$}
+		\State $matches_{final} \gets (f_i, f_j)$
+	\EndIf
+\EndFor \\
+\Return $matches_{final}$
+\end{algorithmic}
+\end{algorithm}
+
+For each test set of cropped image pairs the three 
+algorithms\footnote{\emph{MM}, \emph{MMC} and \emph{BM}} are applied to 
+each pair of images, and the threshold for each is varied over 50 evenly 
+spaced values. For \emph{MM} and \emph{BM} these values lie between 
+$0.4$ and $0.8$ where as the threshold for \emph{MMC} is varied between 
+$0.8$ and $1.0$. For each match returned by any of the algorithms, the 
+match is registered as an inlier if the endpoint in the second image 
+lies within $5$px of the true position calculated by the homography.  
+That is, given $H$ relating $I_1$ with $I_2$ and a match ($p_1, p_2$) 
+then the match is an inlier if $\left\vert Hp_1 - p_2 \right\vert < 5$.  
+This is a relatively lenient threshold since radial distortion from the 
+lens as well as inconsistencies to the planar assumption of the 
+background means that $H$ can not be entirely accurate. The experiments 
+are run on the $8$ image pairs in the test set, as well as the graf 
+image from \cite{mikolajczyk2005performance}.
 
 \section{Results}
 \label{results}
 
+\begin{figure}
+	\makebox[\textwidth][c]{%
+		\begin{subfigure}[t]{0.35\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/fairey_burma_1}
+			\caption{Burma by Fairey (1)}
+			\label{fig:burma1}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.35\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/fairey_burma_2}
+			\caption{Burma by Fairey (2)}
+			\label{fig:burma2}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.35\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/result_fairey_burma}
+			\caption{X: Nb of correct matches. Y: Accuracity}
+			\label{fig:result_burma}
+		\end{subfigure}%
+	}%
+	\label{fig:burma}
+	\caption{results on Burma by Fairey}
+\end{figure}
+
+\begin{figure}
+	\makebox[\textwidth][c]{%
+		\begin{subfigure}[t]{0.25\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/fairey_lady_1}
+			\caption{Lady by Fairey (1)}
+			\label{fig:lady1}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.25\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/fairey_lady_2}
+			\caption{Lady by Fairey (2)}
+			\label{fig:lady2}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.55\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/result_fairey_lady}
+			\caption{X: Nb of correct matches. Y: Accuracity}
+			\label{fig:result_lady}
+		\end{subfigure}%
+	}%
+	\label{fig:lady}
+	\caption{results on Lady by Fairey}
+\end{figure}
 
 
-\bibliographystyle{abbrv}
+\begin{figure}
+	\makebox[\textwidth][c]{%
+		\begin{subfigure}[t]{0.35\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/scharf_1}
+			\caption{Faces by Scharf (1)}
+			\label{fig:faces1}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.35\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/scharf_2}
+			\caption{Faces by Scharf (2)}
+			\label{fig:faces2}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.35\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/result_scharf}
+			\caption{X: Nb of correct matches. Y: Accuracity}
+			\label{fig:result_faces}
+		\end{subfigure}%
+	}%
+	\label{fig:faces}
+	\caption{results on Faces by Scharf}
+\end{figure}
+
+\begin{figure}
+	\makebox[\textwidth][c]{%
+		\begin{subfigure}[t]{0.35\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/houston_1}
+			\caption{Houston (1)}
+			\label{fig:houston1}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.35\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/houston_2}
+			\caption{Houston (2)}
+			\label{fig:houston2}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.35\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/result_houston}
+			\caption{X: Nb of correct matches. Y: Accuracity}
+			\label{fig:result_houston}
+		\end{subfigure}%
+	}%
+	\label{fig:houston}
+	\caption{Results on Houston}
+\end{figure}
+
+\begin{figure}
+	\makebox[\textwidth][c]{%
+		\begin{subfigure}[t]{0.25\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/blu_head_1}
+			\caption{head by blu (1)}
+			\label{fig:head1}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.25\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/blu_head_2}
+			\caption{head by blu (2)}
+			\label{fig:head2}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.55\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/result_blu_head}
+			\caption{X: Nb of correct matches. Y: Accuracity}
+			\label{fig:result_head}
+		\end{subfigure}%
+	}%
+	\label{fig:head}
+	\caption{results on head by blu}
+\end{figure}
+
+\begin{figure}
+	\makebox[\textwidth][c]{%
+		\begin{subfigure}[t]{0.25\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/blu_pencil_1}
+			\caption{Pencil by Blu (1)}
+			\label{fig:pencil1}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.25\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/blu_pencil_2}
+			\caption{Pencil by Blu (2)}
+			\label{fig:pencil2}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.55\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/result_blu_pencil}
+			\caption{X: Nb of correct matches. Y: Accuracity}
+			\label{fig:result_pencil}
+		\end{subfigure}%
+	}%
+	\label{fig:pencil}
+	\caption{Results on Pencil by Blu}
+\end{figure}
+
+\begin{figure}
+	\makebox[\textwidth][c]{%
+		\begin{subfigure}[t]{0.35\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/banksy_city_1}
+			\caption{City by Banksy (1)}
+			\label{fig:city1}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.35\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/banksy_city_2}
+			\caption{City by Banksy (2)}
+			\label{fig:city2}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.35\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/result_banksy_city}
+			\caption{X: Nb of correct matches. Y: Accuracity}
+			\label{fig:result_city}
+		\end{subfigure}%
+	}%
+	\label{fig:city}
+	\caption{results on City}
+\end{figure}
+
+\begin{figure}
+	\makebox[\textwidth][c]{%
+		\begin{subfigure}[t]{0.35\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/banksy_stroller_1}
+			\caption{Stroller by Banksy (1)}
+			\label{fig:stroller1}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.35\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/banksy_stroller_2}
+			\caption{Stroller by Banksy (2)}
+			\label{fig:stroller2}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.35\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/result_banksy_stroller}
+			\caption{X: Nb of correct matches. Y: Accuracity}
+			\label{fig:result_stroller}
+		\end{subfigure}%
+	}%
+	\label{fig:stroller}
+	\caption{Results on Stroller by Banksy}
+\end{figure}
+
+
+\begin{figure}
+	\makebox[\textwidth][c]{%
+		\begin{subfigure}[t]{0.35\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/graf_1}
+			\caption{Graf (1)}
+			\label{fig:graf1}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.35\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/graf_3}
+			\caption{Graf (3)}
+			\label{fig:graf3}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.35\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/result_graf}
+			\caption{X: Nb of correct matches. Y: Accuracity}
+			\label{fig:result_graf}
+		\end{subfigure}%
+	}%
+	\label{fig:graf}
+	\caption{results on Graf}
+\end{figure}
+
+In figure \ref{fig:stroller} to \ref{fig:graf} the results on the images
+
+\bibliographystyle{IEEEtran}
 \bibliography{bibliography}
 \end{document}
 

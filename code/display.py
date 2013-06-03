@@ -286,14 +286,14 @@ def accuDetail(correct, total, legend, ylim = 100, treshold=1000) :
 	accuHist(accu, legend, ylim=ylim)
 
 
-def accuPlot(correct, total, legends, ylim=0.0) :
+def accuPlot(correct, total, legends, ylim=(0.0,1.01)) :
 	for ts,cs,l,color in zip(total, correct, legends, ["blue", "cyan", "green", "orange", "red"]) :
 		xs = [sum(c) for c in cs]
 		ys = [1 if sum(t) == 0 else sum(c)/float(sum(t)) for (c, t) in zip(cs, ts)]
 		pylab.plot(xs, ys, '-', label=l, color=color, alpha=0.65)
 		pylab.legend(loc="best")
 	removeDecoration()
-	pylab.ylim(ylim,1.01)
+	pylab.ylim(ylim[0],ylim[1])
 
 
 def distHist(dist, dist_treshold = 5, dist_distinct = None, accuracity = None, accu_y_lim = 100) :
