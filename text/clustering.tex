@@ -1,5 +1,6 @@
 %\documentclass[12pt,journal,compsoc]{IEEEtran}
 \documentclass{article}
+\usepackage{footnote}
 \usepackage{graphicx}
 \usepackage{cite}
 \usepackage{hyperref}
@@ -33,7 +34,7 @@ the fact that any match between two images should be better than all
 possible matches within the image itself. The second algorithm extends 
 this idea by using the community structure in the similarity graph of 
 feature points to reliably find correspondences. To evaluate the 
-algorithms experimentally we introduce an image set of 8 image pairs all 
+algorithms experimentally we introduce a set of 8 image pairs all 
 containing view port changes and a simple method to generate a large 
 amount of test cases based on these 8 pairs. The experimental results 
 show that the proposed algorithm, overall, is superior to traditional 
@@ -42,78 +43,73 @@ approaches in finding correct correspondences.
 
 \section{Introduction}
 
-Since the introduction of feature points, several methods for matching 
-them across images have been proposed in order to maximize the amount of 
-correct matches. In this part of the project I introduce two methods to 
-reliably match feature points. The word 'reliable' covers that matches 
-only are returned if they are judged as sound. That is, matches should 
-only be returned if there are objects or scenes that appear in both 
-images.
+When matching feature points between two images we are faced with the 
+dilemma of choosing a feature descriptor. We can either choose a 
+discriminative descriptor that has a high accuracy but little 
+robustness. Alternatively a robust descriptor will better match features 
+across changes such as illumination, perspective and image quality at 
+the expense of accuracy.
 
-When matching feature points between two images we are often faced with 
-a dilemma between making the feature descriptor more discriminative to 
-make sure only correct matches are made, and making it less 
-discriminative to increase the robustness of the descriptor over 
-different changes such as illumination, perspective and image quality.  
-Any feature type aiming for robustness will have cases where it isn't 
-possible to generate reliable matches if we only look at the pairwise 
-correspondence of the descriptors. 
-
-To get around this limitation several methods have been proposed in the 
-literature. One of the most fruitful approaches have been to look at the 
-geometric configuration of the feature points and match them with 
-respect to assumptions concerning the variance between images. For 
-example an angular and distance constraint between matches as considered 
-by \cite{kim2008efficient} performs well in situations where no camera 
-rotation occurs between the two images but will likely fail in other 
-cases. Various scenarios have been proposed to improve on this simple 
-assumption such as epipolar constraints (\cite{torr2000mlesac}, 
-\cite{chum2005matching}) and pairwise constraints 
-(\cite{choi2009robust}, \cite{leordeanu2005spectral}). The Epipolar 
-constraint carries the assumption that the two images matched are 
-related by an affine transformation. That is, there is no relative 
-movement of objects in between images and either the viewpoint is fixed 
-or the image resides entirely on a plane. In practice this assumption 
-largely holds true when all objects we are interested in matching are 
-roughly the same distance from the camera and when we don't expect to 
-match objects that aren't consistently positioned across images.  
-Pairwise constraints provide a more robust approach to this problem by 
-looking at a set of proposed correspondences and defining a pairwise 
-error between any two matches usually based on the assumption that two 
-neighboring correspondences will usually have similar angles and 
-distances. We can then convert the problem to an optimization problem 
-and return a set of correspondences that minimizes this error such as 
-proposed in \cite{choi2009robust} and \cite{leordeanu2005spectral}.  
-This approach provides more robustness because assumptions that might 
-not be true globally often still holds on a local level.
+To get the advantage of a robust descriptor while maintaining a high 
+accuracy, several methods have been proposed in the literature to better 
+match the resulting descriptors.  In particular many approaches look at 
+the geometric configuration of the feature points and match them with 
+according to assumptions made about the geometric relationship between 
+the images matched. A simple example is an angular and distance 
+constraint between matches as considered by \cite{kim2008efficient}.  
+This performs well in situations where no camera rotation occurs between 
+the two images, but fails when this assumption isn't met. Various 
+scenarios have been proposed to improve on this simple assumption such 
+as epipolar constraints (\cite{torr2000mlesac}, \cite{chum2005matching}) 
+and pairwise constraints (\cite{choi2009robust}, 
+\cite{leordeanu2005spectral}). The Epipolar constraint carries the 
+assumption that the two images matched are related by an affine 
+transformation. That is, there is no relative movement of objects in 
+between images and either the viewpoint is fixed or the image resides 
+entirely on a plane. In practice this assumption largely holds true when 
+all objects we are interested in matching are roughly the same distance 
+from the camera and when we don't expect to match objects that aren't 
+consistently positioned across images.  Pairwise constraints provide a 
+more robust approach by looking at a set of proposed correspondences and 
+defining a pairwise error between any two matches usually based on the 
+assumption that two neighboring correspondences will usually have 
+similar angles and distances. We can then convert the problem to an 
+optimization problem and return a set of correspondences that minimizes 
+this error such as proposed in \cite{choi2009robust} and 
+\cite{leordeanu2005spectral}. This approach provides more robustness in 
+cases where assumptions will be violated globally but might still hold 
+true on a local scale.
 
 Another approach proposed in the literature is to pick out different 
-zones in each image and find a pairing of zones where feature points are 
-only matched within the same zone. \cite{das2008event} proposes 
-clustering the feature points using their geometric position and 
-matching only feature points between groups that have a certain amount 
-of matchings between them. A more sophisticated approach is introduced 
-in \cite{wu2011robust} where the zones are created by surrounding MSER 
-feature points by an ellipse and grouping the SIFT or SURF feature 
-points that fall within the ellipse together. These points can then be 
-matched according to epipolar constraints.
+zones in each image and pair zones when correspondence pairs are mainly 
+found going from one zone to another. This allows for the filtering of 
+all correspondences that do not fall within paired zones.  
+\cite{das2008event} proposes clustering feature points by using their 
+geometric position and exclude correspondences that are geometrically 
+deviant. A more sophisticated approach is introduced in 
+\cite{wu2011robust} where the zones are created by using the MSER 
+feature detector to find areas of interest in the images. These areas 
+can be defined as an ellipse with a certain radius around the interest 
+points. The feature points that fall within this ellipse are then 
+matched according to epipolar constraints. This approach is inspired by 
+\cite{wu2009bundling} where bundling of feature points was used to 
+enhance the search results in large scale partial-duplicate web image 
+search.
 
 In practice there are many situations where using the geometry of the 
 image to filter correspondences is not possible. This situation most 
 often arise when the assumptions made by a geometric method turns out 
-not to hold in a particular use case. This could matchings between 
+not to hold in a particular use case. This could be matchings between 
 images where the content has been scrambled or with so little 
 consistency that even the geometric assumptions break down even on a 
-local level. In addition the geometric methods all require a set of 
-correspondences to begin with. If this set of correspondences is 
-narrowed down to a smaller set with a higher ratio of inliers the result 
-of the geometric matching will be both faster and more accurate. Finally 
-some use cases might require a performance that can't be achieved by a 
-more complex geometric method where simple non geometric methods might 
-be able to provide additional matching accuracy with a smaller 
-performance penalty. This approach is inspired by \cite{wu2009bundling} 
-where bundling of feature points was used to enhance the search results 
-in large scale partial-duplicate web image search.
+local level. In addition methods using geometric constraints all require 
+a set of correspondences to begin with. If this set of correspondences 
+is narrowed down to a smaller set with a higher ratio of correct matches 
+the result of the geometric matching will be both faster and more 
+accurate.  Finally some use cases might require a performance that can't 
+be achieved by a more complex geometric method where simple non 
+geometric methods might be able to provide additional matching accuracy 
+with a smaller performance penalty.
 
 There are a relatively small number of algorithms proposed to solve the 
 matching problem without involving geometric constraints. Traditionally 
@@ -144,18 +140,19 @@ other geometric solutions when appropriate.
 Based on this idea the two proposed methods find reliable matches as 
 follows:
 \begin{itemize}
-\item{\emph{Mirror Match (MM)}: Match features using the gold standard 
-algorithm\cite[p. 114]{multipleView} ranked by similarity and thresheld 
-by uniqueness\cite{lowe2004sift}. However instead of matching features 
-from one image with features in another, we match every feature with all 
-other features of the two images combined. Only matches from one image 
-to the other are returned.}
-\item{\emph{Mirror Match with Clustering (MMC)}: Take the combined set 
-of feature points from both images and cluster these points according to 
-their descriptors. Given a resulting partition of points, no matches are 
-returned if it contains only feature points from one image. If the 
-partition contains points from both images, \emph{Mirror Match} is used 
-to find the best matches within the partition.}
+\item[]{\emph{Mirror Match (MM)}: Match features using the gold standard 
+		algorithm\cite[p. 114]{multipleView} ranked by similarity and 
+		thresheld by uniqueness\cite{lowe2004sift}.  However instead of 
+		matching features from one image with features in another, we 
+	match every feature with all other features of the two images 
+combined. Only matches from one image to the other are returned.}
+\item[]{\emph{Mirror Match with Clustering (MMC)}: Take the combined set 
+		of feature points from both images and cluster these points 
+		according to their descriptors. Given a resulting partition of 
+		points, no matches are returned if it contains only feature 
+	points from one image. If the partition contains points from both 
+images, \emph{Mirror Match} is used to find the best matches within the 
+partition.}
 \end{itemize}
 
 Matching feature points against the entire set of points from both 
@@ -164,48 +161,37 @@ higher. In almost all cases\footnote{Exceptions would include cases
 where we want to find all particular points in a pattern and other use 
 cases where the correspondence isn't assumed to be unique}, a good match 
 between two images is unambiguous in the sense that there are no other 
-equally (or almost equally) good potential matches to the same point.  
-This is the key insight behind the algorithm presented by Lowe in 
-\cite{lowe2004sift}. However the implication doesn't follow the other 
-way around. In the case that a feature point don't have any actual 
-correspondence in the other image, there is no guarantee that this 
-feature point might not still be uniquely matched to a feature point in 
-the other image. The issue is particularly pronounced if we compare two 
-images that don't correspond. For any proposed correspondence it is 
-entirely probable that this correspondence is unique even if it isn't 
-correct. With Mirror Match this ambiguity is avoided by incorporating 
-the feature points of both images when a match is made. When the two 
-images have nothing to do with each other, chances are that a feature 
-point will match better with another feature point from the same image 
-in which case it is easily discarded.
+equally good potential matches to the same point.  This is the key 
+insight behind the algorithm presented by Lowe in \cite{lowe2004sift}.  
+However the implication doesn't follow the other way around. In the case 
+that a feature point doesn't have a true correspondence there might 
+still exist point with which the feature point is uniquely matched. The 
+issue is particularly pronounced if we compare two images that don't 
+correspond. For any proposed correspondence it is entirely probable that 
+this correspondence is unique even if it isn't correct. With Mirror 
+Match this ambiguity is avoided by incorporating the feature points of 
+both images when a match is made. When the two images have no overlap or 
+objects in common, chances are that a feature point will match better 
+with another feature point from the same image in which case it is 
+easily discarded.
 
 Often images will contain repetitive patterns that are difficult to 
 match\footnote{In fact this particular problem has been given attention 
-before by for example \cite{fan2011towards}} because the feature points 
-covering these patterns will look very similar. If we threshold by 
-uniqueness like in Mirror Match this means that these points will often 
-be discarded even if they might have good correspondences. To solve this 
-problem the enhanced Mirror Match with Clustering makes it possible to 
-look at groups of similar feature points one at a time and within each 
-group finding the best matches. This is done by taking the set of 
-feature points from both images and clustering. The resulting partitions 
-will each contain feature points that are similar to each other. In some 
-cases the clustering will end up grouping feature points of only one 
-image together which can then easily be discarded in the matching 
-process. In other cases partitions will contain feature points from both 
-images that can then be matched using \emph{MM} but with lower 
-thresholds.
-
-The report is organized as follows. In section \ref{algorithms} I will 
-describe the two algorithms. Section \ref{experiment} will cover the 
-experimental set up and introduce the image set that is used in testing.  
-In section \ref{results} I will go through the results and conclude.
+before by for example \cite{fan2011towards}} because the feature 
+descriptors covering these patterns will be similar. If we remove points 
+that aren't deemed sufficiently unique like in \emph{MM} this means that 
+these points will often be discarded even if they are correctly matched.
+\emph{MMC} makes it possible to look at groups of similar feature points 
+one at a time and within each group find the best matches. This is done 
+by taking the set of feature points from both images and cluster them by 
+their similarity. In some cases the clustering will end up grouping 
+feature points of only one image together which can then easily be 
+discarded in the matching process.  In other cases partitions will 
+contain similar feature points from both images that can then be matched 
+using \emph{MM} but with much lower thresholds.
 
 \section{Algorithms}
 \label{algorithms}
-
-To discuss the implementation of \emph{MM} and \emph{MMC} a few notes on 
-notation will be helpful. BLAH BLAH!
 
 \subsection{Mirror Match (\emph{MM})}
 
@@ -252,10 +238,10 @@ correspondences are found and a filtering state where correspondences
 within the same image are removed. In the acquisition state the function 
 \emph{getFeatures($I_i$)} returns a set of feature points given an 
 image.  In practice the feature used for the experiments have been 
-SIFT\cite{lowe2004sift}, but there aren't any reason why other features 
+SIFT\cite{lowe2004sift}, but there are no reasons why other features 
 such as SURF\cite{bay2006surf} or BRIEF\cite{calonder2010brief} couldn't 
-be used just as well. The matching state uses K-Nearest Neighbors to 
-return the two closest neighbors in the set of features for any given 
+be used just as well. The features are matched using K-Nearest Neighbors 
+to return the two closest neighbors in the set of features for any given 
 feature $f_i$ and calculates the ratio between the correspondences as 
 proposed in \cite{lowe2004sift}.  Any correspondence with a ratio below 
 the threshold supplied will be discarded. Finally in the filter the 
@@ -292,25 +278,25 @@ those that match two points in the same image.
 	\caption{Illustration of matches filtered by \emph{MM}}
 \end{figure}
 
-Figure \ref{fig:compare_mirror} shows an example of the performance of 
-\emph{MM}. In sub figure \ref{fig:unique} the result of a normal 
-matching of two images is shown. The two images appear side by side and 
-for each correspondence between them, a line has been drawn from one 
-image to the other. The color of the line indicates if the 
-correspondence is accurate. Sub figure \ref{fig:within} shows the 
-correspondences found by mirror match using the same threshold before 
-the matches within the same image has been filtered out. In particular 
-the fence by the bottom of the image admits correspondences that can 
-conveniently be removed as done in sub figure \ref{fig:without} where 
-only the actual correspondences returned by the algorithm are shown.
+Figure \ref{fig:compare_mirror} shows an example of the result of 
+\emph{MM}. In figure \ref{fig:unique} the result of a normal matching of 
+two images is shown. The two images appear side by side and for each 
+correspondence between them, a line has been drawn from one image to the 
+other. The color of the line indicates if the correspondence is 
+accurate. Figure \ref{fig:within} shows the correspondences found by 
+mirror match using the same threshold before the matches within the same 
+image has been filtered out. In particular the fence by the bottom of 
+the image admits correspondences that can conveniently be removed as 
+done in sub figure \ref{fig:without} where only the actual 
+correspondences returned by the algorithm are shown.
 
 \subsection{Mirror Match with Clustering (\emph{MMC})}
 
 As opposed to \emph{MM}, \emph{MMC} diverges from traditional 
 non-geometric feature matching by clustering the feature points by 
 similarity. This process yields partitions of fairly similar feature 
-points that we can match using the same approach as \emph{MM}. Before I 
-introduce the implementation details I will go over the problem of graph 
+points that we can match using the same approach as \emph{MM}. Before we 
+introduce the implementation details we will go over the problem of graph 
 clustering and how it relates to feature matching.
 
 \subsubsection{Graph Clustering}
@@ -318,7 +304,7 @@ clustering and how it relates to feature matching.
 Given a set of feature points from two images, $im_1$ and $im_2$: $F_k = 
 \{k_i, k_j$ for $k_i \in im_1, k_j \in im_2\}$ as well as a matching 
 function $M(k_i, k_j) \rightarrow \mathbb{R}$ that takes two feature 
-points in an image and return their matching score, we can define a 
+points in an image and returns their matching score, we can define a 
 matrix $A$ where each element $A_ij = M(k_i, k_j)$. A can be interpreted 
 as the \emph{adjecency matrix} of the fully connected graph where each 
 vertex corresponds to a keypoint and the edge between two vertices has a 
@@ -361,8 +347,8 @@ amount of partitions in for example Spectral clustering or Pott's model
 clustering further exacerbates the issue since smaller partitions are 
 then combined into one to achieve the right amount of partitions.
 
-Based on these observations I've decided to use Louvain clustering for 
-grouping feature points since it's fast, performs well, doesn't require 
+Based on these observations we use Louvain clustering for grouping 
+feature points since it's fast, performs well, doesn't require 
 parameters and doesn't emphasize partitions of equal sizes.
 
 \subsubsection{Clustering feature points using Louvain clustering}
@@ -391,20 +377,18 @@ features)$
 \end{algorithmic}
 \end{algorithm}
 
-Unlike the \emph{MM} algorithm the feature points are partitioned before 
-the matching stage. While the louvain clustering algorithm doesn't 
-require any parameters in itself, it tends towards clustering all 
-feature points together in the same partition if the graph is fully 
-connected or close. To ensure that the graph is well clustered, the 
-adjacency matrix is pruned so only edges above a certain threshold is 
-kept. From empirical analysis keeping around 2.5\% of edges seems to 
-work well. Figure \ref{fig:graph} shows the result of clustering the 
-feature points displayed as a graph where each node correspond to a 
-feature point. Here the border of nodes signifies the original image 
-while the color of the node is decided by what partition it belongs to.  
-Notice that since a limited amount of colors are used disconnected 
-subgraphs of the same color can be assumed to belong to separate 
-partitions. The sub figure \ref{fig:cropped_graph} shows a detailed 
+While the louvain clustering algorithm doesn't require any parameters in 
+itself, it tends towards clustering all feature points together in the 
+same partition if the graph is very connected.  To ensure that the graph 
+is well clustered, the adjacency matrix is pruned so only edges above a 
+certain threshold is kept. From empirical analysis keeping around 2.5\% 
+of edges seems to work well. Figure \ref{fig:graph} shows the result of 
+clustering the feature points displayed as a graph where each node 
+correspond to a feature point. Here the border of nodes signifies the 
+original image while the color of the node is decided by what partition 
+it belongs to.  Notice that since a limited amount of colors are used 
+disconnected subgraphs of the same color can be assumed to belong to 
+separate partitions. Figure \ref{fig:cropped_graph} shows a detailed 
 section of the graph where the interplay between small partitions 
 consisting of two or three nodes as well as larger partitions consisting 
 of several hundred nodes can be seen.
@@ -491,7 +475,7 @@ images linked by one edge. This is often the case if all edges below a
 certain similarity threshold have been removed in the graph, in which 
 case it's probable that some nodes will end up with only one outgoing 
 edge. This doesn't necessarily imply that the correspondence represented 
-by the edge is unique, but the only way to figure out if it is, is by 
+by the edge is unique, but the only way to discern if it is, is by 
 checking the similarity scores of the nearest neighbor as proposed in 
 \cite{lowe2004sift}.
 
@@ -537,67 +521,52 @@ f_m)$
 \end{algorithm}
 
 
-The two algorithms introduced in this report are designed to work with 
-feature points such as ,  or similar. While the experimental results 
-have all been done with the SIFT descriptor, there aren't any 
-theoretical or practical issues with using other types of feature 
-points. 
-
-In this report I propose two algorithms for better matching feature 
-points without any geometric assumptions about the images matched. The 
-two algorithms are complementary in the sense that the first, Mirror 
-Match (\emph{MM}) is less complex but performs slightly worse than 
-Mirror Match with Clustering (\emph{MMC}). In cases where high 
-
-
 \section{Experiments}
 \label{experiment}
 
-To reliably measure the accuracity of a matching method on real images 
-we either need a set of image pairs tied by a homography or manually 
-count the number of inliers. The latter poses becomes unfeasable the 
-moment we attempt to test a non-trivial set of images, but has the 
-advantage of working with any image pair. Using a homography between 
-image pairs reduces the test cases to images where the matched areas lie 
-on a plane, or alternatively that there is no viewpoint change. This 
-greatly reduces the body of image pairs we can use to reliably test 
-matching methods. In \cite{mikolaczyk2005performance} Mikolajczyk and 
-Schmid introduces a set of images to compare the performance of feature 
-detectors. The test set looks at different feature descriptors 
-invariance faced with different lighting, blur, rotation as well as 
-viewpoint change. However in practice the image used for the view point 
-change featuring a wall of graffiti\footnote{To ensure that all points 
-lie on the same plane} has gone on to be used the most for later tests 
-given that most of the other test pairs have since become relatively 
-trivial\footnote{see \cite{wu2011robust} or \cite{delponte2006svd} for 
-examples}.
+To reliably measure the accuracy of a matching method on real images we 
+either need a set of image pairs tied by a homography or manually count 
+the number of inliers. The latter becomes unfeasible the moment we 
+attempt to test a non-trivial set of images, but has the advantage of 
+working with any image pair. Using a homography between image pairs 
+reduces the test cases to images where the matched areas lie on a plane, 
+or alternatively that there is no viewpoint change. This greatly reduces 
+the body of image pairs we can use to reliably test matching methods. In 
+\cite{mikolaczyk2005performance} Mikolajczyk and Schmid introduces a set 
+of images to compare the performance of feature detectors. The test set 
+covers different types of image variance such as different lighting, 
+blur, rotation as well as viewpoint change.  However in practice the 
+image used for the view point change featuring a wall of 
+graffiti\footnote{To ensure that all points lie on the same plane} has 
+gone on to be used the most for later tests given that most of the other 
+test pairs have since become relatively trivial to match\footnote{see 
+\cite{wu2011robust} or \cite{delponte2006svd} for examples}.
 
-Inspired by this I have collected a set of image pairs featuring murals 
-of a few famous artists\footnote{Including Banksy, Blu and Shepard 
-Fairey among others}. Each pair consist of images of the same motif 
-taken from different angles, often including repetitive patterns and 
-texture. Based on this image set the two algorithms are tested on a 
-series of image patches from each pair. In order to test if a matching 
-is reliable we of course need correct matches when the image pair we are 
-testing on indeed features the same scene, but we also need to make sure 
-that we don't get any matches when the two images have nothing in 
-common. This means that it isn't enough just testing against pairs of 
-images that we know match. We also need to test against pairs that might 
-look like they could match but in fact don't.
+Inspired by the graffiti image we have collected a set of image pairs 
+featuring murals of a few different artists\footnote{Including Banksy, 
+Blu and Shepard Fairey among others}. Each pair consist of images of the 
+same motive taken from different angles, often including repetitive 
+patterns and texture. Based on this image set the two algorithms are 
+tested on a series of image patches from each pair. To verify that the 
+algorithms proposed are reliable we need to test that we get good 
+matches when images overlap and that we get no matches when they don't.  
+This means that it isn't enough just testing against pairs of images 
+that we know match.  We also need to test against pairs that might look 
+like they could match but in fact don't.
 
-With this in mind I have created a test suite by cropping out $300$ 
+With this in mind we have created a test suite by cropping out $300$ 
 pixel by $300$ pixel patches of the original pair with a random vertical 
-and horizontal offset. Given an image pair I can obtain $n$ pairs of 
-patches where the two patches in any pair might or might not overlap.  
-This ensures that the patch pairs where there is no overlap still retain 
-a basic similarity to each other, while the patches that do overlap 
-often only overlap on a small part of their surface. Figure 
-\ref{fig:fairey} shows an example of possible pairs of test images 
-(\ref{fig:fairey_crop}) produced from two source images 
-(\ref{fig:fairey1} and \ref{fig:fairey2}). Producing $n$ such pairs 
-allows us to test not just how well the matching algorithm performs on 
-corresponding images, but also how many false positives we get on 
-similar images that don't overlap.
+and horizontal offset. Given a source image pair we can obtain $n$ pairs 
+of patches where the two patches in any pair might or might not overlap.  
+This ensures that the patch pairs whith no overlap still retain a basic 
+similarity to each other, while the patches that do overlap often only 
+overlap on a small part of their surface. Figure \ref{fig:fairey} shows 
+an example of possible pairs of test images (\ref{fig:fairey_crop}) 
+produced from two source images (\ref{fig:fairey1} and 
+\ref{fig:fairey2}). Producing $n$ such pairs allows us to test not just 
+how well the matching algorithm performs on corresponding images, but 
+also how many false positives we get on similar images that don't 
+overlap.
 
 The set of source images and homographies as well as the a script to 
 generate the cropped test sets based on them have been published. The 
@@ -640,68 +609,24 @@ online\footnote{They can be found on INSERT URL HERE}.
 \subsection{Experimental setup}
 
 Using the image test sets described above, the \emph{MM} and \emph{MMC} 
-algorithms have been tested against a baseline algorithm incorporating 
-ideas from the algorithm Lowe proposed in \cite{lowe2004sift} as well as 
-the gold standard algorithm for calculating homographies proposed in 
-\cite{multipleView}. For reference the algorithm can be seen in 
-\ref{alg:baseline}.
-
-\begin{algorithm}
-\caption{Baseline Match Algorithm (\emph{BM})}
-\label{alg:baseline}
-\begin{algorithmic}
-\Require $image_1$ : image, $image_2$ : image, $threshold$ : float $\in 
-\mathbb{R}$
-\State $matches_{init}\gets \varnothing$
-\State $matches_{final}\gets \varnothing$
-\State $features_1 \gets getFeatures(image_1)$
-\State $features_2 \gets getFeatures(image_2)$
-\ForAll{$f_i \in features_1$} \Comment Get best match for all features 
-in $image_1$
-	\State $f_m,f_n \gets getTwoNearestNeighbors(f_i, features_2)$
-	\State $ratio \gets getSimilarity(f_i, f_n) / getSimilarity(f_i, 
-	f_m)$
-	\If{$ratio < threshold$}
-		\State $matches_{init} \gets \left(f_i, f_m\right)$
-	\EndIf
-\EndFor
-%
-\ForAll{$f_i \in features_2$} \Comment Get best match for all features 
-in $image_2$
-	\State $f_m,f_n \gets getTwoNearestNeighbors(f_i, features_1)$
-	\State $ratio \gets getSimilarity(f_i, f_n) / getSimilarity(f_i, 
-	f_m)$
-	\If{$ratio < threshold$}
-		\State $matches_{init} \gets \left(f_i, f_m\right)$
-	\EndIf
-\EndFor
-%
-\ForAll{$\left(f_i, f_j \right) \in matches_{init}$} \Comment Filter 
-matches
-\If{$\left(f_j, f_i \right) \in matches_{init} \wedge \left(f_j, 
-f_i\right) \not\in matches_{final}$}
-		\State $matches_{final} \gets (f_i, f_j)$
-	\EndIf
-\EndFor \\
-\Return $matches_{final}$
-\end{algorithmic}
-\end{algorithm}
-
-For each test set of cropped image pairs the three 
-algorithms\footnote{\emph{MM}, \emph{MMC} and \emph{BM}} are applied to 
-each pair of images, and the threshold for each is varied over 50 evenly 
-spaced values. For \emph{MM} and \emph{BM} these values lie between 
-$0.4$ and $0.8$ where as the threshold for \emph{MMC} is varied between 
-$0.8$ and $1.0$. For each match returned by any of the algorithms, the 
-match is registered as an inlier if the endpoint in the second image 
-lies within $5$px of the true position calculated by the homography.  
-That is, given $H$ relating $I_1$ with $I_2$ and a match ($p_1, p_2$) 
-then the match is an inlier if $\left\vert Hp_1 - p_2 \right\vert < 5$.  
-This is a relatively lenient threshold since radial distortion from the 
-lens as well as inconsistencies to the planar assumption of the 
-background means that $H$ can not be entirely accurate. The experiments 
-are run on the $8$ image pairs in the test set, as well as the graf 
-image from \cite{mikolajczyk2005performance}.
+algorithms have been tested against a the algorithm Lowe proposed in 
+\cite{lowe2004sift} as well as the isodata matching algorithm proposed 
+in \cite{das2008event}.  For each test set of cropped image pairs the 
+four algorithms\footnote{\emph{MM}, \emph{MMC}, \emph{SIFT} and 
+\emph{Isodata}} are applied to each pair of images ($100$ per test set), 
+and the threshold for each algorithm is varied over 50 evenly spaced 
+values.  For \emph{MM} and \emph{SIFT} these values lie between $0.4$ 
+and $0.8$ where as the threshold for \emph{MMC} and \emph{Isodata} is 
+varied between $0.8$ and $1.0$.  For each match returned by any of the 
+algorithms, the match is registered as an inlier if the endpoint in the 
+second image lies within $5$px of the true position calculated by the 
+homography.  That is, given $H$ relating $I_1$ with $I_2$ and a match 
+($p_1, p_2$) then the match is an inlier if $\left\vert Hp_1 - p_2 
+\right\vert < 5$.  This is a relatively lenient threshold since radial 
+distortion from the lens as well as inconsistencies to the planar 
+assumption of the background means that $H$ usually isn't entirely 
+accurate. The experiments are run on the $8$ image pairs in the test 
+set, as well as the graf image from \cite{mikolajczyk2005performance}.
 
 \section{Results}
 \label{results}
@@ -727,7 +652,7 @@ image from \cite{mikolajczyk2005performance}.
 		\begin{subfigure}[t]{0.35\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/result_fairey_burma}
-			\caption{X: Nb of correct matches. Y: Accuracity}
+			\caption{X: Nb of correct matches. Y: accuracy}
 			\label{fig:result_burma}
 		\end{subfigure}%
 	}%
@@ -756,7 +681,7 @@ image from \cite{mikolajczyk2005performance}.
 		\begin{subfigure}[t]{0.55\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/result_fairey_lady}
-			\caption{X: Nb of correct matches. Y: Accuracity}
+			\caption{X: Nb of correct matches. Y: accuracy}
 			\label{fig:result_lady}
 		\end{subfigure}%
 	}%
@@ -786,7 +711,7 @@ image from \cite{mikolajczyk2005performance}.
 		\begin{subfigure}[t]{0.35\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/result_scharf}
-			\caption{X: Nb of correct matches. Y: Accuracity}
+			\caption{X: Nb of correct matches. Y: accuracy}
 			\label{fig:result_faces}
 		\end{subfigure}%
 	}%
@@ -815,7 +740,7 @@ image from \cite{mikolajczyk2005performance}.
 		\begin{subfigure}[t]{0.35\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/result_houston}
-			\caption{X: Nb of correct matches. Y: Accuracity}
+			\caption{X: Nb of correct matches. Y: accuracy}
 			\label{fig:result_houston}
 		\end{subfigure}%
 	}%
@@ -844,7 +769,7 @@ image from \cite{mikolajczyk2005performance}.
 		\begin{subfigure}[t]{0.55\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/result_blu_head}
-			\caption{X: Nb of correct matches. Y: Accuracity}
+			\caption{X: Nb of correct matches. Y: accuracy}
 			\label{fig:result_head}
 		\end{subfigure}%
 	}%
@@ -873,7 +798,7 @@ image from \cite{mikolajczyk2005performance}.
 		\begin{subfigure}[t]{0.55\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/result_blu_pencil}
-			\caption{X: Nb of correct matches. Y: Accuracity}
+			\caption{X: Nb of correct matches. Y: accuracy}
 			\label{fig:result_pencil}
 		\end{subfigure}%
 	}%
@@ -902,7 +827,7 @@ image from \cite{mikolajczyk2005performance}.
 		\begin{subfigure}[t]{0.35\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/result_banksy_city}
-			\caption{X: Nb of correct matches. Y: Accuracity}
+			\caption{X: Nb of correct matches. Y: accuracy}
 			\label{fig:result_city}
 		\end{subfigure}%
 	}%
@@ -931,7 +856,7 @@ image from \cite{mikolajczyk2005performance}.
 		\begin{subfigure}[t]{0.35\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/result_banksy_stroller}
-			\caption{X: Nb of correct matches. Y: Accuracity}
+			\caption{X: Nb of correct matches. Y: accuracy}
 			\label{fig:result_stroller}
 		\end{subfigure}%
 	}%
@@ -961,7 +886,7 @@ image from \cite{mikolajczyk2005performance}.
 		\begin{subfigure}[t]{0.35\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/result_graf}
-			\caption{X: Nb of correct matches. Y: Accuracity}
+			\caption{X: Nb of correct matches. Y: accuracy}
 			\label{fig:result_graf}
 		\end{subfigure}%
 	}%
@@ -969,7 +894,67 @@ image from \cite{mikolajczyk2005performance}.
 	\caption{results on Graf}
 \end{figure}
 
-In figure \ref{fig:stroller} to \ref{fig:graf} the results on the images
+In figure \ref{fig:stroller} to \ref{fig:graf} the results on the 
+different image pairs are shown. Keep in mind that the accuracies 
+reflect the tests done on croppings of the source images and as such 
+don't reflect the accuracies of any of the algorithms in matching the 
+two images shown. The Nb of correct matches along the x-axis reflects 
+the total amount of correct correspondences found in the $100$ cropped 
+test pairs generated from the source pair. The accuracy plot reflects 
+the accuracy for each algorithm at a given number of correct 
+correspondences. While most of the cases show a clear advantage of 
+\emph{MM} and \emph{MMC} over \emph{BM}, there are a few exceptions, 
+notably in figure \ref{fig:city} and \ref{fig:pencil}. In the case of 
+figure \ref{fig:pencil} the high general accuracy of all the algorithms 
+makes any improvement hard to obtain, however figure \ref{fig:city} 
+remains an example where the proposed algorithms don't yield any 
+significant improvement. As for the rest of the cases a clear trend 
+emerges however, with \emph{MM} performing significantly better than 
+\emph{BM} and \emph{MMC} most often improving upon that result.
+
+In terms of performance, the three methods all have a complexity of 
+$O(n^2)$ where $n$ is the amount of feature points found in the two 
+images. This complexity assumes that the number of feature points in the 
+images is about the same. However practically speaking \emph{MMC} is 
+much slower than \emph{MM} since the clustering step while having a 
+complexity of $O(nlogn)$ is very computationally intensive. In table 
+\ref{table:running_times} the running time of the algorithm is shown.  
+These numbers should however be interpreted with the knowledge that much 
+of the code behind \emph{MMC} is implemented in python while \emph{MM} 
+and \emph{BM} makes use of opencv to execute computationally intensive 
+operations in C++ which renders it much faster.
+
+\begin{savenotes}
+\begin{table}
+	\centering
+	\small
+\begin{tabular}{l*{4}{c}}
+	Algorithm: & \emph{BM} & \emph{MM} & \emph{MMC} \\
+	\noalign{\smallskip} 
+	%
+	Running time: & 20.94s & 18.23s & 883.99s \\
+\end{tabular}
+\caption{Running times\footnote{As tested on a Intel(R) Core(TM) i5-3550 
+CPU @ 3.30GHz with 8Gb memory}}
+\label{table:running_times}
+\end{table}
+\end{savenotes}
+
+\section{Summary}
+We have addressed the problem of matching feature points without using 
+geometrical constraints and proposed two algorithms \emph{Mirror Match 
+(MM)} and \emph{Mirror Match with Clustering (MMC)}. The two algorithms 
+share the same common idea that feature points should have better 
+matches in another image than in the image they came from to be 
+considered good matches and \emph{MMC} further improves on this idea by 
+using the structure of the similarity graph of the feature points. We 
+also address how to test the algorithms by constructing a image set of 
+$8$ source image pairs and a way to generate testsets based on these 
+pairs. The proposed approach shows promising results when comparing the 
+algorithms on $9$ testsets of $100$ image pairs each where many of the 
+pairs might not have any overlapping areas. In future work it will be 
+usefull to investigate how the algorithms perform when testing on sets 
+of images instead of pairs.
 
 \bibliographystyle{IEEEtran}
 \bibliography{bibliography}

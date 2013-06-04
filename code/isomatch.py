@@ -26,7 +26,11 @@ import pylab
 ####################################
 
 
-def match(paths, options = {}) :
+def match(paths, thresholds, options = {}) :
+
+	# Get matches in usual format
+	def matchFromIndex(i,j) :
+		return (features.getPosition(ks[indices == 0][i]), features.getPosition(ks[indices == 1][j]))
 
 	# Get options
 	k_init				= options.get("k_init", 50)
@@ -35,8 +39,8 @@ def match(paths, options = {}) :
 	max_sd				= options.get("max_sd", 40)
 	min_distance		= options.get("min_distance", 25)
 	verbose				= options.get("verbose", False)
-	keypoint_type		= options.get("keypoint_type", "ORB")
-	descriptor_type		= options.get("descriptor_type", "BRIEF")
+	keypoint_type		= options.get("keypoint_type", "SIFT")
+	descriptor_type		= options.get("descriptor_type", "SIFT")
 
 	# Get images
 	images = map(features.loadImage, paths)
@@ -69,8 +73,12 @@ def match(paths, options = {}) :
 	for i,ms in enumerate(partition_links) :
 		for (j,s) in ms :
 			matches.extend(getPartitionMatches(match_points, part_1 == i, part_2 == j))
+	
+	# Filter matches by uniqueness
+	p = lambda t : [matchFromIndex(i,j) for ((i,j),u) in matches if u < t] 
+	match_set = [p(t) for t in thresholds]
 
-	return matches
+	return match_set
 
 
 
@@ -97,23 +105,20 @@ def showPartitions(part_1, part_2, indices, images, positions) :
 	pylab.show()
 
 
-def getMatchPoints(indices, ks, ds, descriptor_type = "BRIEF") :
-	# Get matches in usual format
-	def matchFromIndex(i,j) :
-		return (features.getPosition(ks[indices == 0][i]), features.getPosition(ks[indices == 1][j]))
+def getMatchPoints(indices, ks, ds, descriptor_type = "SIFT") :
 
 	# Use cv2's matcher to get matching feature points
 	bfMatches = features.bfMatch(descriptor_type, ds[indices == 0], ds[indices == 1])
 
 	# Keep relevant data
-	match_points = [(matchFromIndex(j,i), (j, i), s) for j,(i,s,u) in enumerate(zip(*bfMatches)) if i != None]
+	match_points = [((j, i), u) for j,(i,s,u) in enumerate(zip(*bfMatches)) if i != None]
 
 	return match_points
 
 
 # Get matches that pertain to part_1 in image_1 and part_2 in image_2
 def getPartitionMatches(match_points, part_1_mask, part_2_mask) :
-	return [p for (p, (i,j), s) in match_points if part_1_mask[i] and part_2_mask[j]]
+	return [((i,j),u) for ((i,j), u) in match_points if part_1_mask[i] and part_2_mask[j]]
 
 
 # Count matches that pertain to part_1 in image_1 and part_2 in image_2
