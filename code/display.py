@@ -289,17 +289,33 @@ def accuDetail(correct, total, legend, ylim = 100, treshold=1000) :
 	accuHist(accu, legend, ylim=ylim)
 
 
-def accuPlot(correct, total, legends, ylim=(0.0,1.01), xlim = None) :
-	pylab.figure(figsize=(3, 3))
+def accuPlot(correct, total, legends, ylim=(0.0,1.01), xlim = None, size = (4,6), compareCorrect = None, compareTotal = None, compareLabel = None, outside = False) :
+	fig = pylab.figure(figsize=size)
+	ax = pylab.subplot(111)
 	for ts,cs,l,color in zip(total, correct, legends, ["blue", "cyan", "green", "orange", "red"]) :
 		xs = [sum(t) for t in ts]
 		ys = [1 if sum(t) == 0 else sum(c)/float(sum(t)) for (c, t) in zip(cs, ts)]
-		pylab.plot(xs, ys, '-', label=l, color=color, alpha=0.65)
+		pylab.plot(xs, ys, '-', label=l, color=color, alpha=0.75)
 		pylab.legend(loc="best")
+	if compareCorrect != None and compareTotal != None and compareLabel != None :
+		for ts,cs,l,color in zip(compareTotal, compareCorrect, legends, ["blue", "cyan", "green", "orange", "red"]) :
+			xs = [sum(t) for t in ts]
+			ys = [1 if sum(t) == 0 else sum(c)/float(sum(t)) for (c, t) in zip(cs, ts)]
+			pylab.plot(xs, ys, '--', label="%s - %s" % (l, compareLabel), color=color, alpha=0.95)
+			pylab.legend(loc="best")
 	removeDecoration()
 	pylab.xlabel("# of Matches")
 	pylab.ylabel("Accuracy")
 	pylab.ylim(ylim[0],ylim[1])
+
+	if outside == True :
+		# Shink current axis by 20%
+		box = ax.get_position()
+		ax.set_position([box.x0, box.y0, box.width * 0.75, box.height])
+
+		# Put a legend to the right of the current axis
+		ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
 	if xlim != None : pylab.xlim(0,xlim)
 
 
@@ -541,7 +557,7 @@ def graph_partitions(g, clusters, filename="graph_clusters.png") :
 
 
 
-def graph_on_images(graph, images, clusters = "orange", path="graph_on_images.png", vertex_size=5, edge_color=[0.0, 0.0, 0.0, 0.8]) :
+def graph_on_images(graph, images, clusters = "orange", path="graph_on_images.png", vertex_size=15, edge_color=[0.0, 0.0, 0.0, 0.8]) :
 	""" Displays the feature points of the graph as they are located on the images
 	    Input: graph [Graph]
 		       images [List of images]
@@ -556,6 +572,7 @@ def graph_on_images(graph, images, clusters = "orange", path="graph_on_images.pn
 
 	# Interpolate images to double size
 	scale = 2.0
+	separation = 20
 
 	# Show in gray-scale
 	pylab.gray()
@@ -566,12 +583,12 @@ def graph_on_images(graph, images, clusters = "orange", path="graph_on_images.pn
 	merge_path = path
 
 	# Put images together and resize
-	bg_small = numpy.concatenate(images, axis=1)
+	bg_small = appendimages(images[0], images[1], seperator = separation)
 	bg = imresize(bg_small, size=scale, interp='bicubic')
 	pylab.imsave(bg_path, bg)
 
 	# Calculate offsets
-	offsets = map(sum, [list(t) for t in tails(map(lambda i : i.shape[1]*scale, images))])[::-1]
+	offsets = map(sum, [list(t) for t in tails(map(lambda i : (i.shape[1] + separation)*scale, images))])[::-1]
 	print(offsets)
 
 	# Get scaled positions
@@ -593,7 +610,7 @@ def graph_on_images(graph, images, clusters = "orange", path="graph_on_images.pn
 				  fit_view=False, 
 				  output_size=[bg.shape[1], bg.shape[0]],
 				  vertex_halo=True,
-				  vertex_halo_color=class_colors,
+				  vertex_halo_color="black",
 				  vertex_size=vertex_size,
 				  vertex_fill_color=clusters,
 				  edge_color=edge_color,

@@ -1,6 +1,7 @@
-%\documentclass[12pt,journal,compsoc]{IEEEtran}
-\documentclass{article}
+\documentclass[12pt,journal,compsoc]{IEEEtran}
+%\documentclass{article}
 \usepackage{footnote}
+\usepackage{sidecap}
 \usepackage{graphicx}
 \usepackage{cite}
 \usepackage{hyperref}
@@ -17,10 +18,10 @@
 
 \title{Reliable feature point matching without the use of geometric 
 constraints}
-\author{Jonas Arnfred}
+\author{Jonas Arnfred and what to put here exactly?}
 
 \maketitle
-
+%
 \begin{abstract}
 Many algorithms have been proposed to solve the problem of matching 
 feature points in two or more images using geometric assumptions to 
@@ -40,46 +41,53 @@ amount of test cases based on these 8 pairs. The experimental results
 show that the proposed algorithm, overall, is superior to traditional 
 approaches in finding correct correspondences.
 \end{abstract}
-
+%
 \section{Introduction}
-
-When matching feature points between two images we are faced with the 
-dilemma of choosing a feature descriptor. We can either choose a 
-discriminative descriptor that has a high accuracy but little 
-robustness. Alternatively a robust descriptor will better match features 
-across changes such as illumination, perspective and image quality at 
-the expense of accuracy.
-
-To get the advantage of a robust descriptor while maintaining a high 
-accuracy, several methods have been proposed in the literature to better 
-match the resulting descriptors.  In particular many approaches look at 
-the geometric configuration of the feature points and match them with 
-according to assumptions made about the geometric relationship between 
-the images matched. A simple example is an angular and distance 
-constraint between matches as considered by \cite{kim2008efficient}.  
-This performs well in situations where no camera rotation occurs between 
-the two images, but fails when this assumption isn't met. Various 
-scenarios have been proposed to improve on this simple assumption such 
-as epipolar constraints (\cite{torr2000mlesac}, \cite{chum2005matching}) 
-and pairwise constraints (\cite{choi2009robust}, 
-\cite{leordeanu2005spectral}). The Epipolar constraint carries the 
-assumption that the two images matched are related by an affine 
-transformation. That is, there is no relative movement of objects in 
-between images and either the viewpoint is fixed or the image resides 
-entirely on a plane. In practice this assumption largely holds true when 
-all objects we are interested in matching are roughly the same distance 
-from the camera and when we don't expect to match objects that aren't 
-consistently positioned across images.  Pairwise constraints provide a 
-more robust approach by looking at a set of proposed correspondences and 
-defining a pairwise error between any two matches usually based on the 
-assumption that two neighboring correspondences will usually have 
-similar angles and distances. We can then convert the problem to an 
-optimization problem and return a set of correspondences that minimizes 
-this error such as proposed in \cite{choi2009robust} and 
-\cite{leordeanu2005spectral}. This approach provides more robustness in 
-cases where assumptions will be violated globally but might still hold 
-true on a local scale.
-
+%
+When matching feature points between two or more images we are often 
+faced with the problem of correctly identifying the actual 
+correspondences among many possible pairings. Several methods have been 
+proposed in the literature to solve this problem. In particular many 
+approaches look at the geometric configuration of the feature points and 
+match them according to assumptions made about the geometric 
+relationship between the images matched. These assumptions are then used 
+to create constraints used to evaluate the matches such as angular 
+constraints (\cite{kim2008efficient}), epipolar constraints 
+(\cite{torr2000mlesac}, \cite{chum2005matching}) and pairwise 
+constraints (\cite{choi2009robust}, \cite{leordeanu2005spectral}).
+%
+%When matching feature points between two or more images we are often 
+%faced with the problem of correctly identifying the actual 
+%correspondences among many possible pairings. Several methods have been 
+%proposed in the literature to solve this problem. In particular many 
+%approaches look at the geometric configuration of the feature points 
+%and match them according to assumptions made about the geometric 
+%relationship between the images matched. A simple example would be to 
+%only consider matches that aren't deviating too much with respect to 
+%the average angle and distancen as considered by 
+%\cite{kim2008efficient}.  This performs well in situations where no 
+%camera rotation occurs between the two images, but fails when this 
+%assumption isn't met. Various scenarios have been proposed to improve 
+%on this simple assumption such as epipolar constraints 
+%(\cite{torr2000mlesac}, \cite{chum2005matching}) and pairwise 
+%constraints (\cite{choi2009robust}, \cite{leordeanu2005spectral}). The 
+%Epipolar constraint carries the assumption that the two images matched 
+%are related by an affine transformation. That is, there is no relative 
+%movement of objects in between images and either the viewpoint is fixed 
+%or the image resides entirely on a plane. In practice this assumption 
+%largely holds true when all objects we are interested in matching are 
+%roughly the same distance from the camera and when we expect to match 
+%objects that are consistently positioned across images.  Pairwise 
+%constraints provide a more robust approach to the same problem by 
+%looking at a set of proposed correspondences and defining a pairwise 
+%error between any two matches for example based on the assumption that 
+%two neighboring correspondences will usually have similar angles and 
+%distances. We can then convert the problem to an optimization problem 
+%and return a set of correspondences that minimizes this error such as 
+%proposed in \cite{choi2009robust} and \cite{leordeanu2005spectral}.  
+%This approach provides more robustness in cases where assumptions that 
+%are violated globally still hold on a local scale.
+%
 Another approach proposed in the literature is to pick out different 
 zones in each image and pair zones when correspondence pairs are mainly 
 found going from one zone to another. This allows for the filtering of 
@@ -91,44 +99,34 @@ deviant. A more sophisticated approach is introduced in
 feature detector to find areas of interest in the images. These areas 
 can be defined as an ellipse with a certain radius around the interest 
 points. The feature points that fall within this ellipse are then 
-matched according to epipolar constraints. This approach is inspired by 
-\cite{wu2009bundling} where bundling of feature points was used to 
-enhance the search results in large scale partial-duplicate web image 
-search.
-
-In practice there are many situations where using the geometry of the 
-image to filter correspondences is not possible. This situation most 
-often arise when the assumptions made by a geometric method turns out 
-not to hold in a particular use case. This could be matchings between 
-images where the content has been scrambled or with so little 
-consistency that even the geometric assumptions break down even on a 
-local level. In addition methods using geometric constraints all require 
-a set of correspondences to begin with. If this set of correspondences 
-is narrowed down to a smaller set with a higher ratio of correct matches 
-the result of the geometric matching will be both faster and more 
-accurate.  Finally some use cases might require a performance that can't 
-be achieved by a more complex geometric method where simple non 
-geometric methods might be able to provide additional matching accuracy 
-with a smaller performance penalty.
-
+matched according to epipolar constraints.  
+%
+In practice however, there are many situations where using the geometry 
+of the image to filter correspondences is not possible. This situation 
+most often arise when the assumptions made by a geometric method aren't 
+valid. In object recognition for example, adjecent objects in one photo 
+might be separated in another. In addition methods using geometric 
+constraints all require a set of correspondences to begin with. If this 
+set of correspondences is narrowed down to a smaller set with a higher 
+ratio of correct matches the result of the geometric matching will be 
+both faster and more accurate.  Finally some use cases might require a 
+performance that can't be achieved by a more complex geometric method 
+where simple non geometric methods might be able to provide additional 
+matching accuracy with a smaller performance penalty.
+%
 There are a relatively small number of algorithms proposed to solve the 
 matching problem without involving geometric constraints. Traditionally 
-the feature points of two images have been matched by comparing the 
-every feature point of one image with all feature points of the other 
-and finding the best matches based on the similarity of the descriptors.  
+the feature points of two images have been matched by comparing every 
+feature point of one image with all feature points of the other and 
+finding the best matches based on the similarity of the descriptors.  
 With the introduction of the SIFT features \cite{lowe2004sift}, Lowe 
 proposes an alternative measure where the uniqueness of a given match is 
 found by looking at the two nearest neighbors of each feature point and 
 calculating a match score by the ratio of similarities. By ranking the 
 scores by their uniqueness and picking the $n$ best we get a set of 
-correspondences that are distinctly matched across the two images. In 
-the book Multiple View Geometry \cite[p.  114]{multipleView}, the gold 
-standard algorithm is introduced which ranks correspondences by 
-similarity and further filters them by discarding matches that aren't 
-symmetric, i.e. that for every feature point $f_i$ matching $f_j$ we 
-also have that $f_j$ matches $f_i$.
-
-In turn the two methods proposed in this report are inspired by a simple 
+correspondences that are distinctly matched across the two images.
+%
+In turn the two methods proposed in this paper are inspired by a simple 
 but novel idea. If we have two images and a given feature point in the 
 first image is better matched with other feature points from the 
 \emph{same} image than points in the other image, then any matches of 
@@ -136,93 +134,89 @@ this feature point to points in the other image is deemed unreliable and
 discarded.  This approach carries no implicit assumptions about the 
 geometric consistency of matches and can as such easily be extended with 
 other geometric solutions when appropriate.
-
-Based on this idea the two proposed methods find reliable matches as 
-follows:
-\begin{itemize}
-\item[]{\emph{Mirror Match (MM)}: Match features using the gold standard 
-		algorithm\cite[p. 114]{multipleView} ranked by similarity and 
-		thresheld by uniqueness\cite{lowe2004sift}.  However instead of 
-		matching features from one image with features in another, we 
-	match every feature with all other features of the two images 
-combined. Only matches from one image to the other are returned.}
-\item[]{\emph{Mirror Match with Clustering (MMC)}: Take the combined set 
-		of feature points from both images and cluster these points 
-		according to their descriptors. Given a resulting partition of 
-		points, no matches are returned if it contains only feature 
-	points from one image. If the partition contains points from both 
-images, \emph{Mirror Match} is used to find the best matches within the 
-partition.}
-\end{itemize}
-
-Matching feature points against the entire set of points from both 
-images ensures that the distinctiveness of a returned correspondence is 
-higher. In almost all cases\footnote{Exceptions would include cases 
-where we want to find all particular points in a pattern and other use 
-cases where the correspondence isn't assumed to be unique}, a good match 
-between two images is unambiguous in the sense that there are no other 
-equally good potential matches to the same point.  This is the key 
-insight behind the algorithm presented by Lowe in \cite{lowe2004sift}.  
-However the implication doesn't follow the other way around. In the case 
-that a feature point doesn't have a true correspondence there might 
-still exist point with which the feature point is uniquely matched. The 
-issue is particularly pronounced if we compare two images that don't 
-correspond. For any proposed correspondence it is entirely probable that 
-this correspondence is unique even if it isn't correct. With Mirror 
-Match this ambiguity is avoided by incorporating the feature points of 
-both images when a match is made. When the two images have no overlap or 
-objects in common, chances are that a feature point will match better 
-with another feature point from the same image in which case it is 
-easily discarded.
-
-Often images will contain repetitive patterns that are difficult to 
-match\footnote{In fact this particular problem has been given attention 
-before by for example \cite{fan2011towards}} because the feature 
-descriptors covering these patterns will be similar. If we remove points 
-that aren't deemed sufficiently unique like in \emph{MM} this means that 
-these points will often be discarded even if they are correctly matched.
-\emph{MMC} makes it possible to look at groups of similar feature points 
-one at a time and within each group find the best matches. This is done 
-by taking the set of feature points from both images and cluster them by 
-their similarity. In some cases the clustering will end up grouping 
-feature points of only one image together which can then easily be 
-discarded in the matching process.  In other cases partitions will 
-contain similar feature points from both images that can then be matched 
-using \emph{MM} but with much lower thresholds.
-
-\section{Algorithms}
-\label{algorithms}
-
+%
+%Based on this idea the two proposed methods find reliable matches as 
+%follows:
+%\begin{itemize}
+%\item[]{\emph{Mirror Match (MM)}: Match features using the gold standard 
+%		algorithm\cite[p. 114]{multipleView} ranked by similarity and 
+%		thresheld by uniqueness\cite{lowe2004sift}.  However instead of 
+%		matching features from one image with features in another, we 
+%	match every feature with all other features of the two images 
+%combined. Only matches from one image to the other are returned.}
+%\item[]{\emph{Mirror Match with Clustering (MMC)}: Take the combined set 
+%		of feature points from both images and cluster these points 
+%		according to their descriptors. Given a resulting partition of 
+%		points, no matches are returned if it contains only feature 
+%	points from one image. If the partition contains points from both 
+%images, \emph{Mirror Match} is used to find the best matches within the 
+%partition.}
+%\end{itemize}
+%%
+%Matching feature points against the entire set of points from both 
+%images ensures that the distinctiveness of a returned correspondence is 
+%higher. In almost all cases\footnote{Exceptions would include cases 
+%where we want to find all particular points in a pattern and other use 
+%cases where the correspondence isn't assumed to be unique}, a good 
+%match between two images is unambiguous in the sense that there are no 
+%other equally good potential matches to the same point.  This is the 
+%key insight behind the algorithm presented by Lowe in 
+%\cite{lowe2004sift}.  However the implication doesn't follow the other 
+%way around. In the case that a feature point doesn't have a true 
+%correspondence there might still exist point with which the feature 
+%point is uniquely matched. The issue is particularly pronounced if we 
+%compare two images that don't correspond. For any proposed 
+%correspondence it is entirely probable that this correspondence is 
+%unique even if it isn't correct. When we match against the feature 
+%points of both images this ambiguity is avoided.  When the two images 
+%have no overlap or objects in common, chances are that a feature point 
+%will match better with another feature point from the same image in 
+%which case it is easily discarded.
+%
+%Often images will contain repetitive patterns that are difficult to 
+%match\footnote{In fact this particular problem has been given attention 
+%before by for example \cite{fan2011towards}} because the feature 
+%descriptors covering these patterns will be similar. If we remove points 
+%that aren't deemed sufficiently unique like in \emph{MM} this means that 
+%these points will often be discarded even if they are correctly matched.
+%\emph{MMC} makes it possible to look at groups of similar feature points 
+%one at a time and within each group find the best matches. This is done 
+%by taking the set of feature points from both images and cluster them by 
+%their similarity. In some cases the clustering will end up grouping 
+%feature points of only one image together which can then easily be 
+%discarded in the matching process.  In other cases partitions will 
+%contain similar feature points from both images that can then be matched 
+%using \emph{MM} but with much lower thresholds.
+%
 \subsection{Mirror Match (\emph{MM})}
-
+%
 The central idea behind \emph{MM} is to match features of $n$ images by 
 taking every feature from all $n$ images and matching it against every 
 other feature from the same set. We can then discard the correspondences 
 that match two points within the same image. In algorithm \ref{alg-mm} 
-the actual implementation of \emph{MM} is shown.
-
+the implementation of \emph{MM} is shown.
+%
 \begin{algorithm}
 \caption{Mirror Match Algorithm (\emph{MM})}
 \label{alg-mm}
 \begin{algorithmic}
-\Require $images$ : set of images, $threshold$ : float $\in \mathbb{R}$
+\Require $images$ : set of images, $t$ : float $\in \mathbb{R}$
 \State $matches_{init}\gets \varnothing$
 \State $matches_{final}\gets \varnothing$
 \State $features\gets \varnothing$
-\ForAll{$I_i \in images$} \Comment Gather features of all images
+\ForAll{$I_i \in images$} \Comment Gather Stage
 	\State $features\gets features \cup getFeatures(I_i)$
 \EndFor
-\ForAll{$f_i \in features$} \Comment Get best match for all features
-	\State $f_m,f_n \gets getTwoNearestNeighbors(f_i, features ~ 
-\backslash ~ \left\{f_i\right\})$
-	\State $ratio \gets getSimilarity(f_i, f_n) / getSimilarity(f_i, 
-f_m)$
-	\If{$ratio < threshold$}
+\ForAll{$f_i \in features$} \Comment Match Stage
+	\State $f_m,f_n \gets get2NNs(f_i, features ~ \backslash ~ 
+	\left\{f_i\right\})$
+	\State $ratio \gets similarity(f_i, f_n) / similarity(f_i, f_m)$
+	\If{$ratio < t$}
 		\State $matches_{init} \gets \left(f_i, f_m\right)$
 	\EndIf
 \EndFor
 \ForAll{$\left(f_i, f_j \right) \in matches_{init}$} \Comment Filter 
-matches
+Stage
 \If{$\left(f_j, f_i \right) \in matches_{init} \wedge getImg(f_i) \neq 
 getImg(f_j) \wedge \left(f_j, f_i\right) \not\in matches_{final}$}
 		\State $matches_{final} \gets (f_i, f_j)$
@@ -231,27 +225,19 @@ getImg(f_j) \wedge \left(f_j, f_i\right) \not\in matches_{final}$}
 \Return $matches_{final}$
 \end{algorithmic}
 \end{algorithm}
-
-This algorithm passes over three states: An acquisition state where 
-feature points are gathered, a matching state where the initial set of 
-correspondences are found and a filtering state where correspondences 
-within the same image are removed. In the acquisition state the function 
-\emph{getFeatures($I_i$)} returns a set of feature points given an 
-image.  In practice the feature used for the experiments have been 
-SIFT\cite{lowe2004sift}, but there are no reasons why other features 
-such as SURF\cite{bay2006surf} or BRIEF\cite{calonder2010brief} couldn't 
-be used just as well. The features are matched using K-Nearest Neighbors 
-to return the two closest neighbors in the set of features for any given 
-feature $f_i$ and calculates the ratio between the correspondences as 
-proposed in \cite{lowe2004sift}.  Any correspondence with a ratio below 
-the threshold supplied will be discarded. Finally in the filter the 
-function \emph{getImg($f_i$)} returns the parent image of the feature 
-$f_i$ and discards both correspondences that aren't symmetric as well as 
-those that match two points in the same image.
-
-\begin{figure}
+%
+In the acquisition state we gather all features in the set of images.  
+These features are then matched in the match stage using K-Nearest 
+Neighbors.  For any given feature $f_i$ the two most similar neighbors 
+are returned and we calculate the ratio between them as as proposed in 
+\cite{lowe2004sift}.  Any correspondence with a ratio above the 
+threshold supplied will be discarded. Finally in the filter stage we 
+check that matches are from different images and discard all matches 
+that are not symmetric.
+%
+\begin{figure*}
 	\makebox[\textwidth][c]{%
-		\begin{subfigure}[t]{0.4\textwidth}
+		\begin{subfigure}[t]{0.30\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/mirror_match_off}
 			\caption{Baseline Result}
@@ -259,7 +245,7 @@ those that match two points in the same image.
 		\end{subfigure}%
 		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
 		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.4\textwidth}
+		\begin{subfigure}[t]{0.30\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/mirror_match_with_pruned}
 			\caption{\emph{MM} with intra image matches}
@@ -267,116 +253,116 @@ those that match two points in the same image.
 		\end{subfigure}%
 		~ %add desired spacing between images, e. g. ~, \quad, \qquad
 		  %(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.4\textwidth}
+		\begin{subfigure}[t]{0.30\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/mirror_match}
 			\caption{\emph{MM}}
 			\label{fig:without}
-		\end{subfigure}%
-	}%
-	\label{fig:compare_mirror}
+		\end{subfigure}
+	}
 	\caption{Illustration of matches filtered by \emph{MM}}
-\end{figure}
-
-Figure \ref{fig:compare_mirror} shows an example of the result of 
-\emph{MM}. In figure \ref{fig:unique} the result of a normal matching of 
-two images is shown. The two images appear side by side and for each 
-correspondence between them, a line has been drawn from one image to the 
-other. The color of the line indicates if the correspondence is 
-accurate. Figure \ref{fig:within} shows the correspondences found by 
-mirror match using the same threshold before the matches within the same 
-image has been filtered out. In particular the fence by the bottom of 
-the image admits correspondences that can conveniently be removed as 
-done in sub figure \ref{fig:without} where only the actual 
-correspondences returned by the algorithm are shown.
-
+	\label{fig:comparemirror}
+\end{figure*}
+%
+Figure \ref{fig:comparemirror} shows an example of the result of 
+\emph{MM}. In figure \ref{fig:unique} the matches between two images are 
+shown when using the \emph{SIFT} algorithm from \cite{lowe2004sift}. For 
+each match found between the two images, a line has been drawn. The 
+color of the line is green in case the match is correct and red for 
+incorrect matches. Figure \ref{fig:within} shows the correspondences 
+found by mirror match, but including all matches that are found within 
+the same image. Notice how the by the bottom of the image admits 
+correspondences that can conveniently be removed as done in sub figure 
+\ref{fig:without} where only the actual correspondences returned by the 
+algorithm are shown.
+%
 \subsection{Mirror Match with Clustering (\emph{MMC})}
-
+%
 As opposed to \emph{MM}, \emph{MMC} diverges from traditional 
 non-geometric feature matching by clustering the feature points by 
 similarity. This process yields partitions of fairly similar feature 
-points that we can match using the same approach as \emph{MM}. Before we 
-introduce the implementation details we will go over the problem of graph 
-clustering and how it relates to feature matching.
-
-\subsubsection{Graph Clustering}
-
-Given a set of feature points from two images, $im_1$ and $im_2$: $F_k = 
-\{k_i, k_j$ for $k_i \in im_1, k_j \in im_2\}$ as well as a matching 
-function $M(k_i, k_j) \rightarrow \mathbb{R}$ that takes two feature 
-points in an image and returns their matching score, we can define a 
-matrix $A$ where each element $A_ij = M(k_i, k_j)$. A can be interpreted 
-as the \emph{adjecency matrix} of the fully connected graph where each 
-vertex corresponds to a keypoint and the edge between two vertices has a 
-weight equal to the distance between the two corresponding keypoints.
-
-This representation reduces the problem of partitioning the keypoints 
-into groups to that of graph clustering or community structure depending 
-on the context. In the literature there are various ways of clustering a 
-graph according to different measures of what constitutes an optimal 
-partitioning. Traditionally the most used clustering algorithms have 
-been K-means and spectral clustering, but in recent years a host of new 
-algorithms have been proposed based on both Newman's concept of graph 
-modularity\footnote{Introduced in \cite{girvan2002}, discussed in 
-\cite{brandes2007} and used in \cite{blondel2008} as well as others} as 
-well as information theoretical measures\footnote{See for example 
-\cite{rosvall2008}} and the Potts spin model from physics\footnote{Used 
-in \cite{ronhovde2009}} just to mention a few approaches. Many of the 
-new algorithms differ from K-means clustering and Spectral clustering in 
-that they don't require the number of expected to clusters to be 
-specified beforehand\footnote{Among the aforementioned methods, this is 
-true for \cite{blondel2008} and \cite{rosvall2008}}.  Furthermore, on 
-tests done using randomly generated graphs with a known partitioning 
-\cite{blondel2008}, \cite{rosvall2008} and \cite{ronhovde2009} perform 
-markedly better than spectral clustering and 
-K-means\cite{lancichinetti2009}.
-
-The performance of clustering algorithms is a complicated issue, since 
-an optimal clustering given the same graph can vary depending on the 
-application. Spectral clustering for example will usually return a 
-partitioning where each partition is roughly equal in size\footnote{As 
-mentioned in \cite{von2007}} while the Louvain 
-clustering\cite{blondel2008} might return partitions of very uneven 
-size, even if the modularity measurement has been shown to penalize very 
-small clusters\cite{brandes2007}. Both behaviours can be beneficial 
-depending on the application, but when clustering feature points, 
-maintaining clusters of an even size usually means that some clusters 
-will be '\emph{catch-all}' clusters where the feature points that don't 
-fit anywhere else are grouped together. The necessity of specifying the 
-amount of partitions in for example Spectral clustering or Pott's model 
-clustering further exacerbates the issue since smaller partitions are 
-then combined into one to achieve the right amount of partitions.
-
-Based on these observations we use Louvain clustering for grouping 
-feature points since it's fast, performs well, doesn't require 
-parameters and doesn't emphasize partitions of equal sizes.
-
-\subsubsection{Clustering feature points using Louvain clustering}
-
+points that we can match using the same approach as \emph{MM}. 
+%
+%Before we introduce the implementation details we will go over the 
+%problem of graph clustering and how it relates to feature matching.
+%
+%\subsubsection{Graph Clustering}
+%
+%Given a set of feature points from two images, $im_1$ and $im_2$: $F_k = 
+%\{k_i, k_j$ for $k_i \in im_1, k_j \in im_2\}$ as well as a matching 
+%function $M(k_i, k_j) \rightarrow \mathbb{R}$ that takes two feature 
+%points in an image and returns their matching score, we can define a 
+%matrix $A$ where each element $A_ij = M(k_i, k_j)$. A can be interpreted 
+%as the \emph{adjecency matrix} of the fully connected graph where each 
+%vertex corresponds to a keypoint and the edge between two vertices has a 
+%weight equal to the distance between the two corresponding keypoints.
+%
+%This representation reduces the problem of partitioning the keypoints 
+%into groups to that of graph clustering or community structure depending 
+%on the context. In the literature there are various ways of clustering a 
+%graph according to different measures of what constitutes an optimal 
+%partitioning. Traditionally the most used clustering algorithms have 
+%been K-means and spectral clustering, but in recent years a host of new 
+%algorithms have been proposed based on both Newman's concept of graph 
+%modularity\footnote{Introduced in \cite{girvan2002}, discussed in 
+%\cite{brandes2007} and used in \cite{blondel2008} as well as others} as 
+%well as information theoretical measures\footnote{See for example 
+%\cite{rosvall2008}} and the Potts spin model from physics\footnote{Used 
+%in \cite{ronhovde2009}} just to mention a few approaches. Many of the 
+%new algorithms differ from K-means clustering and Spectral clustering in 
+%that they don't require the number of expected to clusters to be 
+%specified beforehand\footnote{Among the aforementioned methods, this is 
+%true for \cite{blondel2008} and \cite{rosvall2008}}.  Furthermore, on 
+%tests done using randomly generated graphs with a known partitioning 
+%\cite{blondel2008}, \cite{rosvall2008} and \cite{ronhovde2009} perform 
+%markedly better than spectral clustering and 
+%K-means\cite{lancichinetti2009}.
+%
+%The performance of clustering algorithms is a complicated issue, since 
+%an optimal clustering given the same graph can vary depending on the 
+%application. Spectral clustering for example will usually return a 
+%partitioning where each partition is roughly equal in size\footnote{As 
+%mentioned in \cite{von2007}} while the Louvain 
+%clustering\cite{blondel2008} might return partitions of very uneven 
+%size, even if the modularity measurement has been shown to penalize very 
+%small clusters\cite{brandes2007}. Both behaviours can be beneficial 
+%depending on the application, but when clustering feature points, 
+%maintaining clusters of an even size usually means that some clusters 
+%will be '\emph{catch-all}' clusters where the feature points that don't 
+%fit anywhere else are grouped together. The necessity of specifying the 
+%amount of partitions in for example Spectral clustering or Pott's model 
+%clustering further exacerbates the issue since smaller partitions are 
+%then combined into one to achieve the right amount of partitions.
+%
+We use the Louvain Method\cite{blondel2008} for clustering feature 
+points since it's relatively fast and performs 
+well\cite{lancichinetti2009}, doesn't require 
+parameters\cite{blondel2008} and doesn't emphasize partitions of equal 
+sizes as opposed to for example spectral clustering and 
+k-means\cite{von2007}.
+%
 \begin{algorithm}
 \caption{Mirror Match with Clustering Algorithm (\emph{MMC})}
 \label{alg-mmc}
 \begin{algorithmic}
-\Require $images$ : set of images, $threshold \in \mathbb{R}$
-\State $matches\gets \varnothing$
-\State $features\gets \varnothing$
-\ForAll{$I_i \in images$} \Comment Gather features of all images
+\Require $images$ : set of images, $t \in \mathbb{R}$
+\State $M\gets \varnothing$
+\State $F\gets \varnothing$
+\ForAll{$I_i \in images$} \Comment Gather features
 	\State $f_i\gets getFeatures(I_i)$
-	\State $features\gets features \cup f_i$
+	\State $F\gets F \cup f_i$
 \EndFor
 \State $A\gets getAdjecencyMatrix(f_1, f_2,\; \ldots \;, f_n)$
 \State $A_{norm}\gets 1 - normalize(A)$
-\Comment Shorter distance is higher weight
 \State $A_{pruned}\gets pruneEdges(A_{norm},\alpha)$
-\State $Partitions\gets cluster(A_{pruned})$
-\ForAll{$p \in Partitions$} \Comment p is a set of feature points
-	\State $matches\gets matches \cup getMatches(p, threshold, 
-features)$
+\State $P\gets cluster(A_{pruned})$
+\ForAll{$p \in P$} \Comment p is a set of feature points
+	\State $M\gets M \cup getMatches(p, t, F)$
 \EndFor \\
 \Return matches
 \end{algorithmic}
 \end{algorithm}
-
+%
 While the louvain clustering algorithm doesn't require any parameters in 
 itself, it tends towards clustering all feature points together in the 
 same partition if the graph is very connected.  To ensure that the graph 
@@ -392,30 +378,30 @@ separate partitions. Figure \ref{fig:cropped_graph} shows a detailed
 section of the graph where the interplay between small partitions 
 consisting of two or three nodes as well as larger partitions consisting 
 of several hundred nodes can be seen.
-
-\begin{figure}
-	\makebox[\textwidth][c]{%
-		\begin{subfigure}[t]{0.60\textwidth}
+%
+\begin{SCfigure*}
+	\makebox[0.7\textwidth][c]{%
+		\begin{subfigure}[t]{0.35\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/MMC_graph_full}
 			\caption{Full Graph}
 			\label{fig:full_graph}
 		\end{subfigure}%
-		%~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
 		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.60\textwidth}
+		\begin{subfigure}[t]{0.3\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/MMC_graph_cropped}
 			\caption{Cropped Section of Graph}
 			\label{fig:cropped_graph}
 		\end{subfigure}%
 	}%
-	\label{fig:graph}
 	\caption{The partitioned feature graph. Every color signifies a 
-partition while the edge color of each node signifies which image it 
-belongs to}
-\end{figure}
-
+	partition while the edge color of each node signifies which image it 
+belongs to. Notice the many clusters with only two or three nodes.}
+	\label{fig:graph}
+\end{SCfigure*}
+%
 The partitions group feature points by similarity which means that 
 repetitive structures such as buildings often feature in larger 
 partitions as exemplified in figure \ref{fig:compare_mirror}. Here the 
@@ -423,18 +409,18 @@ cluster shown in part \ref{fig:pitts_partition} contains left window
 corners from two buildings across both images. This is an example of 
 feature points that are hard to match correctly since each point will 
 have several similar potential matches.
-
+%
 \begin{figure}
-	\makebox[\textwidth][c]{%
-		\begin{subfigure}[t]{0.60\textwidth}
+	\makebox[0.5\textwidth][c]{%
+		\begin{subfigure}[t]{0.24\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/MMC_pitts_source}
 			\caption{Source image}
 			\label{fig:pitts_source}
 		\end{subfigure}%
-		%~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
 		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.60\textwidth}
+		\begin{subfigure}[t]{0.24\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/MMC_pitts_keypoints}
 			\caption{Keypoints Displayed}
@@ -442,120 +428,112 @@ have several similar potential matches.
 		\end{subfigure}%
 	}%
 	\\
-	\makebox[\textwidth][c]{
+	\makebox[0.5\textwidth][c]{
 		%~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
 		%(or a blank line to force the subfigure onto a new line)
 		
-		\begin{subfigure}[t]{1.16\textwidth}
+		\begin{subfigure}[t]{0.5\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/MMC_partition}
 			\caption{A Partition Example}
 			\label{fig:pitts_partition}
 		\end{subfigure}%
 	}%
-	\label{fig:compare_mirror}
 	\caption{Example of a partition of keypoints in an image}
+	\label{fig:compare_mirror}
 \end{figure}
-
-The matching algorithm for \emph{MMC} (algorithm \ref{alg-getmatches}) 
-goes through the partitions one by one and selects matches in the 
-following way: If the partition has no edges going from a feature point 
-in one image to a feature point in another image, the partition is 
-discarded. If we have more than one edge going between images then 
-$getMatches$ will behave as \emph{MM} and make sure that a 
-correspondence is symmetric, that it has a ratio above the desired 
-threshold and that it isn't matching two feature points from the same 
-image. Since feature points are all guaranteed to be fairly similar this 
-means that we can set the ratio threshold much higher than in \emph{MM} 
-and include matches that would normally have been discarded for not 
-being sufficiently unique.
-However as can be seen in the example in figure \ref{fig:cropped_graph} 
-many of the partitions contain only two feature points from different 
-images linked by one edge. This is often the case if all edges below a 
-certain similarity threshold have been removed in the graph, in which 
-case it's probable that some nodes will end up with only one outgoing 
-edge. This doesn't necessarily imply that the correspondence represented 
-by the edge is unique, but the only way to discern if it is, is by 
-checking the similarity scores of the nearest neighbor as proposed in 
-\cite{lowe2004sift}.
-
-\begin{algorithm}
-\caption{Impl. of getMatches (\emph{from MMC algorithm})}
-\label{alg-getmatches}
-\begin{algorithmic}
-\Require $p$ : set of features, $threshold \in \mathbb{R}$, $features$ : 
-Set of all features
-\State $matches \gets \varnothing$
-\State $edges \gets \left\{getSimilarity(f_i, f_j) \mid getImg(f_i) \neq 
-getImg(f_j) \wedge f_i, f_j \in p \right\}$
-\If{$\left\vert edges \right\vert = 1$} \Comment If $\exists$ one edge 
-between images
-	\State $f_i,f_j \gets getInterImageFeatures(edges_{inter}, p)$
-	\State $f_m,f_n \gets getTwoNearestNeighbors(f_i, features ~ 
-\backslash ~ \left\{f_i\right\})$
-	\State $f_s,f_t \gets getTwoNearestNeighbors(f_j, features ~ 
-\backslash ~ \left\{f_j\right\})$
-	\State $ratio_i \gets getSimilarity(f_i, f_n) / getSimilarity(f_i, 
-f_j)$
-	\State $ratio_j \gets getSimilarity(f_j, f_t) / getSimilarity(f_j, 
-f_i)$
-	\If{$ratio_i < threshold \wedge ratio_j < threshold$}
-		\State $matches \gets matches \cup (f_i, f_j)$
-	\EndIf
-\ElsIf{$\left\vert edges \right\vert > 1$} \Comment If $\exists$ more 
-than one edge between images
-	\ForAll{$f_i \in p$}
-		\State $f_m,f_n \gets getTwoNearestNeighbors(f_i, p ~ \backslash 
-~ \left\{f_i\right\})$
-		\State $ratio \gets getSimilarity(f_i, f_n) / getSimilarity(f_i, 
-f_m)$
-		\If{$getImg(f_i) \neq getImg(f_m) \wedge ratio < threshold 
-\wedge (f_m, f_i) \not\in matches$}
-			\State $matches \gets matches \cup (f_i, f_m)$
-		\EndIf
-	\EndFor
-\EndIf
-
-\Return matches
-\end{algorithmic}
-\end{algorithm}
-
-
+%
+%The matching algorithm for \emph{MMC} (algorithm \ref{alg-getmatches}) 
+%goes through the partitions one by one and selects matches in the 
+%following way: If the partition has no edges going from a feature point 
+%in one image to a feature point in another image, the partition is 
+%discarded. If we have more than one edge going between images then 
+%$getMatches$ will behave as \emph{MM} and make sure that a 
+%correspondence is symmetric, that it has a ratio above the desired 
+%threshold and that it isn't matching two feature points from the same 
+%image. Since feature points are all guaranteed to be fairly similar 
+%this means that we can set the ratio threshold much higher than in 
+%\emph{MM} and include matches that would normally have been discarded 
+%for not being sufficiently unique.
+The matching for \emph{MMC} \emph{getMatches} finds matches within all 
+partitions with more than two elements as done in \emph{MM}. However as 
+can be seen in the example in figure \ref{fig:cropped_graph} many of the 
+partitions contain only two feature points from different images linked 
+by one edge. In this case we compare the ratio of this match to the next 
+best match across all partitions.
+%\begin{algorithm}
+%\caption{Impl. of getMatches (\emph{from MMC algorithm})}
+%\label{alg-getmatches}
+%\begin{algorithmic}
+%\Require $p$ : set of features, $t\in \mathbb{R}$, $features$ : Set of 
+%all features
+%\State $matches \gets \varnothing$
+%\State $edges \gets \left\{getSimilarity(f_i, f_j) \mid getImg(f_i) \neq 
+%getImg(f_j) \wedge f_i, f_j \in p \right\}$
+%\If{$\left\vert edges \right\vert = 1$} \Comment If $\exists$ one edge 
+%between images
+%	\State $f_i,f_j \gets getInterImageFeatures(edges_{inter}, p)$
+%	\State $f_m,f_n \gets getTwoNearestNeighbors(f_i, features ~ 
+%\backslash ~ \left\{f_i\right\})$
+%	\State $f_s,f_t \gets getTwoNearestNeighbors(f_j, features ~ 
+%\backslash ~ \left\{f_j\right\})$
+%	\State $ratio_i \gets getSimilarity(f_i, f_n) / getSimilarity(f_i, 
+%f_j)$
+%	\State $ratio_j \gets getSimilarity(f_j, f_t) / getSimilarity(f_j, 
+%f_i)$
+%	\If{$ratio_i < t\wedge ratio_j < t$}
+%		\State $matches \gets matches \cup (f_i, f_j)$
+%	\EndIf
+%\ElsIf{$\left\vert edges \right\vert > 1$} \Comment If $\exists$ more 
+%than one edge between images
+%	\ForAll{$f_i \in p$}
+%		\State $f_m,f_n \gets getTwoNearestNeighbors(f_i, p ~ \backslash 
+%~ \left\{f_i\right\})$
+%		\State $ratio \gets getSimilarity(f_i, f_n) / getSimilarity(f_i, 
+%f_m)$
+%		\If{$getImg(f_i) \neq getImg(f_m) \wedge ratio < t
+%\wedge (f_m, f_i) \not\in matches$}
+%			\State $matches \gets matches \cup (f_i, f_m)$
+%		\EndIf
+%	\EndFor
+%\EndIf
+%
+%\Return matches
+%\end{algorithmic}
+%\end{algorithm}
+%
 \section{Experiments}
 \label{experiment}
-
+%
 To reliably measure the accuracy of a matching method on real images we 
 either need a set of image pairs tied by a homography or manually count 
 the number of inliers. The latter becomes unfeasible the moment we 
-attempt to test a non-trivial set of images, but has the advantage of 
-working with any image pair. Using a homography between image pairs 
-reduces the test cases to images where the matched areas lie on a plane, 
-or alternatively that there is no viewpoint change. This greatly reduces 
-the body of image pairs we can use to reliably test matching methods. In 
-\cite{mikolaczyk2005performance} Mikolajczyk and Schmid introduces a set 
-of images to compare the performance of feature detectors. The test set 
-covers different types of image variance such as different lighting, 
-blur, rotation as well as viewpoint change.  However in practice the 
-image used for the view point change featuring a wall of 
-graffiti\footnote{To ensure that all points lie on the same plane} has 
-gone on to be used the most for later tests given that most of the other 
-test pairs have since become relatively trivial to match\footnote{see 
-\cite{wu2011robust} or \cite{delponte2006svd} for examples}.
-
-Inspired by the graffiti image we have collected a set of image pairs 
-featuring murals of a few different artists\footnote{Including Banksy, 
-Blu and Shepard Fairey among others}. Each pair consist of images of the 
-same motive taken from different angles, often including repetitive 
-patterns and texture. Based on this image set the two algorithms are 
-tested on a series of image patches from each pair. To verify that the 
-algorithms proposed are reliable we need to test that we get good 
-matches when images overlap and that we get no matches when they don't.  
-This means that it isn't enough just testing against pairs of images 
-that we know match.  We also need to test against pairs that might look 
-like they could match but in fact don't.
-
-With this in mind we have created a test suite by cropping out $300$ 
-pixel by $300$ pixel patches of the original pair with a random vertical 
+attempt to test a non-trivial set of images. In 
+\cite{mikolajczyk2005performance} Mikolajczyk and Schmid introduces a 
+set of images to compare the performance of feature detectors. The test 
+set covers different types of image variance such as different lighting, 
+blur, rotation as well as viewpoint change.However in practice the view 
+point change has gone on to be used the most for later tests given that 
+most of the other test pairs have since become easy to 
+match\footnote{see \cite{wu2011robust} or \cite{delponte2006svd} for 
+examples}.
+%
+%Inspired by the graffiti image we have collected a set of image pairs 
+%featuring murals of a few different artists\footnote{Including Banksy, 
+%Blu and Shepard Fairey among others}. Each pair consist of images of 
+%the same motive taken from different angles, often including repetitive 
+%patterns and texture. Based on this image set the two algorithms are 
+%tested on a series of image patches from each pair. To verify that the 
+%algorithms proposed are reliable we need to test that we get good 
+%matches when images overlap and that we get no matches when they don't.  
+%This means that it isn't enough just testing against pairs of images 
+%that we know match.  We also need to test against pairs that might look 
+%like they could match but in fact don't.
+%
+To increase the amount of images that feature view port changes we have 
+collected a set of $8$ image pairs featuring murals from different 
+angles. From these pairs we can create test suites by cropping out $250$ 
+pixel by $250$ pixel patches of the original pair with a random vertical 
 and horizontal offset. Given a source image pair we can obtain $n$ pairs 
 of patches where the two patches in any pair might or might not overlap.  
 This ensures that the patch pairs whith no overlap still retain a basic 
@@ -566,52 +544,55 @@ produced from two source images (\ref{fig:fairey1} and
 \ref{fig:fairey2}). Producing $n$ such pairs allows us to test not just 
 how well the matching algorithm performs on corresponding images, but 
 also how many false positives we get on similar images that don't 
-overlap.
-
-The set of source images and homographies as well as the a script to 
-generate the cropped test sets based on them have been published. The 
-actual testsets used for testing in this paper are also available 
-online\footnote{They can be found on INSERT URL HERE}.
-
+overlap.\footnote{The set of source images and homographies as well as 
+	the a script to generate the cropped test sets based on them have 
+	been made available online together with the exact test sets used in 
+this paper on INSERT URL HERE}.
+%
+\begin{figure*}
+	\centering
+	\includegraphics[width=\textwidth]{images/murals}
+	\caption{Images in the mural test set}
+	\label{fig:mural}
+\end{figure*}
+%
 \begin{figure}
-	\makebox[\textwidth][c]{%
-		\begin{subfigure}[t]{0.50\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/pair_example1}
-			\caption{Mural by Fairey (1)}
-			\label{fig:fairey1}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.50\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/pair_example2}
-			\caption{Mural by Fairey (2)}
-			\label{fig:fairey2}
-		\end{subfigure}%
-	}%
-	\\
-	\makebox[\textwidth][c]{
-		%~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		
-		\begin{subfigure}[t]{1.16\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/crop_examples}
-			\caption{Image pairs}
-			\label{fig:fairey_crop}
-		\end{subfigure}%
-	}%
+%	\makebox[0.5\textwidth][c]{%
+%		\begin{subfigure}[t]{0.12\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/pair_example1}
+%			\caption{Mural by Fairey (1)}
+%			\label{fig:fairey1}
+%		\end{subfigure}%
+%		\qquad %add desired spacing between images, e. g. ~, \quad, 
+%		%(or a blank line to force the subfigure onto a new line)
+%		\begin{subfigure}[t]{0.12\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/pair_example2}
+%			\caption{Mural by Fairey (2)}
+%			\label{fig:fairey2}
+%		\end{subfigure}%
+%	}%
+%	\\
+	%\makebox[0.5\textwidth][c]{
+	%	%~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+	%	%(or a blank line to force the subfigure onto a new line)
+	%	
+	%	\begin{subfigure}[t]{0.5\textwidth}
+	%	\end{subfigure}%
+	%}%
+	\centering
+	\includegraphics[width=0.5\textwidth]{images/crop_examples}
+	\caption{Example of test set produced by a source pair of images}
 	\label{fig:fairey}
-	\caption{Example of test set produced by pair of images}
 \end{figure}
-
+%
 \subsection{Experimental setup}
-
+%
 Using the image test sets described above, the \emph{MM} and \emph{MMC} 
 algorithms have been tested against a the algorithm Lowe proposed in 
 \cite{lowe2004sift} as well as the isodata matching algorithm proposed 
-in \cite{das2008event}.  For each test set of cropped image pairs the 
+in \cite{das2008event}. For each test set of cropped image pairs the 
 four algorithms\footnote{\emph{MM}, \emph{MMC}, \emph{SIFT} and 
 \emph{Isodata}} are applied to each pair of images ($100$ per test set), 
 and the threshold for each algorithm is varied over 50 evenly spaced 
@@ -622,324 +603,335 @@ algorithms, the match is registered as an inlier if the endpoint in the
 second image lies within $5$px of the true position calculated by the 
 homography.  That is, given $H$ relating $I_1$ with $I_2$ and a match 
 ($p_1, p_2$) then the match is an inlier if $\left\vert Hp_1 - p_2 
-\right\vert < 5$.  This is a relatively lenient threshold since radial 
-distortion from the lens as well as inconsistencies to the planar 
-assumption of the background means that $H$ usually isn't entirely 
-accurate. The experiments are run on the $8$ image pairs in the test 
-set, as well as the graf image from \cite{mikolajczyk2005performance}.
-
+\right\vert + \left\vert H^{-1}p_2 - p_1 \right\vert < 5$. The 
+experiments are run on the $8$ image pairs in the test set, as well as 
+the graf image from \cite{mikolajczyk2005performance}.
+%
 \section{Results}
 \label{results}
-
+%
+%\begin{figure}
+%	\makebox[\textwidth][c]{%
+%		\begin{subfigure}[t]{0.35\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/fairey_burma_1}
+%			\caption{Burma by Fairey (1)}
+%			\label{fig:burma1}
+%		\end{subfigure}%
+%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+%		%(or a blank line to force the subfigure onto a new line)
+%		\begin{subfigure}[t]{0.35\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/fairey_burma_2}
+%			\caption{Burma by Fairey (2)}
+%			\label{fig:burma2}
+%		\end{subfigure}%
+%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+%		%(or a blank line to force the subfigure onto a new line)
+%		\begin{subfigure}[t]{0.35\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/result_fairey_burma}
+%			\caption{X: Nb of correct matches. Y: accuracy}
+%			\label{fig:result_burma}
+%		\end{subfigure}%
+%	}%
+%	\label{fig:burma}
+%	\caption{results on Burma by Fairey}
+%\end{figure}
+%
+%\begin{figure}
+%	\makebox[\textwidth][c]{%
+%		\begin{subfigure}[t]{0.25\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/fairey_lady_1}
+%			\caption{Lady by Fairey (1)}
+%			\label{fig:lady1}
+%		\end{subfigure}%
+%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+%		%(or a blank line to force the subfigure onto a new line)
+%		\begin{subfigure}[t]{0.25\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/fairey_lady_2}
+%			\caption{Lady by Fairey (2)}
+%			\label{fig:lady2}
+%		\end{subfigure}%
+%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+%		%(or a blank line to force the subfigure onto a new line)
+%		\begin{subfigure}[t]{0.55\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/result_fairey_lady}
+%			\caption{X: Nb of correct matches. Y: accuracy}
+%			\label{fig:result_lady}
+%		\end{subfigure}%
+%	}%
+%	\label{fig:lady}
+%	\caption{results on Lady by Fairey}
+%\end{figure}
+%
+%
 \begin{figure}
-	\makebox[\textwidth][c]{%
-		\begin{subfigure}[t]{0.35\textwidth}
+	\makebox[0.5\textwidth][c]{%
+		\begin{subfigure}[t]{.13\textwidth}
 			\centering
-			\includegraphics[width=\textwidth]{images/fairey_burma_1}
-			\caption{Burma by Fairey (1)}
-			\label{fig:burma1}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.35\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/fairey_burma_2}
-			\caption{Burma by Fairey (2)}
-			\label{fig:burma2}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.35\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/result_fairey_burma}
-			\caption{X: Nb of correct matches. Y: accuracy}
-			\label{fig:result_burma}
-		\end{subfigure}%
-	}%
-	\label{fig:burma}
-	\caption{results on Burma by Fairey}
-\end{figure}
-
-\begin{figure}
-	\makebox[\textwidth][c]{%
-		\begin{subfigure}[t]{0.25\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/fairey_lady_1}
-			\caption{Lady by Fairey (1)}
-			\label{fig:lady1}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.25\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/fairey_lady_2}
-			\caption{Lady by Fairey (2)}
-			\label{fig:lady2}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.55\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/result_fairey_lady}
-			\caption{X: Nb of correct matches. Y: accuracy}
-			\label{fig:result_lady}
-		\end{subfigure}%
-	}%
-	\label{fig:lady}
-	\caption{results on Lady by Fairey}
-\end{figure}
-
-
-\begin{figure}
-	\makebox[\textwidth][c]{%
-		\begin{subfigure}[t]{0.35\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/scharf_1}
-			\caption{Faces by Scharf (1)}
-			\label{fig:faces1}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.35\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/scharf_2}
-			\caption{Faces by Scharf (2)}
-			\label{fig:faces2}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.35\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/result_scharf}
-			\caption{X: Nb of correct matches. Y: accuracy}
-			\label{fig:result_faces}
-		\end{subfigure}%
-	}%
-	\label{fig:faces}
-	\caption{results on Faces by Scharf}
-\end{figure}
-
-\begin{figure}
-	\makebox[\textwidth][c]{%
-		\begin{subfigure}[t]{0.35\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/houston_1}
-			\caption{Houston (1)}
-			\label{fig:houston1}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.35\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/houston_2}
-			\caption{Houston (2)}
-			\label{fig:houston2}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.35\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/result_houston}
-			\caption{X: Nb of correct matches. Y: accuracy}
-			\label{fig:result_houston}
-		\end{subfigure}%
-	}%
-	\label{fig:houston}
-	\caption{Results on Houston}
-\end{figure}
-
-\begin{figure}
-	\makebox[\textwidth][c]{%
-		\begin{subfigure}[t]{0.25\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/blu_head_1}
-			\caption{head by blu (1)}
-			\label{fig:head1}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.25\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/blu_head_2}
-			\caption{head by blu (2)}
-			\label{fig:head2}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.55\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/result_blu_head}
-			\caption{X: Nb of correct matches. Y: accuracy}
-			\label{fig:result_head}
-		\end{subfigure}%
-	}%
-	\label{fig:head}
-	\caption{results on head by blu}
-\end{figure}
-
-\begin{figure}
-	\makebox[\textwidth][c]{%
-		\begin{subfigure}[t]{0.25\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/blu_pencil_1}
-			\caption{Pencil by Blu (1)}
-			\label{fig:pencil1}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.25\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/blu_pencil_2}
-			\caption{Pencil by Blu (2)}
-			\label{fig:pencil2}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.55\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/result_blu_pencil}
-			\caption{X: Nb of correct matches. Y: accuracy}
-			\label{fig:result_pencil}
-		\end{subfigure}%
-	}%
-	\label{fig:pencil}
-	\caption{Results on Pencil by Blu}
-\end{figure}
-
-\begin{figure}
-	\makebox[\textwidth][c]{%
-		\begin{subfigure}[t]{0.35\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/banksy_city_1}
-			\caption{City by Banksy (1)}
-			\label{fig:city1}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.35\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/banksy_city_2}
-			\caption{City by Banksy (2)}
-			\label{fig:city2}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.35\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/result_banksy_city}
-			\caption{X: Nb of correct matches. Y: accuracy}
-			\label{fig:result_city}
-		\end{subfigure}%
-	}%
-	\label{fig:city}
-	\caption{results on City}
-\end{figure}
-
-\begin{figure}
-	\makebox[\textwidth][c]{%
-		\begin{subfigure}[t]{0.35\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/banksy_stroller_1}
-			\caption{Stroller by Banksy (1)}
-			\label{fig:stroller1}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.35\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/banksy_stroller_2}
-			\caption{Stroller by Banksy (2)}
-			\label{fig:stroller2}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.35\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/result_banksy_stroller}
-			\caption{X: Nb of correct matches. Y: accuracy}
-			\label{fig:result_stroller}
-		\end{subfigure}%
-	}%
-	\label{fig:stroller}
-	\caption{Results on Stroller by Banksy}
-\end{figure}
-
-
-\begin{figure}
-	\makebox[\textwidth][c]{%
-		\begin{subfigure}[t]{0.35\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/graf_1}
-			\caption{Graf (1)}
-			\label{fig:graf1}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.35\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/graf_3}
-			\caption{Graf (3)}
-			\label{fig:graf3}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.35\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/result_graf}
-			\caption{X: Nb of correct matches. Y: accuracy}
+			\includegraphics[width=\textwidth]{images/graf}
+			\caption{Graf \cite{mikolajczyk2005performance}}
 			\label{fig:result_graf}
 		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{.27\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/result_graf}
+			%\caption{Performance on Scharf}
+		\end{subfigure}%
 	}%
-	\label{fig:graf}
-	\caption{results on Graf}
+
+	\makebox[0.5\textwidth][c]{%
+		\begin{subfigure}[t]{.15\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/scharf}
+			\caption{Faces (Scharf)}
+			\label{fig:result_faces}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{.27\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/result_scharf}
+			%\caption{Performance on Scharf}
+		\end{subfigure}%
+	}%
+	\label{fig:accuracy}
+	\caption{Accuracy Examples: Each plot pictures the result of $100$ 
+	image pairs generated from the source images shown to the left.  The 
+number of matches is the total number of matches for all $100$ image 
+pairs.}
 \end{figure}
+%
+\begin{figure}
+	\centering
+	\includegraphics[width=0.45\textwidth]{images/result_viewport}
+	\caption{Results on viewport changes. S is image 1 and 2 of the 
+	graffiti set in\cite{mikolajczyk2005performance}. M is 1 and 3, L is 
+1 and 4 while XL is 1 and 5. Solid line is result by \emph{MMC} while 
+dashed line is result by \emph{SIFT}}
+	\label{fig:result_viewport}
+\end{figure}
+%\begin{figure}
+%	\makebox[\textwidth][c]{%
+%		\begin{subfigure}[t]{0.35\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/houston_1}
+%			\caption{Houston (1)}
+%			\label{fig:houston1}
+%		\end{subfigure}%
+%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+%		%(or a blank line to force the subfigure onto a new line)
+%		\begin{subfigure}[t]{0.35\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/houston_2}
+%			\caption{Houston (2)}
+%			\label{fig:houston2}
+%		\end{subfigure}%
+%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+%		%(or a blank line to force the subfigure onto a new line)
+%		\begin{subfigure}[t]{0.35\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/result_houston}
+%			\caption{X: Nb of correct matches. Y: accuracy}
+%			\label{fig:result_houston}
+%		\end{subfigure}%
+%	}%
+%	\label{fig:houston}
+%	\caption{Results on Houston}
+%\end{figure}
+%
+%\begin{figure}
+%	\makebox[\textwidth][c]{%
+%		\begin{subfigure}[t]{0.25\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/blu_head_1}
+%			\caption{head by blu (1)}
+%			\label{fig:head1}
+%		\end{subfigure}%
+%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+%		%(or a blank line to force the subfigure onto a new line)
+%		\begin{subfigure}[t]{0.25\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/blu_head_2}
+%			\caption{head by blu (2)}
+%			\label{fig:head2}
+%		\end{subfigure}%
+%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+%		%(or a blank line to force the subfigure onto a new line)
+%		\begin{subfigure}[t]{0.55\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/result_blu_head}
+%			\caption{X: Nb of correct matches. Y: accuracy}
+%			\label{fig:result_head}
+%		\end{subfigure}%
+%	}%
+%	\label{fig:head}
+%	\caption{results on head by blu}
+%\end{figure}
+%
+%\begin{figure}
+%	\makebox[\textwidth][c]{%
+%		\begin{subfigure}[t]{0.25\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/blu_pencil_1}
+%			\caption{Pencil by Blu (1)}
+%			\label{fig:pencil1}
+%		\end{subfigure}%
+%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+%		%(or a blank line to force the subfigure onto a new line)
+%		\begin{subfigure}[t]{0.25\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/blu_pencil_2}
+%			\caption{Pencil by Blu (2)}
+%			\label{fig:pencil2}
+%		\end{subfigure}%
+%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+%		%(or a blank line to force the subfigure onto a new line)
+%		\begin{subfigure}[t]{0.55\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/result_blu_pencil}
+%			\caption{X: Nb of correct matches. Y: accuracy}
+%			\label{fig:result_pencil}
+%		\end{subfigure}%
+%	}%
+%	\label{fig:pencil}
+%	\caption{Results on Pencil by Blu}
+%\end{figure}
+%
+%\begin{figure}
+%	\makebox[\textwidth][c]{%
+%		\begin{subfigure}[t]{0.35\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/banksy_city_1}
+%			\caption{City by Banksy (1)}
+%			\label{fig:city1}
+%		\end{subfigure}%
+%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+%		%(or a blank line to force the subfigure onto a new line)
+%		\begin{subfigure}[t]{0.35\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/banksy_city_2}
+%			\caption{City by Banksy (2)}
+%			\label{fig:city2}
+%		\end{subfigure}%
+%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+%		%(or a blank line to force the subfigure onto a new line)
+%		\begin{subfigure}[t]{0.35\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/result_banksy_city}
+%			\caption{X: Nb of correct matches. Y: accuracy}
+%			\label{fig:result_city}
+%		\end{subfigure}%
+%	}%
+%	\label{fig:city}
+%	\caption{results on City}
+%\end{figure}
+%
+%\begin{figure}
+%	\makebox[\textwidth][c]{%
+%		\begin{subfigure}[t]{0.35\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/banksy_stroller_1}
+%			\caption{Stroller by Banksy (1)}
+%			\label{fig:stroller1}
+%		\end{subfigure}%
+%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+%		%(or a blank line to force the subfigure onto a new line)
+%		\begin{subfigure}[t]{0.35\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/banksy_stroller_2}
+%			\caption{Stroller by Banksy (2)}
+%			\label{fig:stroller2}
+%		\end{subfigure}%
+%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+%		%(or a blank line to force the subfigure onto a new line)
+%		\begin{subfigure}[t]{0.35\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/result_banksy_stroller}
+%			\caption{X: Nb of correct matches. Y: accuracy}
+%			\label{fig:result_stroller}
+%		\end{subfigure}%
+%	}%
+%	\label{fig:stroller}
+%	\caption{Results on Stroller by Banksy}
+%\end{figure}
+%
+%
+%\begin{figure}
+%	\makebox[\textwidth][c]{%
+%		\begin{subfigure}[t]{0.35\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/graf_1}
+%			\caption{Graf (1)}
+%			\label{fig:graf1}
+%		\end{subfigure}%
+%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+%		%(or a blank line to force the subfigure onto a new line)
+%		\begin{subfigure}[t]{0.35\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/graf_3}
+%			\caption{Graf (3)}
+%			\label{fig:graf3}
+%		\end{subfigure}%
+%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+%		%(or a blank line to force the subfigure onto a new line)
+%		\begin{subfigure}[t]{0.35\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/result_graf}
+%			\caption{X: Nb of correct matches. Y: accuracy}
+%			\label{fig:result_graf}
+%		\end{subfigure}%
+%	}%
+%	\label{fig:graf}
+%	\caption{results on Graf}
+%\end{figure}
+%
+Figure \ref{fig:accumulated} shows the results on the test set proposed 
+earlier\footnote{Illustrated in Figure \ref{mural}}. The performance of 
+the proposed algorithm is shown to be [FILL IN ONCE THE DATA IS READY] 
+to \emph{SIFT} and \emph{Isodata} when testing on image pairs that might 
+not overlap. This result is repeated (TODO: is it?) when testing on the 
+graf image as demonstrated in Figure \ref{fig:result_graf}. To 
+illustrate that this performance improvement isn't limited to street 
+art, figure \ref{fig:gallagher} shows the performance on an image from 
+the Gallagher data set \cite{gallagher2008} where images featuring 
+occlusion and change of perspective are matched. While performance is of 
+course affected by the magnitude of for example view port change, figure 
+\ref{fig:result_viewport} shows that \emph{MMC} consistently outperforms 
+the \emph{SIFT} algorithm over different magnitudes of change in 
+perspective. TODO: include note on plot for different descriptors.
 
-In figure \ref{fig:stroller} to \ref{fig:graf} the results on the 
-different image pairs are shown. Keep in mind that the accuracies 
-reflect the tests done on croppings of the source images and as such 
-don't reflect the accuracies of any of the algorithms in matching the 
-two images shown. The Nb of correct matches along the x-axis reflects 
-the total amount of correct correspondences found in the $100$ cropped 
-test pairs generated from the source pair. The accuracy plot reflects 
-the accuracy for each algorithm at a given number of correct 
-correspondences. While most of the cases show a clear advantage of 
-\emph{MM} and \emph{MMC} over \emph{BM}, there are a few exceptions, 
-notably in figure \ref{fig:city} and \ref{fig:pencil}. In the case of 
-figure \ref{fig:pencil} the high general accuracy of all the algorithms 
-makes any improvement hard to obtain, however figure \ref{fig:city} 
-remains an example where the proposed algorithms don't yield any 
-significant improvement. As for the rest of the cases a clear trend 
-emerges however, with \emph{MM} performing significantly better than 
-\emph{BM} and \emph{MMC} most often improving upon that result.
-
-In terms of performance, the three methods all have a complexity of 
-$O(n^2)$ where $n$ is the amount of feature points found in the two 
-images. This complexity assumes that the number of feature points in the 
-images is about the same. However practically speaking \emph{MMC} is 
-much slower than \emph{MM} since the clustering step while having a 
-complexity of $O(nlogn)$ is very computationally intensive. In table 
-\ref{table:running_times} the running time of the algorithm is shown.  
-These numbers should however be interpreted with the knowledge that much 
-of the code behind \emph{MMC} is implemented in python while \emph{MM} 
-and \emph{BM} makes use of opencv to execute computationally intensive 
-operations in C++ which renders it much faster.
-
+In terms of performance, table \ref{table:running_times} shows the 
+running time of the four algorithms over $100$ image pairs of $250$px by 
+$250$px. These numbers should be interpreted with the knowledge that 
+much of the code behind \emph{MMC} and \emph{Isodata} is implemented in 
+python while \emph{MM} and \emph{SIFT} makes use of opencv to execute 
+computationally intensive operations in C++ which renders it much 
+faster.
+%
 \begin{savenotes}
 \begin{table}
 	\centering
 	\small
 \begin{tabular}{l*{4}{c}}
-	Algorithm: & \emph{BM} & \emph{MM} & \emph{MMC} \\
+	Algorithm: & \emph{SIFT} & \emph{MM} & \emph{MMC} & \emph{Isodata} 
+	\\
 	\noalign{\smallskip} 
 	%
-	Running time: & 20.94s & 18.23s & 883.99s \\
+	Running time: & 20.94s & 18.23s & 883.99s & 555.33s \\
 \end{tabular}
 \caption{Running times\footnote{As tested on a Intel(R) Core(TM) i5-3550 
 CPU @ 3.30GHz with 8Gb memory}}
 \label{table:running_times}
 \end{table}
 \end{savenotes}
-
+%
 \section{Summary}
 We have addressed the problem of matching feature points without using 
 geometrical constraints and proposed two algorithms \emph{Mirror Match 
@@ -955,7 +947,7 @@ algorithms on $9$ testsets of $100$ image pairs each where many of the
 pairs might not have any overlapping areas. In future work it will be 
 usefull to investigate how the algorithms perform when testing on sets 
 of images instead of pairs.
-
+%
 \bibliographystyle{IEEEtran}
 \bibliography{bibliography}
 \end{document}

@@ -54,6 +54,8 @@ def match(paths, thresholds, options = {}) :
 	# Get matches
 	match_points = getMatchPoints(indices, ks, ds, descriptor_type = descriptor_type)
 
+	if len(match_points) == 0 : return [[] for _ in thresholds]
+
 	# Partition with isodata
 	part_1 = isodata.cluster(positions[indices==0], k_init=k_init, max_iterations=max_iterations, min_partition_size=min_partition_size, max_sd=max_sd, min_distance=min_distance)
 	part_2 = isodata.cluster(positions[indices==1], k_init=k_init, max_iterations=max_iterations, min_partition_size=min_partition_size, max_sd=max_sd, min_distance=min_distance)
