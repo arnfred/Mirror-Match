@@ -34,25 +34,27 @@ from sklearn import metrics
 #                                  #
 ####################################
 
-def appendimages(im1, im2) :
+def appendimages(im1, im2, seperator = 0) :
 	""" return a new image that appends the two images side-by-side.
 	"""
+
+	barrier = numpy.ones((im1.shape[0],seperator)) * 255
 
 	if (im1.shape[0] == im2.shape[0]) :
 		tmp = im2
 
 	elif (im1.shape[0] > im2.shape[0]) :
-		tmp = numpy.ones((im1.shape[0], im2.shape[1]))
+		tmp = numpy.ones((im1.shape[0], im2.shape[1])) * 255
 		tmp[0:im2.shape[0], :] = im2
 
 	elif (im1.shape[0] < im2.shape[0]) :
-		tmp = numpy.ones((im1.shape[0], im2.shape[1]))
+		tmp = numpy.ones((im1.shape[0], im2.shape[1])) * 255
 		tmp[0:im1.shape[0], :] = im2[0:im1.shape[0],:]
 
 	else :
 		print("Detonating thermo-nuclear devices")
 
-	return numpy.concatenate((im1,tmp), axis=1)
+	return numpy.concatenate((im1,barrier, tmp), axis=1)
 
 
 
@@ -70,16 +72,16 @@ def keypoints(im, pos) :
 	pylab.show()
 
 
-def compareKeypoints(im1, im2, pos1, pos2, filename = None) :
+def compareKeypoints(im1, im2, pos1, pos2, filename = None, separation = 0) :
 	""" Show two images next to each other with the keypoints marked
 	"""
 
 	# Construct unified image
-	im3 = appendimages(im1,im2)
+	im3 = appendimages(im1,im2, separation)
 
 	# Find the offset and add it
 	offset = im1.shape[1]
-	pos2_o = [(x+offset,y) for (x,y) in pos2]
+	pos2_o = [(x+offset + separation,y) for (x,y) in pos2]
 
 	# Create figure
 	fig = pylab.figure(frameon=False, figsize=(10.0, 7.0))
@@ -105,8 +107,10 @@ def matchPoints(im1, im2, matches, dist = None, filename = None, max_dist = 100,
 		matchscores (as output from 'match'). 
 	"""
 
+	separation = 20
+
 	# Construct unified image
-	im3 = appendimages(im1,im2)
+	im3 = appendimages(im1,im2, separation)
 
 	# Create figure
 	fig = pylab.figure(frameon=False, figsize=(5.0, 3.0))
@@ -138,15 +142,14 @@ def matchPoints(im1, im2, matches, dist = None, filename = None, max_dist = 100,
 	# Plot all lines
 	offset_x = im1.shape[1]
 	for i,((x1,y1),(x2,y2)) in enumerate(matches) :
-		ax.plot([x1, x2+offset_x], [y1,y2], color=cs[i], lw=0.8)
+		ax.plot([x1, x2+offset_x + separation], [y1,y2], color=cs[i], lw=0.8)
 	if matches_im1 != None :
 		for i,((x1,y1),(x2,y2)) in enumerate(matches_im1) :
 			ax.plot([x1, x2], [y1,y2], color=cs_im1[i], lw=0.8)
 	if matches_im2 != None :
 		for i,((x1,y1),(x2,y2)) in enumerate(matches_im2) :
-			ax.plot([x1+offset_x, x2+offset_x], [y1,y2], color=cs_im2[i], lw=0.8)
+			ax.plot([x1+offset_x + separation, x2+offset_x + separation], [y1,y2], color=cs_im2[i], lw=0.8)
 
-	
 	pylab.xlim(0,im3.shape[1])
 	pylab.ylim(im3.shape[0],0)
 
@@ -287,6 +290,7 @@ def accuDetail(correct, total, legend, ylim = 100, treshold=1000) :
 
 
 def accuPlot(correct, total, legends, ylim=(0.0,1.01), xlim = None) :
+	pylab.figure(figsize=(3, 3))
 	for ts,cs,l,color in zip(total, correct, legends, ["blue", "cyan", "green", "orange", "red"]) :
 		xs = [sum(t) for t in ts]
 		ys = [1 if sum(t) == 0 else sum(c)/float(sum(t)) for (c, t) in zip(cs, ts)]

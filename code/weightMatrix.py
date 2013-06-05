@@ -162,7 +162,7 @@ def pruneHighest(weights, edges_per_vertex,n=0,start=0) :
 
 
 
-def pruneTreshold(weights, edges_per_vertex, n=600, start=0.0) :
+def pruneThreshold(weights, edges_per_vertex, n=600, start=0.0) :
 	""" Removes all edges under a certain treshold
 	"""
 	# Get treshold

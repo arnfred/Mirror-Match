@@ -75,11 +75,41 @@ def match(paths, thresholds, options = {}) :
 			matches.extend(getPartitionMatches(match_points, part_1 == i, part_2 == j))
 	
 	# Filter matches by uniqueness
-	p = lambda t : [matchFromIndex(i,j) for ((i,j),u) in matches if u < t] 
+	p = lambda t : pruneMatches([matchFromIndex(i,j) for ((i,j),u) in matches if u < t])
 	match_set = [p(t) for t in thresholds]
 
 	return match_set
 
+
+
+def pruneMatches(matches) :
+	# filter matches that are deviant from average angle
+	def getLength(p1, p2) :
+		v = numpy.array([p2[0] - p1[0], p2[1] - p1[1]])
+		return numpy.linalg.norm(v)
+
+	def getAngle(p1, p2) :
+		# The + 1 is to avoid division with zero when positions overlap
+		x_dist = 500
+		return numpy.arccos((p2[0] - (p1[0] + x_dist)) / (getLength([p1[0] + x_dist, p1[1]],p2) + 0.001))
+
+	def isAcceptable(l, a) :
+		sdv = 1
+		within_length = l < (mdn_length + sdv*sdv_length) and l > (mdn_length - sdv*sdv_length)
+		within_angle = a < (mdn_angle + sdv*sdv_angle) and a > (mdn_angle - sdv*sdv_angle)
+		return within_length and within_angle
+
+	# Get the length and angle of each match
+	lengths = [ getLength(p1,p2) for p1,p2 in matches]
+	angles = [ getAngle(p1,p2) for p1,p2 in matches]
+
+	# Calculate a bit of statistics
+	mdn_length = numpy.median(lengths)
+	sdv_length = numpy.sqrt(numpy.var(lengths))
+	mdn_angle = numpy.median(angles)
+	sdv_angle = numpy.sqrt(numpy.var(angles))
+
+	return [m for m,l,a in zip(matches, lengths, angles) if isAcceptable(l, a)]
 
 
 def getLinkMat(part_1, part_2, match_points) :

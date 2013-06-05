@@ -20,7 +20,7 @@ import features
 #                                  #
 ####################################
 
-def match(paths, tresholds, options = {}) :
+def match(paths, thresholds, options = {}) :
 
 	# Returns the position of a match
 	def matchPos(i,j) :
@@ -39,8 +39,8 @@ def match(paths, tresholds, options = {}) :
 	# See if matches go both ways
 	bothways = [(i,j) for i,j in enumerate(jj) if indices[i] == 0 and indices[j] == 1 and jj[j] == i]
 
-	# Now for each treshold test the uniqueness of the matches
+	# Now for each threshold test the uniqueness of the matches
 	p = lambda t : [matchPos(i,j) for i,j in bothways if uu[i] < t] 
-	match_set = [p(t) for t in tresholds]
+	match_set = [p(t) for t in thresholds]
 
 	return match_set

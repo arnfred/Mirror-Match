@@ -233,34 +233,6 @@ def matchDistance(p1, p2, hom) :
 
 
 
-def pruneMatches(matches) :
-	# filter matches that are deviant from average angle
-	def getLength(p1, p2) :
-		v = numpy.array([p2[0] - p1[0], p2[1] - p1[1]])
-		return numpy.linalg.norm(v)
-
-	def getAngle(p1, p2) :
-		# The + 1 is to avoid division with zero when positions overlap
-		x_dist = 500
-		return numpy.arccos((p2[0] - (p1[0] + x_dist)) / (getLength([p1[0] + x_dist, p1[1]],p2) + 0.001))
-
-	def isAcceptable(l, a) :
-		sdv = 1
-		within_length = l < (mdn_length + sdv*sdv_length) and l > (mdn_length - sdv*sdv_length)
-		within_angle = a < (mdn_angle + sdv*sdv_angle) and a > (mdn_angle - sdv*sdv_angle)
-		return within_length and within_angle
-
-	# Get the length and angle of each match
-	lengths = [ getLength(p1,p2) for p1,p2 in matches]
-	angles = [ getAngle(p1,p2) for p1,p2 in matches]
-
-	# Calculate a bit of statistics
-	mdn_length = numpy.median(lengths)
-	sdv_length = numpy.sqrt(numpy.var(lengths))
-	mdn_angle = numpy.median(angles)
-	sdv_angle = numpy.sqrt(numpy.var(angles))
-
-	return [m for m,l,a in zip(matches, lengths, angles) if isAcceptable(l, a)]
 
 
 
@@ -285,26 +257,12 @@ def clusterMatch(distance_threshold, paths, homography, thresholds, keypoint, de
 		clustermatch.match,
 		verbose = False,
 		options = {
-			"prune_fun" : weightMatrix.prunethreshold, 
+			"prune_fun" : weightMatrix.pruneThreshold, 
 			"prune_limit" : 2.5,
 			"min_coherence" : 0.0,
 			"thresholds" : thresholds,
 			"split_limit" : 500,
 			"cluster_prune_limit" : 1.5,
-			"distance_threshold" : distance_threshold,
-			"keypoint_type" : keypoint,
-			"descriptor_type" : descriptor,
-		})
-
-
-def uniqueMatch(distance_threshold, paths, homography, thresholds, keypoint, descriptor) :
-	return testMatch(
-		paths,
-		homography, 
-		standardMatch,
-		verbose = False,
-		options = {
-			"thresholds" : thresholds,
 			"distance_threshold" : distance_threshold,
 			"keypoint_type" : keypoint,
 			"descriptor_type" : descriptor,
@@ -337,6 +295,7 @@ def mirrorMatch(distance_threshold, paths, homography, thresholds, keypoint, des
 			"keypoint_type" : keypoint,
 			"descriptor_type" : descriptor,
 		})
+
 
 def isoMatch(distance_threshold, paths, homography, thresholds, keypoint, descriptor) :
 	return testMatch(

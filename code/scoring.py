@@ -122,7 +122,7 @@ def scoreImages(paths,
 		withGeometry 	= True, 
 		withCertainty 	= True, 
 		cluster_prune 	= weightMatrix.pruneHighest,
-		score_prune 	= weightMatrix.pruneTreshold,
+		score_prune 	= weightMatrix.pruneThreshold,
 		normalize		= True,
 		score_type		= scoreWeights) :
 	""" Given paths to two images, the images are scored based on how 

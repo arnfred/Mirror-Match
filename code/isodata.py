@@ -77,7 +77,7 @@ def cluster(points, k_init=None, max_iterations=100, min_partition_size=5, max_s
 	"""
 	
 	# Set a sensible k_init if it wasn't specified
-	if k_init == None:
+	if k_init == None or len(points) < k_init:
 		k_init = points.shape[0] / (min_partition_size * 2)
 	
 	# Sample nb_partitions points as initial guess

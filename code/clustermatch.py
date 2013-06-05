@@ -35,10 +35,10 @@ dist_fun_map = {
 ####################################
 
 
-def match(paths, tresholds, options = {}) : 
+def match(paths, thresholds, options = {}) : 
 	
 	# Get parameters
-	prune_fun = options.get("prune_fun", weightMatrix.pruneTreshold)
+	prune_fun = options.get("prune_fun", weightMatrix.pruneThreshold)
 	prune_limit = options.get("prune_limit", 2.5)
 	keypoint_type = options.get("keypoint_type", "SIFT")
 	descriptor_type = options.get("descriptor_type", "SIFT")
@@ -59,9 +59,9 @@ def match(paths, tresholds, options = {}) :
 	partitions = cluster(cluster_weights, indices, split_limit = split_limit, prune_limit = cluster_prune_limit, verbose=verbose)
 	if verbose : print("%i partitions" % len(set(partitions)))
 
-	# For each treshold, get partition matches
+	# For each threshold, get partition matches
 	p = lambda t : getPartitionMatches(partitions, cluster_weights, weights, indices, t)
-	match_set = [p(t) for t in tresholds]
+	match_set = [p(t) for t in thresholds]
 
 	# Get positions
 	get_pos = lambda (m_i, m_j) : getMatchPosition(m_i, m_j, ks)
@@ -71,13 +71,13 @@ def match(paths, tresholds, options = {}) :
 
 
 
-def getMatches(m, ind, treshold) :
+def getMatches(m, ind, threshold) :
 
 	def getMaxMatch(m) :
 		for i,row in enumerate(m) :
 			s = numpy.argsort(row)
 			u = row[s[-2]] / row[s[-1]]
-			if u < treshold : yield (i,s[-1])
+			if u < threshold : yield (i,s[-1])
 	
 	# Get best matches for rows and columns
 	matches = list(getMaxMatch(m))
@@ -109,7 +109,7 @@ def cluster(weights, indices, split_limit = 10, prune_limit = 3, verbose = False
 			nb_inter_edges = numpy.sum(pij_edges > 0)
 			if (numpy.sum(partition_mask) > split_limit) :
 				# Prune weights
-				p_edges_pruned = weightMatrix.pruneTreshold(p_edges, prune_limit)
+				p_edges_pruned = weightMatrix.prunethreshold(p_edges, prune_limit)
 
 				# If there are no edges left, then skip
 				if numpy.sum(p_edges_pruned) == 0 : continue
@@ -129,7 +129,7 @@ def cluster(weights, indices, split_limit = 10, prune_limit = 3, verbose = False
 	return partitions
 
 
-def getPartitionMatches(partitions, weights, full_weights, indices, treshold, verbose = False, ks = None, homography = None) :
+def getPartitionMatches(partitions, weights, full_weights, indices, threshold, verbose = False, ks = None, homography = None) :
 
 	# index
 	index = numpy.arange(0, weights.shape[0])
@@ -168,7 +168,7 @@ def getPartitionMatches(partitions, weights, full_weights, indices, treshold, ve
 				ratio_row = sort_row[-2] / w
 				ratio_col = sort_col[-2] / w
 
-				if bothways_p and (ratio_row < treshold and ratio_col < treshold) :
+				if bothways_p and (ratio_row < threshold and ratio_col < threshold) :
 					(p_i, p_j) = (index_row[m_i], index_col[m_j])
 					if verbose : 
 						distance = matchDistance(ks[p_i].pt, ks[p_j].pt, homography)
@@ -178,8 +178,8 @@ def getPartitionMatches(partitions, weights, full_weights, indices, treshold, ve
 			# If there are several edges
 			elif nb_e >= 2 :
 
-				# Collect matches and check if they are beyond treshold
-				matches = getMatches(pij_edges_both, indices[mask_both], treshold)
+				# Collect matches and check if they are beyond threshold
+				matches = getMatches(pij_edges_both, indices[mask_both], threshold)
 				for m_i,m in matches :
 					(p_i, p_j) = (index_both[m_i], index_both[m])
 					if verbose :
