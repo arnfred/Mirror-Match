@@ -403,12 +403,7 @@ clustering the feature points displayed as a graph.
 %
 The partitions group feature points by similarity which means that 
 repetitive structures such as buildings often feature in larger 
-partitions as exemplified in figure \ref{fig:compare_mirror}. Here the 
-cluster shown in part \ref{fig:pitts_partition} contains left window 
-corners from two buildings across both images. This is an example of 
-feature points that are hard to match correctly since each point will 
-have several similar potential matches.
-%
+partitions as exemplified in figure \ref{fig:compare_mirror}. %
 \begin{figure}
 	\makebox[0.5\textwidth][c]{%
 		\begin{subfigure}[t]{0.24\textwidth}
@@ -438,7 +433,10 @@ have several similar potential matches.
 			\label{fig:pitts_partition}
 		\end{subfigure}%
 	}%
-	\caption{Example of a partition of keypoints in an image}
+	\caption{Example of a partition of keypoints in an image pair. The 
+		partition shown contains window corners from a building in the 
+		left image and similar corners on the shirt in the right image.  
+	}
 	\label{fig:compare_mirror}
 \end{figure}
 %
@@ -549,12 +547,12 @@ cropped test sets based on them have been made available online together
 with the exact test sets used in this paper on 
 \href{https://github.com/arnfred/Murals}{www.github.com/arnfred/Murals}}.
 %
-\begin{figure*}
-	\centering
-	\includegraphics[width=\textwidth]{images/murals}
-	\caption{Images in the mural test set}
-	\label{fig:mural}
-\end{figure*}
+%\begin{figure*}
+%	\centering
+%	\includegraphics[width=\textwidth]{images/murals}
+%	\caption{Images in the mural test set}
+%	\label{fig:mural}
+%\end{figure*}
 %
 \begin{figure}
 	\makebox[0.5\textwidth][c]{%
@@ -719,8 +717,8 @@ pairs.}
 	\includegraphics[width=0.45\textwidth]{images/result_viewport}
 	\caption{Results on viewport changes. S is image 1 and 2 of the 
 	graffiti set in\cite{mikolajczyk2005performance}. M is 1 and 3, L is 
-1 and 4 while XL is 1 and 5. Solid line is result by \emph{MMC} while 
-dashed line is result by \emph{SIFT}}
+1 and 4 while XL is 1 and 5. \emph{MMC} is represented by a solid line 
+while \emph{SIFT} results are shown by a dashed line.}
 	\label{fig:result_viewport}
 \end{figure}
 \begin{figure}
@@ -908,19 +906,18 @@ dashed line is result by \emph{SIFT}}
 %\end{figure}
 %
 Figure \ref{fig:result_accumulated} shows the accumulated results on the 
-\emph{Murals} dataset\footnote{Illustrated in Figure \ref{mural}}. It 
-shows that \emph{MMC} and \emph{MM} is overall superior to both 
-\emph{SIFT} and \emph{Isodata} which uses geometric constraints when 
-tested on image pairs with no assurance of overlap depicting simple 
-planar scenes. Figure \ref{fig:result_faces} illustrates the result on a 
-particular image pair from the \emph{Murals} dataset. For an example of 
-a real life use case \ref{fig:result_pitts} shows the results on 
-potentially overlapping image pairs generated from a typical holiday 
-scene with partial overlap and slight view port change. As can be seen 
-in figure \ref{fig:result_viewport}, \emph{MMC} consistently outperforms 
-\emph{SIFT} across different magnitudes of the viewport change. For the 
-results on image 1 and 3 from the \emph{Graf} dataset, see figure 
-\ref{fig:result_graf}.
+\emph{Murals} dataset. It shows that \emph{MMC} and \emph{MM} is overall 
+superior to both \emph{SIFT} and \emph{Isodata} which uses geometric 
+constraints when tested on image pairs with no assurance of overlap 
+depicting simple planar scenes. Figure \ref{fig:result_faces} 
+illustrates the result on a particular image pair from the \emph{Murals} 
+dataset. For an example of a real life use case \ref{fig:result_pitts} 
+shows the results on potentially overlapping image pairs generated from 
+a typical holiday scene with partial overlap and slight view port 
+change. As can be seen in figure \ref{fig:result_viewport}, \emph{MMC} 
+consistently outperforms \emph{SIFT} across different magnitudes of the 
+viewport change. For the results on image 1 and 3 from the \emph{Graf} 
+dataset, see figure \ref{fig:result_graf}.
 Generally all plots show good results by \emph{Isodata} when only the 
 best matches are returned, but when the thresholds are more lenient the 
 quality of the returned matches degrades quickly and \emph{MMC} and 
@@ -945,8 +942,8 @@ faster.
 	%
 	Running time: & 20.94s & 18.23s & 883.99s & 555.33s \\
 \end{tabular}
-\caption{Running times\footnote{As tested on a Intel(R) Core(TM) i5-3550 
-CPU @ 3.30GHz with 8Gb memory}}
+\caption{Running times as tested on a Intel(R) Core(TM) i5-3550 CPU @ 
+3.30GHz with 8Gb memory}
 \label{table:running_times}
 \end{table}
 \end{savenotes}
