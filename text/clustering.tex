@@ -1,6 +1,7 @@
 \documentclass[12pt,journal,compsoc]{IEEEtran}
 %\documentclass{article}
 \usepackage{footnote}
+\usepackage[font={small}]{caption}
 \usepackage{sidecap}
 \usepackage{graphicx}
 \usepackage{cite}
@@ -532,22 +533,23 @@ examples}.
 %
 To increase the amount of images that feature view port changes we have 
 collected a set of $8$ image pairs featuring murals from different 
-angles. From these pairs we can create test suites by cropping out $250$ 
-pixel by $250$ pixel patches of the original pair with a random vertical 
-and horizontal offset. Given a source image pair we can obtain $n$ pairs 
-of patches where the two patches in any pair might or might not overlap.  
-This ensures that the patch pairs whith no overlap still retain a basic 
-similarity to each other, while the patches that do overlap often only 
-overlap on a small part of their surface. Figure \ref{fig:fairey} shows 
-an example of possible pairs of test images (\ref{fig:fairey_crop}) 
-produced from two source images (\ref{fig:fairey1} and 
-\ref{fig:fairey2}). Producing $n$ such pairs allows us to test not just 
-how well the matching algorithm performs on corresponding images, but 
-also how many false positives we get on similar images that don't 
-overlap.\footnote{The set of source images and homographies as well as 
-	the a script to generate the cropped test sets based on them have 
-	been made available online together with the exact test sets used in 
-this paper on INSERT URL HERE}.
+angles.  From these pairs we can create test suites by cropping out 
+$250$ pixel by $250$ pixel patches of the original pair with a random 
+vertical and horizontal offset. Given a source image pair we can obtain 
+$n$ pairs of patches where the two patches in any pair might or might 
+not overlap.  This ensures that the patch pairs whith no overlap still 
+retain a basic similarity to each other, while the patches that do 
+overlap often only overlap on a small part of their surface. This 
+dataset will from here on be referred to as the \emph{Murals} dataset.  
+Figure \ref{fig:fairey} shows an example of possible pairs of test 
+images produced from two source images to the left.  Producing $n$ such 
+pairs allows us to test not just how well the matching algorithm 
+performs on corresponding images, but also how many false positives we 
+get on similar images that don't overlap.\footnote{The set of source 
+	images and homographies as well as the script to generate the 
+cropped test sets based on them have been made available online together 
+with the exact test sets used in this paper on 
+\href{https://github.com/arnfred/Murals}{www.github.com/arnfred/Murals}}.
 %
 \begin{figure*}
 	\centering
@@ -557,53 +559,43 @@ this paper on INSERT URL HERE}.
 \end{figure*}
 %
 \begin{figure}
-%	\makebox[0.5\textwidth][c]{%
-%		\begin{subfigure}[t]{0.12\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/pair_example1}
-%			\caption{Mural by Fairey (1)}
-%			\label{fig:fairey1}
-%		\end{subfigure}%
-%		\qquad %add desired spacing between images, e. g. ~, \quad, 
-%		%(or a blank line to force the subfigure onto a new line)
-%		\begin{subfigure}[t]{0.12\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/pair_example2}
-%			\caption{Mural by Fairey (2)}
-%			\label{fig:fairey2}
-%		\end{subfigure}%
-%	}%
-%	\\
-	%\makebox[0.5\textwidth][c]{
-	%	%~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-	%	%(or a blank line to force the subfigure onto a new line)
-	%	
-	%	\begin{subfigure}[t]{0.5\textwidth}
-	%	\end{subfigure}%
-	%}%
-	\centering
-	\includegraphics[width=0.5\textwidth]{images/crop_examples}
+	\makebox[0.5\textwidth][c]{%
+		\begin{subfigure}[t]{0.044\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/pair_example1}
+			\label{fig:fairey1}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, (or a 
+		%blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.044\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/pair_example2}
+			\label{fig:fairey2}
+		\end{subfigure}%
+		~ %
+		\begin{subfigure}[t]{0.37\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/crop_examples}
+		\end{subfigure}%
+	}%
 	\caption{Example of test set produced by a source pair of images}
 	\label{fig:fairey}
 \end{figure}
 %
-\subsection{Experimental setup}
+%\subsection{Experimental setup}
 %
 Using the image test sets described above, the \emph{MM} and \emph{MMC} 
-algorithms have been tested against a the algorithm Lowe proposed in 
-\cite{lowe2004sift} as well as the isodata matching algorithm proposed 
-in \cite{das2008event}. For each test set of cropped image pairs the 
-four algorithms\footnote{\emph{MM}, \emph{MMC}, \emph{SIFT} and 
-\emph{Isodata}} are applied to each pair of images ($100$ per test set), 
-and the threshold for each algorithm is varied over 50 evenly spaced 
-values.  For \emph{MM} and \emph{SIFT} these values lie between $0.4$ 
-and $0.8$ where as the threshold for \emph{MMC} and \emph{Isodata} is 
-varied between $0.8$ and $1.0$.  For each match returned by any of the 
-algorithms, the match is registered as an inlier if the endpoint in the 
-second image lies within $5$px of the true position calculated by the 
-homography.  That is, given $H$ relating $I_1$ with $I_2$ and a match 
-($p_1, p_2$) then the match is an inlier if $\left\vert Hp_1 - p_2 
-\right\vert + \left\vert H^{-1}p_2 - p_1 \right\vert < 5$. The 
+algorithms have been tested against \emph{SIFT}, the algorithm Lowe 
+proposed in \cite{lowe2004sift} as well as the \emph{Isodata} matching 
+algorithm proposed in \cite{das2008event} which uses geometric 
+information to improve the matching. For each test set of cropped image 
+pairs the four algorithms\footnote{\emph{MM}, \emph{MMC}, \emph{SIFT} 
+and \emph{Isodata}} are applied to each pair of images ($100$ per test 
+set), and the threshold for each algorithm is varied over 50 evenly 
+spaced values. For each match returned by any of the algorithms, the 
+match is registered as an inlier if given $H$ relating $I_1$ with $I_2$ 
+and a match ($p_1, p_2$) the match is an inlier if $\left\vert Hp_1 - 
+p_2 \right\vert + \left\vert H^{-1}p_2 - p_1 \right\vert < 5$. The 
 experiments are run on the $8$ image pairs in the test set, as well as 
 the graf image from \cite{mikolajczyk2005performance}.
 %
@@ -701,6 +693,22 @@ the graf image from \cite{mikolajczyk2005performance}.
 			%\caption{Performance on Scharf}
 		\end{subfigure}%
 	}%
+
+	\makebox[0.5\textwidth][c]{%
+		\begin{subfigure}[t]{.15\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/pitts}
+			\caption{Pittsburg \cite{gallagher2008}}
+			\label{fig:result_pitts}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{.27\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/result_pitts}
+			%\caption{Performance on Scharf}
+		\end{subfigure}%
+	}%
 	\label{fig:accuracy}
 	\caption{Accuracy Examples: Each plot pictures the result of $100$ 
 	image pairs generated from the source images shown to the left.  The 
@@ -716,6 +724,15 @@ pairs.}
 1 and 4 while XL is 1 and 5. Solid line is result by \emph{MMC} while 
 dashed line is result by \emph{SIFT}}
 	\label{fig:result_viewport}
+\end{figure}
+\begin{figure}
+	\centering
+	\includegraphics[width=0.45\textwidth]{images/result_accumulated}
+	\caption{Results on the mural dataset. For each of the 8 source 
+		image pairs, 100 test pairs have been created. The x-axis 
+		illustrates the accumulated returned matches for all pairs.
+		changes.}
+	\label{fig:result_accumulated}
 \end{figure}
 %\begin{figure}
 %	\makebox[\textwidth][c]{%
@@ -892,20 +909,24 @@ dashed line is result by \emph{SIFT}}
 %	\caption{results on Graf}
 %\end{figure}
 %
-Figure \ref{fig:accumulated} shows the results on the test set proposed 
-earlier\footnote{Illustrated in Figure \ref{mural}}. The performance of 
-the proposed algorithm is shown to be [FILL IN ONCE THE DATA IS READY] 
-to \emph{SIFT} and \emph{Isodata} when testing on image pairs that might 
-not overlap. This result is repeated (TODO: is it?) when testing on the 
-graf image as demonstrated in Figure \ref{fig:result_graf}. To 
-illustrate that this performance improvement isn't limited to street 
-art, figure \ref{fig:gallagher} shows the performance on an image from 
-the Gallagher data set \cite{gallagher2008} where images featuring 
-occlusion and change of perspective are matched. While performance is of 
-course affected by the magnitude of for example view port change, figure 
-\ref{fig:result_viewport} shows that \emph{MMC} consistently outperforms 
-the \emph{SIFT} algorithm over different magnitudes of change in 
-perspective. TODO: include note on plot for different descriptors.
+Figure \ref{fig:result_accumulated} shows the accumulated results on the 
+\emph{Murals} dataset\footnote{Illustrated in Figure \ref{mural}}. It 
+shows that \emph{MMC} and \emph{MM} is overall superior to both 
+\emph{SIFT} and \emph{Isodata} which uses geometric constraints when 
+tested on image pairs with no assurance of overlap depicting simple 
+planar scenes. Figure \ref{fig:result_faces} illustrates the result on a 
+particular image pair from the \emph{Murals} dataset. For an example of 
+a real life use case \ref{fig:result_pitts} shows the results on 
+potentially overlapping image pairs generated from a typical holiday 
+scene with partial overlap and slight view port change. As can be seen 
+in figure \ref{fig:result_viewport}, \emph{MMC} consistently outperforms 
+\emph{SIFT} across different magnitudes of the viewport change. For the 
+results on image 1 and 3 from the \emph{Graf} dataset, see figure 
+\ref{fig:result_graf}.
+Generally all plots show good results by \emph{Isodata} when only the 
+best matches are returned, but when the thresholds are more lenient the 
+quality of the returned matches degrades quickly and \emph{MMC} and 
+\emph{MM} yield better results.
 
 In terms of performance, table \ref{table:running_times} shows the 
 running time of the four algorithms over $100$ image pairs of $250$px by 
@@ -940,13 +961,13 @@ share the same common idea that feature points should have better
 matches in another image than in the image they came from to be 
 considered good matches and \emph{MMC} further improves on this idea by 
 using the structure of the similarity graph of the feature points. We 
-also address how to test the algorithms by constructing a image set of 
-$8$ source image pairs and a way to generate testsets based on these 
-pairs. The proposed approach shows promising results when comparing the 
-algorithms on $9$ testsets of $100$ image pairs each where many of the 
-pairs might not have any overlapping areas. In future work it will be 
-usefull to investigate how the algorithms perform when testing on sets 
-of images instead of pairs.
+also address how to test the algorithms by constructing the 
+\emph{Murals} dataset consisting of $8$ source image pairs and a way to 
+generate testsets based on these pairs.  The proposed approach shows 
+promising results on both the \emph{Murals} dataset as well as a real 
+life example from the Gallagher dataset and the \emph{Graf} image set, 
+beating even a method using geometrical constraints when matching image 
+pairs that might not overlap.
 %
 \bibliographystyle{IEEEtran}
 \bibliography{bibliography}
