@@ -34,7 +34,7 @@ objects. In this paper we propose two algorithms for matching feature
 points without the use of geometric constraints. The first makes use of 
 the fact that any match between two images should be better than all 
 possible matches within the image itself. The second algorithm extends 
-this idea by using the community structure in the similarity graph of 
+this idea by using community structure in the similarity graph of 
 feature points to reliably find correspondences. To evaluate the 
 algorithms experimentally we introduce a set of 8 image pairs all 
 containing view port changes and a simple method to generate a large 
@@ -48,14 +48,14 @@ approaches in finding correct correspondences.
 When matching feature points between two or more images we are often 
 faced with the problem of correctly identifying the actual 
 correspondences among many possible pairings. Several methods have been 
-proposed in the literature to solve this problem. In particular many 
-approaches look at the geometric configuration of the feature points and 
-match them according to assumptions made about the geometric 
-relationship between the images matched. These assumptions are then used 
-to create constraints used to evaluate the matches such as angular 
-constraints (\cite{kim2008efficient}), epipolar constraints 
-(\cite{torr2000mlesac}, \cite{chum2005matching}) and pairwise 
-constraints (\cite{choi2009robust}, \cite{leordeanu2005spectral}).
+proposed in the literature to solve this problem. Many approaches look 
+at the geometric configuration of the feature points and match them 
+according to assumptions made about the geometric relationship between 
+the images matched. These assumptions are then used to create 
+constraints used to evaluate the matches such as angular constraints 
+\cite{kim2008efficient}, epipolar constraints \cite{torr2000mlesac}, 
+\cite{chum2005matching} and pairwise constraints \cite{choi2009robust}, 
+\cite{leordeanu2005spectral}.
 %
 %When matching feature points between two or more images we are often 
 %faced with the problem of correctly identifying the actual 
@@ -89,32 +89,34 @@ constraints (\cite{choi2009robust}, \cite{leordeanu2005spectral}).
 %This approach provides more robustness in cases where assumptions that 
 %are violated globally still hold on a local scale.
 %
-Another approach proposed in the literature is to pick out different 
-zones in each image and pair zones when correspondence pairs are mainly 
-found going from one zone to another. This allows for the filtering of 
-all correspondences that do not fall within paired zones.  
-\cite{das2008event} proposes clustering feature points by using their 
-geometric position and exclude correspondences that are geometrically 
-deviant. A more sophisticated approach is introduced in 
-\cite{wu2011robust} where the zones are created by using the MSER 
-feature detector to find areas of interest in the images. These areas 
-can be defined as an ellipse with a certain radius around the interest 
-points. The feature points that fall within this ellipse are then 
-matched according to epipolar constraints.  
+Alternatively we can pick out different areas in each image and pair 
+areas when correspondence pairs are mainly found going from one area to 
+another. This allows for the filtering of all correspondences that do 
+not fall within paired areas. Examples include \cite{das2008event} and 
+\cite{wu2011robust}.
+%
+%proposes clustering feature points by using their geometric position 
+%and exclude correspondences that are geometrically deviant. A more 
+%sophisticated approach is introduced in \cite{wu2011robust} where the 
+%areas are created by using the MSER feature detector to find areas of 
+%interest in the images. These areas can be defined as an ellipse with a 
+%certain radius around the interest points. The feature points that fall 
+%within this ellipse are then matched according to epipolar constraints.  
 %
 In practice however, there are many situations where using the geometry 
-of the image to filter correspondences is not possible. This situation 
-most often arise when the assumptions made by a geometric method aren't 
-valid. In object recognition for example, adjecent objects in one photo 
-might be separated in another. In addition methods using geometric 
-constraints all require a set of correspondences to begin with. If this 
-set of correspondences is narrowed down to a smaller set with a higher 
-ratio of correct matches the result of the geometric matching will be 
-both faster and more accurate.  Finally some use cases might require a 
-performance that can't be achieved by a more complex geometric method 
-where simple non geometric methods might be able to provide additional 
-matching accuracy with a smaller performance penalty.
-%
+of the image to filter correspondences is not possible, such as object 
+recognition where adjecent objects in one photo might be separated in 
+another. Another example is images that do not overlap where algorithms 
+might still find matches adhering to the imposed geometric constraints.
+In addition methods using geometric constraints all require a set of 
+correspondences to begin with. If this set of correspondences is 
+narrowed down to a smaller set with a higher ratio of correct matches 
+the result of the geometric matching will be both faster and more 
+accurate.  Finally some use cases might require a performance that can't 
+be achieved by a more complex geometric method where simple non 
+geometric methods might be able to provide sufficient matching accuracy 
+with a smaller performance penalty.
+
 There are a relatively small number of algorithms proposed to solve the 
 matching problem without involving geometric constraints. Traditionally 
 the feature points of two images have been matched by comparing every 
@@ -125,8 +127,9 @@ proposes an alternative measure where the uniqueness of a given match is
 found by looking at the two nearest neighbors of each feature point and 
 calculating a match score by the ratio of similarities. By ranking the 
 scores by their uniqueness and picking the $n$ best we get a set of 
-correspondences that are distinctly matched across the two images.
-%
+correspondences that are distinctly matched across the two images. This 
+method will be referred to as \emph{SIFT} in this paper.
+
 In turn the two methods proposed in this paper are inspired by a simple 
 but novel idea. If we have two images and a given feature point in the 
 first image is better matched with other feature points from the 
@@ -241,7 +244,7 @@ that are not symmetric.
 		\begin{subfigure}[t]{0.30\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/mirror_match_off}
-			\caption{Baseline Result}
+			\caption{SIFT}
 			\label{fig:unique}
 		\end{subfigure}%
 		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
@@ -261,18 +264,16 @@ that are not symmetric.
 			\label{fig:without}
 		\end{subfigure}
 	}
-	\caption{Illustration of matches filtered by \emph{MM}}
+	\caption{Illustration of matches filtered by \emph{MM}. For each 
+	correct match found between the two images, a green line is shown.  
+Incorrect matches are marked with a red line. Figure \ref{fig:within} 
+shows the correspondences found by mirror match, but including all 
+matches that are found within the same image. }
 	\label{fig:comparemirror}
 \end{figure*}
 %
 Figure \ref{fig:comparemirror} shows an example of the result of 
-\emph{MM}. In figure \ref{fig:unique} the matches between two images are 
-shown when using the \emph{SIFT} algorithm from \cite{lowe2004sift}. For 
-each match found between the two images, a line has been drawn. The 
-color of the line is green in case the match is correct and red for 
-incorrect matches. Figure \ref{fig:within} shows the correspondences 
-found by mirror match, but including all matches that are found within 
-the same image. Notice how the by the bottom of the image admits 
+\emph{MM}. Notice how the by the bottom of the image admits 
 correspondences that can conveniently be removed as done in sub figure 
 \ref{fig:without} where only the actual correspondences returned by the 
 algorithm are shown.
@@ -370,15 +371,7 @@ same partition if the graph is very connected.  To ensure that the graph
 is well clustered, the adjacency matrix is pruned so only edges above a 
 certain threshold is kept. From empirical analysis keeping around 2.5\% 
 of edges seems to work well. Figure \ref{fig:graph} shows the result of 
-clustering the feature points displayed as a graph where each node 
-correspond to a feature point. Here the border of nodes signifies the 
-original image while the color of the node is decided by what partition 
-it belongs to.  Notice that since a limited amount of colors are used 
-disconnected subgraphs of the same color can be assumed to belong to 
-separate partitions. Figure \ref{fig:cropped_graph} shows a detailed 
-section of the graph where the interplay between small partitions 
-consisting of two or three nodes as well as larger partitions consisting 
-of several hundred nodes can be seen.
+clustering the feature points displayed as a graph.
 %
 \begin{SCfigure*}
 	\makebox[0.7\textwidth][c]{%
@@ -397,9 +390,14 @@ of several hundred nodes can be seen.
 			\label{fig:cropped_graph}
 		\end{subfigure}%
 	}%
-	\caption{The partitioned feature graph. Every color signifies a 
-	partition while the edge color of each node signifies which image it 
-belongs to. Notice the many clusters with only two or three nodes.}
+	\caption{The partitioned feature graph. Each vertex represents a 
+		feature point while an edge represent a high similarity between 
+		points. A partition is a connected group marked by a color.  Due 
+		to a limited amount of colors some disconnected partitions have 
+		been assigned the same color. The edge color of each node 
+		signifies which image it belongs to. In the detailed crop to the 
+		right the various cluster sizes can be seen, ranging from 
+	hundreds of feature points to only two or three.}
 	\label{fig:graph}
 \end{SCfigure*}
 %
