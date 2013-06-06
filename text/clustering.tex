@@ -679,23 +679,21 @@ To decrease clutter \emph{MM} is not shown, but it performs alike to
 	\label{fig:result_viewport}
 \end{figure}
 
-Figure \ref{fig:result_accumulated} shows the accumulated results on the 
-\emph{Murals} dataset. It shows that \emph{MMC} and \emph{MM} is overall 
-superior to both \emph{SIFT} and \emph{Isodata} which uses geometric 
-constraints when tested on image pairs with no assurance of overlap 
-depicting simple planar scenes. Figure \ref{fig:result_faces} 
-illustrates the result on a particular image pair from the \emph{Murals} 
-dataset. For an example of a real life use case \ref{fig:result_pitts} 
-shows the results on potentially overlapping image pairs generated from 
-a typical holiday scene with partial overlap and slight viewport 
-change. As can be seen in figure \ref{fig:result_viewport}, \emph{MMC} 
-consistently outperforms \emph{SIFT} across different magnitudes of the 
-viewport change. For the results on image 1 and 3 from the \emph{Graf} 
-dataset, see figure \ref{fig:result_graf}.
-Generally all plots show good results by \emph{Isodata} when only the 
-best matches are returned, but when the thresholds are more lenient the 
-quality of the returned matches degrades quickly and \emph{MMC} and 
-\emph{MM} yield better results.
+Figure \ref{fig:result_graf} shows the results for 100 image pairs 
+generated from img1 and img3 of the \emph{Graf} image set. The plot 
+illustrates how \emph{Isodata} performs well to begin with, but as we 
+permit more matches \emph{MM} and \emph{MMC} show superior results. To 
+generalize this result, figure \ref{fig:result_accumulated} displays the 
+accumulated result over the \emph{Murals} dataset as well as the 
+\emph{Graf} pair tested in fig. \ref{fig:result_graf}. In total 900 
+image pairs were generated from 9 source pairs. This plot confirms the 
+accuracy of \emph{MMC} and \emph{MM} over a bigger data set. As can be 
+seen in figure \ref{fig:result_viewport}, the results of \emph{MMC} are 
+general across different magnitudes of the viewport change.
+
+For an example of a real life use case \ref{fig:result_pitts} shows the 
+results on potentially overlapping image pairs generated from a typical 
+holiday scene with partial overlap and slight viewport change.
 
 In terms of performance, table \ref{table:running_times} shows the 
 running time of the four algorithms over $100$ image pairs of $250$px by 
@@ -703,7 +701,12 @@ $250$px. These numbers should be interpreted with the knowledge that
 much of the code behind \emph{MMC} and \emph{Isodata} is implemented in 
 python while \emph{MM} and \emph{SIFT} makes use of opencv to execute 
 computationally intensive operations in C++ which renders it much 
-faster.
+faster. While \emph{SIFT}, \emph{MM} and \emph{Isodata} can be 
+implemented in $O(nlogn)$ where $n$ is the total amount of feature 
+points, \emph{MMC} currently has a complexity of $O(n^2)$ due to the 
+construction of a similarity matrix of the feature points. It is however 
+possible to approximate this in $O(nlogn)$, something that might be 
+pursued in future work.
 %
 \begin{savenotes}
 \begin{table}
