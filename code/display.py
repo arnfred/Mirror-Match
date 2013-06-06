@@ -289,19 +289,19 @@ def accuDetail(correct, total, legend, ylim = 100, treshold=1000) :
 	accuHist(accu, legend, ylim=ylim)
 
 
-def accuPlot(correct, total, legends, ylim=(0.0,1.01), xlim = None, size = (4,6), compareCorrect = None, compareTotal = None, compareLabel = None, outside = False) :
+def accuPlot(correct, total, legends, colors = ["blue", "red", "green", "orange", "cyan"], ylim=(0.0,1.01), xlim = None, size = (4,6), compareCorrect = None, compareTotal = None, compareLegend = None, outside = False) :
 	fig = pylab.figure(figsize=size)
 	ax = pylab.subplot(111)
-	for ts,cs,l,color in zip(total, correct, legends, ["blue", "cyan", "green", "orange", "red"]) :
+	for ts,cs,l,color in zip(total, correct, legends, colors) :
 		xs = [sum(t) for t in ts]
 		ys = [1 if sum(t) == 0 else sum(c)/float(sum(t)) for (c, t) in zip(cs, ts)]
-		pylab.plot(xs, ys, '-', label=l, color=color, alpha=0.75)
+		pylab.plot(xs, ys, '-', label=l, color=color, alpha=0.95)
 		pylab.legend(loc="best")
-	if compareCorrect != None and compareTotal != None and compareLabel != None :
+	if compareCorrect != None and compareTotal != None and compareLegend != None :
 		for ts,cs,l,color in zip(compareTotal, compareCorrect, legends, ["blue", "cyan", "green", "orange", "red"]) :
 			xs = [sum(t) for t in ts]
 			ys = [1 if sum(t) == 0 else sum(c)/float(sum(t)) for (c, t) in zip(cs, ts)]
-			pylab.plot(xs, ys, '--', label="%s - %s" % (l, compareLabel), color=color, alpha=0.95)
+			pylab.plot(xs, ys, '--', label="%s" % (compareLegend), color=color, alpha=1)
 			pylab.legend(loc="best")
 	removeDecoration()
 	pylab.xlabel("# of Matches")

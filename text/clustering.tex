@@ -1,4 +1,4 @@
-\documentclass[12pt,journal,compsoc]{IEEEtran}
+\documentclass[12pt,journal]{IEEEtran}
 %\documentclass{article}
 \usepackage{footnote}
 \usepackage[font={small}]{caption}
@@ -19,7 +19,7 @@
 
 \title{Reliable feature point matching without the use of geometric 
 constraints}
-\author{Jonas Arnfred and what to put here exactly?}
+%\author{Jonas Arnfred and what to put here exactly?}
 
 \maketitle
 %
@@ -37,7 +37,7 @@ possible matches within the image itself. The second algorithm extends
 this idea by using community structure in the similarity graph of 
 feature points to reliably find correspondences. To evaluate the 
 algorithms experimentally we introduce a set of 8 image pairs all 
-containing view port changes and a simple method to generate a large 
+containing viewport changes and a simple method to generate a large 
 amount of test cases based on these 8 pairs. The experimental results 
 show that the proposed algorithm, overall, is superior to traditional 
 approaches in finding correct correspondences.
@@ -125,8 +125,8 @@ finding the best matches based on the similarity of the descriptors.
 With the introduction of the SIFT features \cite{lowe2004sift}, Lowe 
 proposes an alternative measure where the uniqueness of a given match is 
 found by looking at the two nearest neighbors of each feature point and 
-calculating a match score by the ratio of similarities. By ranking the 
-scores by their uniqueness and picking the $n$ best we get a set of 
+calculating a match score by the ratio of similarities. Ranking the 
+scores by their uniqueness and picking the $n$ best produces a set of 
 correspondences that are distinctly matched across the two images. This 
 method will be referred to as \emph{SIFT} in this paper.
 
@@ -138,7 +138,7 @@ this feature point to points in the other image is deemed unreliable and
 discarded.  This approach carries no implicit assumptions about the 
 geometric consistency of matches and can as such easily be extended with 
 other geometric solutions when appropriate.
-%
+
 %Based on this idea the two proposed methods find reliable matches as 
 %follows:
 %\begin{itemize}
@@ -192,6 +192,7 @@ other geometric solutions when appropriate.
 %contain similar feature points from both images that can then be matched 
 %using \emph{MM} but with much lower thresholds.
 %
+\section{Matching Methods}
 \subsection{Mirror Match (\emph{MM})}
 %
 The central idea behind \emph{MM} is to match features of $n$ images by 
@@ -203,6 +204,7 @@ the implementation of \emph{MM} is shown.
 \begin{algorithm}
 \caption{Mirror Match Algorithm (\emph{MM})}
 \label{alg-mm}
+{\fontsize{10}{10}\selectfont
 \begin{algorithmic}
 \Require $images$ : set of images, $t$ : float $\in \mathbb{R}$
 \State $matches_{init}\gets \varnothing$
@@ -228,6 +230,7 @@ getImg(f_j) \wedge \left(f_j, f_i\right) \not\in matches_{final}$}
 \EndFor \\
 \Return $matches_{final}$
 \end{algorithmic}
+}
 \end{algorithm}
 %
 In the acquisition state we gather all features in the set of images.  
@@ -241,43 +244,65 @@ that are not symmetric.
 %
 \begin{figure*}
 	\makebox[\textwidth][c]{%
-		\begin{subfigure}[t]{0.30\textwidth}
+		\begin{subfigure}[t]{0.32\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/MMC_pitts_source}
+			\caption{Source image}
+			\label{fig:pitts_source}
+		\end{subfigure}%
+		\enspace %
+		\begin{subfigure}[t]{0.32\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/MMC_pitts_keypoints}
+			\caption{Keypoints Displayed}
+			\label{fig:pitts_keypoints}
+		\end{subfigure}%
+		\enspace %add desired spacing between images, e. g. ~, \quad, 
+		%\qquad (or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.32\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/mirror_match_off}
-			\caption{SIFT}
+			\caption{\emph{SIFT}}
 			\label{fig:unique}
 		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.30\textwidth}
+	}
+	\makebox[\textwidth][c]{%
+		\begin{subfigure}[t]{0.32\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/mirror_match}
+			\caption{\emph{MM}}
+			\label{fig:without}
+		\end{subfigure}%
+		\enspace%
+		\begin{subfigure}[t]{0.32\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/mirror_match_with_pruned}
 			\caption{\emph{MM} with intra image matches}
 			\label{fig:within}
 		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad
-		  %(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.30\textwidth}
+		\enspace %add desired spacing between images, e. g. ~, \quad, 
+		%\qquad (or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.32\textwidth}
 			\centering
-			\includegraphics[width=\textwidth]{images/mirror_match}
-			\caption{\emph{MM}}
-			\label{fig:without}
-		\end{subfigure}
-	}
+			\includegraphics[width=\textwidth]{images/MMC_partition}
+			\caption{\emph{MMC} Partition Example}
+			\label{fig:pitts_partition}
+		\end{subfigure}%
+	}%
 	\caption{Illustration of matches filtered by \emph{MM}. For each 
 	correct match found between the two images, a green line is shown.  
 Incorrect matches are marked with a red line. Figure \ref{fig:within} 
 shows the correspondences found by mirror match, but including all 
-matches that are found within the same image. }
-	\label{fig:comparemirror}
-\end{figure*}
-%
-Figure \ref{fig:comparemirror} shows an example of the result of 
-\emph{MM}. Notice how the by the bottom of the image admits 
+matches that are found within the same image. }%
+	\label{fig:comparemirror}%
+\end{figure*}%
+
+In figure \ref{fig:comparemirror} an example of the result of \emph{MM} 
+is illustrated. Notice how the by the bottom of the image admits 
 correspondences that can conveniently be removed as done in sub figure 
 \ref{fig:without} where only the actual correspondences returned by the 
 algorithm are shown.
-%
+
 \subsection{Mirror Match with Clustering (\emph{MMC})}
 %
 As opposed to \emph{MM}, \emph{MMC} diverges from traditional 
@@ -335,7 +360,7 @@ points that we can match using the same approach as \emph{MM}.
 %amount of partitions in for example Spectral clustering or Pott's model 
 %clustering further exacerbates the issue since smaller partitions are 
 %then combined into one to achieve the right amount of partitions.
-%
+
 We use the Louvain Method\cite{blondel2008} for clustering feature 
 points since it's relatively fast and performs 
 well\cite{lancichinetti2009}, doesn't require 
@@ -346,6 +371,7 @@ k-means\cite{von2007}.
 \begin{algorithm}
 \caption{Mirror Match with Clustering Algorithm (\emph{MMC})}
 \label{alg-mmc}
+{\fontsize{10}{10}\selectfont
 \begin{algorithmic}
 \Require $images$ : set of images, $t \in \mathbb{R}$
 \State $M\gets \varnothing$
@@ -363,8 +389,9 @@ k-means\cite{von2007}.
 \EndFor \\
 \Return matches
 \end{algorithmic}
+}
 \end{algorithm}
-%
+
 While the louvain clustering algorithm doesn't require any parameters in 
 itself, it tends towards clustering all feature points together in the 
 same partition if the graph is very connected.  To ensure that the graph 
@@ -400,45 +427,40 @@ clustering the feature points displayed as a graph.
 	hundreds of feature points to only two or three.}
 	\label{fig:graph}
 \end{SCfigure*}
-%
+
 The partitions group feature points by similarity which means that 
 repetitive structures such as buildings often feature in larger 
-partitions as exemplified in figure \ref{fig:compare_mirror}. %
-\begin{figure}
-	\makebox[0.5\textwidth][c]{%
-		\begin{subfigure}[t]{0.24\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/MMC_pitts_source}
-			\caption{Source image}
-			\label{fig:pitts_source}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.24\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/MMC_pitts_keypoints}
-			\caption{Keypoints Displayed}
-			\label{fig:pitts_keypoints}
-		\end{subfigure}%
-	}%
-	\\
-	\makebox[0.5\textwidth][c]{
-		%~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		
-		\begin{subfigure}[t]{0.5\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/MMC_partition}
-			\caption{A Partition Example}
-			\label{fig:pitts_partition}
-		\end{subfigure}%
-	}%
-	\caption{Example of a partition of keypoints in an image pair. The 
-		partition shown contains window corners from a building in the 
-		left image and similar corners on the shirt in the right image.  
-	}
-	\label{fig:compare_mirror}
-\end{figure}
+partitions as exemplified in figure \ref{fig:pitts_partition}.
+%
+%\begin{figure}
+%	\makebox[0.5\textwidth][c]{%
+%		\begin{subfigure}[t]{0.24\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/MMC_pitts_source}
+%			\caption{Source image}
+%			\label{fig:pitts_source}
+%		\end{subfigure}%
+%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+%		%(or a blank line to force the subfigure onto a new line)
+%	}%
+%	\\
+%	\makebox[0.5\textwidth][c]{
+%		%~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+%		%(or a blank line to force the subfigure onto a new line)
+%		
+%		\begin{subfigure}[t]{0.5\textwidth}
+%			\centering
+%			\includegraphics[width=\textwidth]{images/MMC_partition}
+%			\caption{A Partition Example}
+%			\label{fig:pitts_partition}
+%		\end{subfigure}%
+%	}%
+%	\caption{Example of a partition of keypoints in an image pair. The 
+%		partition shown contains window corners from a building in the 
+%		left image and similar corners on the shirt in the right image.  
+%	}
+%	\label{fig:compare_mirror}
+%\end{figure}
 %
 %The matching algorithm for \emph{MMC} (algorithm \ref{alg-getmatches}) 
 %goes through the partitions one by one and selects matches in the 
@@ -452,6 +474,7 @@ partitions as exemplified in figure \ref{fig:compare_mirror}. %
 %this means that we can set the ratio threshold much higher than in 
 %\emph{MM} and include matches that would normally have been discarded 
 %for not being sufficiently unique.
+
 The matching for \emph{MMC} \emph{getMatches} finds matches within all 
 partitions with more than two elements as done in \emph{MM}. However as 
 can be seen in the example in figure \ref{fig:cropped_graph} many of the 
@@ -505,16 +528,37 @@ best match across all partitions.
 To reliably measure the accuracy of a matching method on real images we 
 either need a set of image pairs tied by a homography or manually count 
 the number of inliers. The latter becomes unfeasible the moment we 
-attempt to test a non-trivial set of images. In 
-\cite{mikolajczyk2005performance} Mikolajczyk and Schmid introduces a 
+attempt to test a non-trivial set of images. 
+
+In \cite{mikolajczyk2005performance} Mikolajczyk and Schmid introduces a 
 set of images to compare the performance of feature detectors. The test 
 set covers different types of image variance such as different lighting, 
-blur, rotation as well as viewpoint change.However in practice the view 
-point change has gone on to be used the most for later tests given that 
-most of the other test pairs have since become easy to 
-match\footnote{see \cite{wu2011robust} or \cite{delponte2006svd} for 
-examples}.
-%
+blur, rotation as well as viewpoint change. Inspired by this 
+dataset\footnote{In particular by the 'Graf' image set} and motivated by 
+the need for more image pairs featuring viewport changes, we have 
+compiled a set of $8$ image pairs consisting of the same subject taken 
+from two different angles. The images are collected from Flickr's 
+database of images published under a creative commons 
+licence\footnote{\href{http://creativecommons.org/}{www.creativecommons.org}, 
+a copyleft license permitting redistribution} and feature murals which 
+makes it possible to relate points in the image pairs with a homography.  
+The images have been cropped to feature the same motive and resized to 
+$900$px by $600$px. This dataset will be referred to as the 
+\emph{Murals} dataset in this paper. The images can be seen in figure 
+\ref{fig:murals}.
+
+\begin{figure*}
+	\centering
+	\includegraphics[width=\textwidth]{images/murals}
+	\caption{Images in the mural test set}
+	\label{fig:murals}
+\end{figure*}
+
+%However in practice the view point change has gone on to be used the 
+%most for later tests given that most of the other test pairs have since 
+%become easy to match\footnote{see \cite{wu2011robust} or 
+%\cite{delponte2006svd} for examples}.
+
 %Inspired by the graffiti image we have collected a set of image pairs 
 %featuring murals of a few different artists\footnote{Including Banksy, 
 %Blu and Shepard Fairey among others}. Each pair consist of images of 
@@ -526,50 +570,25 @@ examples}.
 %This means that it isn't enough just testing against pairs of images 
 %that we know match.  We also need to test against pairs that might look 
 %like they could match but in fact don't.
-%
-To increase the amount of images that feature view port changes we have 
-collected a set of $8$ image pairs featuring murals from different 
-angles.  From these pairs we can create test suites by cropping out 
-$250$ pixel by $250$ pixel patches of the original pair with a random 
-vertical and horizontal offset. Given a source image pair we can obtain 
-$n$ pairs of patches where the two patches in any pair might or might 
-not overlap.  This ensures that the patch pairs whith no overlap still 
-retain a basic similarity to each other, while the patches that do 
-overlap often only overlap on a small part of their surface. This 
-dataset will from here on be referred to as the \emph{Murals} dataset.  
-Figure \ref{fig:fairey} shows an example of possible pairs of test 
-images produced from two source images to the left.  Producing $n$ such 
-pairs allows us to test not just how well the matching algorithm 
-performs on corresponding images, but also how many false positives we 
-get on similar images that don't overlap.\footnote{The set of source 
-	images and homographies as well as the script to generate the 
-cropped test sets based on them have been made available online together 
-with the exact test sets used in this paper on 
-\href{https://github.com/arnfred/Murals}{www.github.com/arnfred/Murals}}.
-%
-%\begin{figure*}
-%	\centering
-%	\includegraphics[width=\textwidth]{images/murals}
-%	\caption{Images in the mural test set}
-%	\label{fig:mural}
-%\end{figure*}
+
+
 %
 \begin{figure}
 	\makebox[0.5\textwidth][c]{%
-		\begin{subfigure}[t]{0.044\textwidth}
+		\begin{subfigure}[t]{0.048\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/pair_example1}
 			\label{fig:fairey1}
 		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, (or a 
-		%blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.044\textwidth}
+		\enspace %add desired spacing between images, e. g. ~, \quad, 
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.048\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/pair_example2}
 			\label{fig:fairey2}
 		\end{subfigure}%
-		~ %
-		\begin{subfigure}[t]{0.37\textwidth}
+		\enspace %
+		\begin{subfigure}[t]{0.36\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/crop_examples}
 		\end{subfigure}%
@@ -579,91 +598,47 @@ with the exact test sets used in this paper on
 \end{figure}
 %
 %\subsection{Experimental setup}
-%
-Using the image test sets described above, the \emph{MM} and \emph{MMC} 
-algorithms have been tested against \emph{SIFT}, the algorithm Lowe 
-proposed in \cite{lowe2004sift} as well as the \emph{Isodata} matching 
-algorithm proposed in \cite{das2008event} which uses geometric 
-information to improve the matching. For each test set of cropped image 
-pairs the four algorithms\footnote{\emph{MM}, \emph{MMC}, \emph{SIFT} 
-and \emph{Isodata}} are applied to each pair of images ($100$ per test 
-set), and the threshold for each algorithm is varied over 50 evenly 
-spaced values. For each match returned by any of the algorithms, the 
-match is registered as an inlier if given $H$ relating $I_1$ with $I_2$ 
-and a match ($p_1, p_2$) the match is an inlier if $\left\vert Hp_1 - 
-p_2 \right\vert + \left\vert H^{-1}p_2 - p_1 \right\vert < 5$. The 
-experiments are run on the $8$ image pairs in the test set, as well as 
-the graf image from \cite{mikolajczyk2005performance}.
+The \emph{MM} and \emph{MMC} algorithms have been tested against 
+\emph{SIFT}, the algorithm Lowe proposed in \cite{lowe2004sift} as well 
+as the \emph{Isodata} matching algorithm proposed in \cite{das2008event} 
+which uses geometric information to improve the matching. The comparison 
+has been done using the \emph{Murals} dataset, the \emph{Graf} set from 
+\cite{mikolajczyk2005performance} and two images\footnote{100\_1942.jpg 
+and 100\_1941.jpg} from \cite{gallagher2008} illustrated in figure 
+\ref{fig:pitts_partition}.
+
+Test sets have been generated from the image pairs by cropping out 
+$250$px by $250$px patches with a random vertical and horizontal offset.  
+Given a source image pair we produce $100$ pairs of patches where the 
+two patches in any pair might or might not overlap.  This ensures that 
+the patch pairs with no overlap still retain a basic similarity to each 
+other, while the patches that do overlap often only overlap on a small 
+part of their surface. Figure \ref{fig:fairey} shows an example of 
+possible pairs of test images produced from a source image pair.  
+Producing $n$ such pairs allows us to test not just how well the 
+matching algorithm performs on a variety of overlap but also how many 
+false positives we get on similar images that don't overlap at 
+all\footnote{The set of source images and homographies as well as the 
+	script to generate the cropped test sets based on them have been 
+made available online together with the exact test sets used in this 
+paper on 
+\href{https://github.com/arnfred/Murals}{www.github.com/arnfred/Murals}}.
+
+To judge whether a possible match ($p_1, p_2$) should be counted as an 
+inlier given a homography $H$ relating two images $I_1$ and $I_2$ we 
+test if $p_1$ and $p_2$ satisfies the following criterium:
+
+$$\left\vert Hp_1 - p_2 \right\vert + \left\vert H^{-1}p_2 - p_1 
+\right\vert < 5$$
 %
 \section{Results}
 \label{results}
-%
-%\begin{figure}
-%	\makebox[\textwidth][c]{%
-%		\begin{subfigure}[t]{0.35\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/fairey_burma_1}
-%			\caption{Burma by Fairey (1)}
-%			\label{fig:burma1}
-%		\end{subfigure}%
-%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-%		%(or a blank line to force the subfigure onto a new line)
-%		\begin{subfigure}[t]{0.35\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/fairey_burma_2}
-%			\caption{Burma by Fairey (2)}
-%			\label{fig:burma2}
-%		\end{subfigure}%
-%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-%		%(or a blank line to force the subfigure onto a new line)
-%		\begin{subfigure}[t]{0.35\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/result_fairey_burma}
-%			\caption{X: Nb of correct matches. Y: accuracy}
-%			\label{fig:result_burma}
-%		\end{subfigure}%
-%	}%
-%	\label{fig:burma}
-%	\caption{results on Burma by Fairey}
-%\end{figure}
-%
-%\begin{figure}
-%	\makebox[\textwidth][c]{%
-%		\begin{subfigure}[t]{0.25\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/fairey_lady_1}
-%			\caption{Lady by Fairey (1)}
-%			\label{fig:lady1}
-%		\end{subfigure}%
-%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-%		%(or a blank line to force the subfigure onto a new line)
-%		\begin{subfigure}[t]{0.25\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/fairey_lady_2}
-%			\caption{Lady by Fairey (2)}
-%			\label{fig:lady2}
-%		\end{subfigure}%
-%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-%		%(or a blank line to force the subfigure onto a new line)
-%		\begin{subfigure}[t]{0.55\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/result_fairey_lady}
-%			\caption{X: Nb of correct matches. Y: accuracy}
-%			\label{fig:result_lady}
-%		\end{subfigure}%
-%	}%
-%	\label{fig:lady}
-%	\caption{results on Lady by Fairey}
-%\end{figure}
-%
-%
+
 \begin{figure}
 	\makebox[0.5\textwidth][c]{%
 		\begin{subfigure}[t]{.13\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/graf}
-			\caption{Graf \cite{mikolajczyk2005performance}}
-			\label{fig:result_graf}
 		\end{subfigure}%
 		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
 		%(or a blank line to force the subfigure onto a new line)
@@ -673,238 +648,37 @@ the graf image from \cite{mikolajczyk2005performance}.
 			%\caption{Performance on Scharf}
 		\end{subfigure}%
 	}%
-
-	\makebox[0.5\textwidth][c]{%
-		\begin{subfigure}[t]{.15\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/scharf}
-			\caption{Faces (Scharf)}
-			\label{fig:result_faces}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{.27\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/result_scharf}
-			%\caption{Performance on Scharf}
-		\end{subfigure}%
-	}%
-
-	\makebox[0.5\textwidth][c]{%
-		\begin{subfigure}[t]{.15\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/pitts}
-			\caption{Pittsburg \cite{gallagher2008}}
-			\label{fig:result_pitts}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{.27\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/result_pitts}
-			%\caption{Performance on Scharf}
-		\end{subfigure}%
-	}%
-	\label{fig:accuracy}
-	\caption{Accuracy Examples: Each plot pictures the result of $100$ 
-	image pairs generated from the source images shown to the left.  The 
-number of matches is the total number of matches for all $100$ image 
-pairs.}
+	\label{fig:results_graf}
+	\caption{Accuracy on the \emph{Graf} set from 
+		\cite{mikolajczyk2005performance} using img1 and img3. The plot 
+	shows the result of $100$ image pairs generated from the source 
+images shown to the left. The number of matches is the total number of 
+matches for all $100$ image pairs.}
 \end{figure}
-%
-\begin{figure}
-	\centering
-	\includegraphics[width=0.45\textwidth]{images/result_viewport}
-	\caption{Results on viewport changes. S is image 1 and 2 of the 
-	graffiti set in\cite{mikolajczyk2005performance}. M is 1 and 3, L is 
-1 and 4 while XL is 1 and 5. \emph{MMC} is represented by a solid line 
-while \emph{SIFT} results are shown by a dashed line.}
-	\label{fig:result_viewport}
-\end{figure}
+
 \begin{figure}
 	\centering
 	\includegraphics[width=0.45\textwidth]{images/result_accumulated}
-	\caption{Results on the mural dataset. For each of the 8 source 
-		image pairs, 100 test pairs have been created. The x-axis 
-		illustrates the accumulated returned matches for all pairs.
-		changes.}
+	\caption{Results on the \emph{Murals} dataset and the pair of img1 
+		and img3 from the \emph{Graf} image set from 	
+		\cite{mikolajczyk2005performance}. For each of the 9 source 
+		image pairs, 100 test pairs have been created.  The x-axis 
+	illustrates the accumulated returned matches for all pairs.}
 	\label{fig:result_accumulated}
 \end{figure}
-%\begin{figure}
-%	\makebox[\textwidth][c]{%
-%		\begin{subfigure}[t]{0.35\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/houston_1}
-%			\caption{Houston (1)}
-%			\label{fig:houston1}
-%		\end{subfigure}%
-%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-%		%(or a blank line to force the subfigure onto a new line)
-%		\begin{subfigure}[t]{0.35\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/houston_2}
-%			\caption{Houston (2)}
-%			\label{fig:houston2}
-%		\end{subfigure}%
-%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-%		%(or a blank line to force the subfigure onto a new line)
-%		\begin{subfigure}[t]{0.35\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/result_houston}
-%			\caption{X: Nb of correct matches. Y: accuracy}
-%			\label{fig:result_houston}
-%		\end{subfigure}%
-%	}%
-%	\label{fig:houston}
-%	\caption{Results on Houston}
-%\end{figure}
-%
-%\begin{figure}
-%	\makebox[\textwidth][c]{%
-%		\begin{subfigure}[t]{0.25\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/blu_head_1}
-%			\caption{head by blu (1)}
-%			\label{fig:head1}
-%		\end{subfigure}%
-%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-%		%(or a blank line to force the subfigure onto a new line)
-%		\begin{subfigure}[t]{0.25\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/blu_head_2}
-%			\caption{head by blu (2)}
-%			\label{fig:head2}
-%		\end{subfigure}%
-%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-%		%(or a blank line to force the subfigure onto a new line)
-%		\begin{subfigure}[t]{0.55\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/result_blu_head}
-%			\caption{X: Nb of correct matches. Y: accuracy}
-%			\label{fig:result_head}
-%		\end{subfigure}%
-%	}%
-%	\label{fig:head}
-%	\caption{results on head by blu}
-%\end{figure}
-%
-%\begin{figure}
-%	\makebox[\textwidth][c]{%
-%		\begin{subfigure}[t]{0.25\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/blu_pencil_1}
-%			\caption{Pencil by Blu (1)}
-%			\label{fig:pencil1}
-%		\end{subfigure}%
-%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-%		%(or a blank line to force the subfigure onto a new line)
-%		\begin{subfigure}[t]{0.25\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/blu_pencil_2}
-%			\caption{Pencil by Blu (2)}
-%			\label{fig:pencil2}
-%		\end{subfigure}%
-%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-%		%(or a blank line to force the subfigure onto a new line)
-%		\begin{subfigure}[t]{0.55\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/result_blu_pencil}
-%			\caption{X: Nb of correct matches. Y: accuracy}
-%			\label{fig:result_pencil}
-%		\end{subfigure}%
-%	}%
-%	\label{fig:pencil}
-%	\caption{Results on Pencil by Blu}
-%\end{figure}
-%
-%\begin{figure}
-%	\makebox[\textwidth][c]{%
-%		\begin{subfigure}[t]{0.35\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/banksy_city_1}
-%			\caption{City by Banksy (1)}
-%			\label{fig:city1}
-%		\end{subfigure}%
-%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-%		%(or a blank line to force the subfigure onto a new line)
-%		\begin{subfigure}[t]{0.35\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/banksy_city_2}
-%			\caption{City by Banksy (2)}
-%			\label{fig:city2}
-%		\end{subfigure}%
-%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-%		%(or a blank line to force the subfigure onto a new line)
-%		\begin{subfigure}[t]{0.35\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/result_banksy_city}
-%			\caption{X: Nb of correct matches. Y: accuracy}
-%			\label{fig:result_city}
-%		\end{subfigure}%
-%	}%
-%	\label{fig:city}
-%	\caption{results on City}
-%\end{figure}
-%
-%\begin{figure}
-%	\makebox[\textwidth][c]{%
-%		\begin{subfigure}[t]{0.35\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/banksy_stroller_1}
-%			\caption{Stroller by Banksy (1)}
-%			\label{fig:stroller1}
-%		\end{subfigure}%
-%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-%		%(or a blank line to force the subfigure onto a new line)
-%		\begin{subfigure}[t]{0.35\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/banksy_stroller_2}
-%			\caption{Stroller by Banksy (2)}
-%			\label{fig:stroller2}
-%		\end{subfigure}%
-%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-%		%(or a blank line to force the subfigure onto a new line)
-%		\begin{subfigure}[t]{0.35\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/result_banksy_stroller}
-%			\caption{X: Nb of correct matches. Y: accuracy}
-%			\label{fig:result_stroller}
-%		\end{subfigure}%
-%	}%
-%	\label{fig:stroller}
-%	\caption{Results on Stroller by Banksy}
-%\end{figure}
-%
-%
-%\begin{figure}
-%	\makebox[\textwidth][c]{%
-%		\begin{subfigure}[t]{0.35\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/graf_1}
-%			\caption{Graf (1)}
-%			\label{fig:graf1}
-%		\end{subfigure}%
-%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-%		%(or a blank line to force the subfigure onto a new line)
-%		\begin{subfigure}[t]{0.35\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/graf_3}
-%			\caption{Graf (3)}
-%			\label{fig:graf3}
-%		\end{subfigure}%
-%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-%		%(or a blank line to force the subfigure onto a new line)
-%		\begin{subfigure}[t]{0.35\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/result_graf}
-%			\caption{X: Nb of correct matches. Y: accuracy}
-%			\label{fig:result_graf}
-%		\end{subfigure}%
-%	}%
-%	\label{fig:graf}
-%	\caption{results on Graf}
-%\end{figure}
-%
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.45\textwidth]{images/result_viewport}
+	\caption{Results on viewport changes using the \emph{Graf} set from 
+		\cite{mikolajczyk2005performance} as image pair sources. S is a 
+		testst of $100$ crops from img1 and img2. M is likewise but 
+	based on img1 and img3.  L is img1 and img4 and XL is img1 and img5.  
+To decrease clutter \emph{MM} is not shown, but it performs alike to 
+\emph{MMC}}
+	\label{fig:result_viewport}
+\end{figure}
+
 Figure \ref{fig:result_accumulated} shows the accumulated results on the 
 \emph{Murals} dataset. It shows that \emph{MMC} and \emph{MM} is overall 
 superior to both \emph{SIFT} and \emph{Isodata} which uses geometric 
@@ -913,7 +687,7 @@ depicting simple planar scenes. Figure \ref{fig:result_faces}
 illustrates the result on a particular image pair from the \emph{Murals} 
 dataset. For an example of a real life use case \ref{fig:result_pitts} 
 shows the results on potentially overlapping image pairs generated from 
-a typical holiday scene with partial overlap and slight view port 
+a typical holiday scene with partial overlap and slight viewport 
 change. As can be seen in figure \ref{fig:result_viewport}, \emph{MMC} 
 consistently outperforms \emph{SIFT} across different magnitudes of the 
 viewport change. For the results on image 1 and 3 from the \emph{Graf} 
@@ -948,6 +722,30 @@ faster.
 \end{table}
 \end{savenotes}
 %
+
+\begin{figure}
+	\makebox[0.5\textwidth][c]{%
+		\begin{subfigure}[t]{.15\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/pitts}
+		\end{subfigure}%
+		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+		%(or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{.27\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/result_pitts}
+			%\caption{Performance on Scharf}
+		\end{subfigure}%
+	}%
+	\label{fig:results_pitts}
+	\caption{Accuracy on an image pair from the Gallagher dataset from 
+		\cite{gallagher2008} using cropped versions of 100\_1941 and 
+		100\_1942. The plot shows the result of $100$ image pairs 
+		generated from the source images shown to the left.  The number 
+	of matches is the total number of matches for all $100$ image 
+pairs.}
+\end{figure}
+
 \section{Summary}
 We have addressed the problem of matching feature points without using 
 geometrical constraints and proposed two algorithms \emph{Mirror Match 
