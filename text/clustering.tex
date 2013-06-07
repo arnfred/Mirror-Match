@@ -1,7 +1,7 @@
-\documentclass[12pt,journal]{IEEEtran}
+\documentclass[conference]{IEEEtran}
 %\documentclass{article}
 \usepackage{footnote}
-\usepackage[font={small}]{caption}
+%\usepackage[font={small}]{caption}
 \usepackage{sidecap}
 \usepackage{graphicx}
 \usepackage{cite}
@@ -29,7 +29,7 @@ feature points in two or more images using geometric assumptions to
 increase the robustness of the matching. However very little work 
 addresses the case where these assumptions might not hold true. In 
 particular few methods address the problem of reliable matching in cases 
-where we don't know if two images have any corresponding areas or 
+where we do not know if two images have any corresponding areas or 
 objects. In this paper we propose two algorithms for matching feature 
 points without the use of geometric constraints. The first makes use of 
 the fact that any match between two images should be better than all 
@@ -52,7 +52,7 @@ proposed in the literature to solve this problem. Many approaches look
 at the geometric configuration of the feature points and match them 
 according to assumptions made about the geometric relationship between 
 the images matched. These assumptions are then used to create 
-constraints used to evaluate the matches such as angular constraints 
+constraints on the matches such as angular constraints 
 \cite{kim2008efficient}, epipolar constraints \cite{torr2000mlesac}, 
 \cite{chum2005matching} and pairwise constraints \cite{choi2009robust}, 
 \cite{leordeanu2005spectral}.
@@ -94,7 +94,7 @@ areas when correspondence pairs are mainly found going from one area to
 another. This allows for the filtering of all correspondences that do 
 not fall within paired areas. Examples include \cite{das2008event} and 
 \cite{wu2011robust}.
-%
+
 %proposes clustering feature points by using their geometric position 
 %and exclude correspondences that are geometrically deviant. A more 
 %sophisticated approach is introduced in \cite{wu2011robust} where the 
@@ -102,20 +102,20 @@ not fall within paired areas. Examples include \cite{das2008event} and
 %interest in the images. These areas can be defined as an ellipse with a 
 %certain radius around the interest points. The feature points that fall 
 %within this ellipse are then matched according to epipolar constraints.  
-%
+
 In practice however, there are many situations where using the geometry 
 of the image to filter correspondences is not possible, such as object 
-recognition where adjecent objects in one photo might be separated in 
+recognition where adjacent objects in one photo might be separated in 
 another. Another example is images that do not overlap where algorithms 
 might still find matches adhering to the imposed geometric constraints.
-In addition methods using geometric constraints all require a set of 
-correspondences to begin with. If this set of correspondences is 
-narrowed down to a smaller set with a higher ratio of correct matches 
-the result of the geometric matching will be both faster and more 
-accurate.  Finally some use cases might require a performance that can't 
-be achieved by a more complex geometric method where simple non 
-geometric methods might be able to provide sufficient matching accuracy 
-with a smaller performance penalty.
+In addition methods using geometric constraints all require an initial 
+set of correspondences. If this set of correspondences is narrowed down 
+to a set with a higher ratio of correct matches the result of the 
+geometric matching will benefit in terms of speed and accuracy. Finally 
+some use cases might require a performance that can't be achieved by a 
+more complex geometric method where simple non geometric methods might 
+be able to provide sufficient matching accuracy with a smaller 
+performance penalty.
 
 There are a relatively small number of algorithms proposed to solve the 
 matching problem without involving geometric constraints. Traditionally 
@@ -133,7 +133,7 @@ method will be referred to as \emph{SIFT} in this paper.
 In turn the two methods proposed in this paper are inspired by a simple 
 but novel idea. If we have two images and a given feature point in the 
 first image is better matched with other feature points from the 
-\emph{same} image than points in the other image, then any matches of 
+\emph{same} image than points in the other image, then any matches from 
 this feature point to points in the other image is deemed unreliable and 
 discarded.  This approach carries no implicit assumptions about the 
 geometric consistency of matches and can as such easily be extended with 
@@ -169,7 +169,7 @@ other geometric solutions when appropriate.
 %way around. In the case that a feature point doesn't have a true 
 %correspondence there might still exist point with which the feature 
 %point is uniquely matched. The issue is particularly pronounced if we 
-%compare two images that don't correspond. For any proposed 
+%compare two images that do not correspond. For any proposed 
 %correspondence it is entirely probable that this correspondence is 
 %unique even if it isn't correct. When we match against the feature 
 %points of both images this ambiguity is avoided.  When the two images 
@@ -214,7 +214,7 @@ the implementation of \emph{MM} is shown.
 	\State $features\gets features \cup getFeatures(I_i)$
 \EndFor
 \ForAll{$f_i \in features$} \Comment Match Stage
-	\State $f_m,f_n \gets get2NNs(f_i, features ~ \backslash ~ 
+	\State $f_m,f_n \gets get2NNs(f_i, features \setminus 
 	\left\{f_i\right\})$
 	\State $ratio \gets similarity(f_i, f_n) / similarity(f_i, f_m)$
 	\If{$ratio < t$}
@@ -269,19 +269,19 @@ that are not symmetric.
 	\makebox[\textwidth][c]{%
 		\begin{subfigure}[t]{0.32\textwidth}
 			\centering
-			\includegraphics[width=\textwidth]{images/mirror_match}
-			\caption{\emph{MM}}
-			\label{fig:without}
-		\end{subfigure}%
-		\enspace%
-		\begin{subfigure}[t]{0.32\textwidth}
-			\centering
 			\includegraphics[width=\textwidth]{images/mirror_match_with_pruned}
 			\caption{\emph{MM} with intra image matches}
 			\label{fig:within}
 		\end{subfigure}%
 		\enspace %add desired spacing between images, e. g. ~, \quad, 
 		%\qquad (or a blank line to force the subfigure onto a new line)
+		\begin{subfigure}[t]{0.32\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/mirror_match}
+			\caption{\emph{MM}}
+			\label{fig:without}
+		\end{subfigure}%
+		\enspace%
 		\begin{subfigure}[t]{0.32\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/MMC_partition}
@@ -297,11 +297,13 @@ matches that are found within the same image. }%
 	\label{fig:comparemirror}%
 \end{figure*}%
 
-In figure \ref{fig:comparemirror} an example of the result of \emph{MM} 
-is illustrated. Notice how the by the bottom of the image admits 
-correspondences that can conveniently be removed as done in sub figure 
-\ref{fig:without} where only the actual correspondences returned by the 
-algorithm are shown.
+In figure \ref{fig:within} and \ref{fig:without} an example of the 
+result of \emph{MM} is illustrated. In figure \ref{fig:unique} many of 
+the incorrect matches occur in the fence in the bottom of the image.  
+When we match all feature points together many of these incorrect 
+matches are eliminated because points in the fence match with other 
+points in the fence in the same image as shown in figure 
+\ref{fig:within} and \ref{fig:without}.
 
 \subsection{Mirror Match with Clustering (\emph{MMC})}
 %
@@ -336,8 +338,8 @@ points that we can match using the same approach as \emph{MM}.
 %well as information theoretical measures\footnote{See for example 
 %\cite{rosvall2008}} and the Potts spin model from physics\footnote{Used 
 %in \cite{ronhovde2009}} just to mention a few approaches. Many of the 
-%new algorithms differ from K-means clustering and Spectral clustering in 
-%that they don't require the number of expected to clusters to be 
+%new algorithms differ from K-means clustering and Spectral clustering 
+%in that they do not require the number of expected to clusters to be 
 %specified beforehand\footnote{Among the aforementioned methods, this is 
 %true for \cite{blondel2008} and \cite{rosvall2008}}.  Furthermore, on 
 %tests done using randomly generated graphs with a known partitioning 
@@ -355,11 +357,11 @@ points that we can match using the same approach as \emph{MM}.
 %small clusters\cite{brandes2007}. Both behaviours can be beneficial 
 %depending on the application, but when clustering feature points, 
 %maintaining clusters of an even size usually means that some clusters 
-%will be '\emph{catch-all}' clusters where the feature points that don't 
-%fit anywhere else are grouped together. The necessity of specifying the 
-%amount of partitions in for example Spectral clustering or Pott's model 
-%clustering further exacerbates the issue since smaller partitions are 
-%then combined into one to achieve the right amount of partitions.
+%will be '\emph{catch-all}' clusters where the feature points that do 
+%not fit anywhere else are grouped together. The necessity of specifying 
+%the amount of partitions in for example Spectral clustering or Pott's 
+%model clustering further exacerbates the issue since smaller partitions 
+%are then combined into one to achieve the right amount of partitions.
 
 We use the Louvain Method\cite{blondel2008} for clustering feature 
 points since it's relatively fast and performs 
@@ -396,13 +398,14 @@ While the louvain clustering algorithm doesn't require any parameters in
 itself, it tends towards clustering all feature points together in the 
 same partition if the graph is very connected.  To ensure that the graph 
 is well clustered, the adjacency matrix is pruned so only edges above a 
-certain threshold is kept. From empirical analysis keeping around 2.5\% 
-of edges seems to work well. Figure \ref{fig:graph} shows the result of 
-clustering the feature points displayed as a graph.
+certain threshold is kept. From empirical analysis keeping the 2.5\% of 
+edges with the highest similarity seems to work well in practice. Figure 
+\ref{fig:graph} shows the result of clustering the feature points 
+displayed as a graph.
 %
 \begin{SCfigure*}
 	\makebox[0.7\textwidth][c]{%
-		\begin{subfigure}[t]{0.28\textwidth}
+		\begin{subfigure}[t]{0.35\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/MMC_graph_full}
 			\caption{Full Graph}
@@ -410,7 +413,7 @@ clustering the feature points displayed as a graph.
 		\end{subfigure}%
 		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
 		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.28\textwidth}
+		\begin{subfigure}[t]{0.32\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/MMC_graph_cropped}
 			\caption{Cropped Section of Graph}
@@ -475,32 +478,36 @@ partitions as exemplified in figure \ref{fig:pitts_partition}.
 %\emph{MM} and include matches that would normally have been discarded 
 %for not being sufficiently unique.
 
-The matching for \emph{MMC} \emph{getMatches} finds matches within all 
-partitions with more than two elements as done in \emph{MM}. However as 
-can be seen in the example in figure \ref{fig:cropped_graph} many of the 
-partitions contain only two feature points from different images linked 
-by one edge. In this case we compare the similarity of this match to the 
-next best match across all partitions and filter the matches based on 
-this ratio like in \emph{SIFT}.
+The matching algorithm for \emph{MMC}, \emph{getMatches}, finds matches 
+within all partitions with more than two elements as done in \emph{MM}.  
+However as can be seen in the example in figure \ref{fig:cropped_graph} 
+many of the partitions contain only two feature points from different 
+images linked by one edge. In the case of such a pair we compare the 
+similarity of the these two feature points with their second best match 
+and filters matches where this ratio falls over a certain threshold like 
+in the \emph{SIFT} algorithm.
+
 %\begin{algorithm}
 %\caption{Impl. of getMatches (\emph{from MMC algorithm})}
 %\label{alg-getmatches}
+%{\fontsize{10}{10}\selectfont
 %\begin{algorithmic}
 %\Require $p$ : set of features, $t\in \mathbb{R}$, $features$ : Set of 
 %all features
 %\State $matches \gets \varnothing$
-%\State $edges \gets \left\{getSimilarity(f_i, f_j) \mid getImg(f_i) \neq 
-%getImg(f_j) \wedge f_i, f_j \in p \right\}$
+%\State $edges \gets \left\{similarity(f_i, f_j) \mid getImg(f_i) \neq 
+%	getImg(f_j)$
+%\State $\wedge f_i, f_j \in p \right\}$
 %\If{$\left\vert edges \right\vert = 1$} \Comment If $\exists$ one edge 
 %between images
-%	\State $f_i,f_j \gets getInterImageFeatures(edges_{inter}, p)$
-%	\State $f_m,f_n \gets getTwoNearestNeighbors(f_i, features ~ 
-%\backslash ~ \left\{f_i\right\})$
-%	\State $f_s,f_t \gets getTwoNearestNeighbors(f_j, features ~ 
-%\backslash ~ \left\{f_j\right\})$
-%	\State $ratio_i \gets getSimilarity(f_i, f_n) / getSimilarity(f_i, 
+%	\State $f_i,f_j \gets getFeatures(edges_{inter}, p)$
+%	\State $f_m,f_n \gets get2NNs(f_i, features ~ 
+%\setminus ~ \left\{f_i\right\})$
+%	\State $f_s,f_t \gets get2NNs(f_j, features ~ 
+%\setminus ~ \left\{f_j\right\})$
+%	\State $ratio_i \gets similarity(f_i, f_n) / similarity(f_i, 
 %f_j)$
-%	\State $ratio_j \gets getSimilarity(f_j, f_t) / getSimilarity(f_j, 
+%	\State $ratio_j \gets similarity(f_j, f_t) / similarity(f_j, 
 %f_i)$
 %	\If{$ratio_i < t\wedge ratio_j < t$}
 %		\State $matches \gets matches \cup (f_i, f_j)$
@@ -508,9 +515,9 @@ this ratio like in \emph{SIFT}.
 %\ElsIf{$\left\vert edges \right\vert > 1$} \Comment If $\exists$ more 
 %than one edge between images
 %	\ForAll{$f_i \in p$}
-%		\State $f_m,f_n \gets getTwoNearestNeighbors(f_i, p ~ \backslash 
-%~ \left\{f_i\right\})$
-%		\State $ratio \gets getSimilarity(f_i, f_n) / getSimilarity(f_i, 
+%		\State $f_m,f_n \gets get2NNs(f_i, p \setminus 
+%\left\{f_i\right\})$
+%		\State $ratio \gets similarity(f_i, f_n) / similarity(f_i, 
 %f_m)$
 %		\If{$getImg(f_i) \neq getImg(f_m) \wedge ratio < t
 %\wedge (f_m, f_i) \not\in matches$}
@@ -521,8 +528,9 @@ this ratio like in \emph{SIFT}.
 %
 %\Return matches
 %\end{algorithmic}
+%}
 %\end{algorithm}
-%
+
 \section{Experiments}
 \label{experiment}
 %
@@ -537,9 +545,9 @@ set covers different types of image variance such as different lighting,
 blur, rotation as well as viewpoint change. Inspired by this 
 dataset\footnote{In particular by the 'Graf' image set} and motivated by 
 the need for more image pairs featuring viewport changes, we have 
-compiled a set of $8$ image pairs consisting of the same subject taken 
-from two different angles. The images are collected from Flickr's 
-database of images published under a creative commons 
+compiled a set of $8$ image pairs consisting of subjects taken from two 
+different angles. The images are collected from Flickr's database of 
+images published under a creative commons 
 licence\footnote{\href{http://creativecommons.org/}{www.creativecommons.org}, 
 a copyleft license permitting redistribution} and feature murals which 
 makes it possible to relate points in the image pairs with a homography.  
@@ -567,10 +575,10 @@ $900$px by $600$px. This dataset will be referred to as the
 %patterns and texture. Based on this image set the two algorithms are 
 %tested on a series of image patches from each pair. To verify that the 
 %algorithms proposed are reliable we need to test that we get good 
-%matches when images overlap and that we get no matches when they don't.  
-%This means that it isn't enough just testing against pairs of images 
-%that we know match.  We also need to test against pairs that might look 
-%like they could match but in fact don't.
+%matches when images overlap and that we get no matches when they do 
+%not.  This means that it isn't enough just testing against pairs of 
+%images that we know match.  We also need to test against pairs that 
+%might look like they could match but in fact do not.
 
 
 %
@@ -606,7 +614,7 @@ which uses geometric information to improve the matching. The comparison
 has been done using the \emph{Murals} dataset, the \emph{Graf} set from 
 \cite{mikolajczyk2005performance} and two images\footnote{100\_1942.jpg 
 and 100\_1941.jpg} from \cite{gallagher2008} illustrated in figure 
-\ref{fig:pitts_partition}.
+\ref{fig:comparemirror}.
 
 Test sets have been generated from the image pairs by cropping out 
 $250$px by $250$px patches with a random vertical and horizontal offset.  
@@ -618,20 +626,41 @@ part of their surface. Figure \ref{fig:fairey} shows an example of
 possible pairs of test images produced from a source image pair.  
 Producing $n$ such pairs allows us to test not just how well the 
 matching algorithm performs on a variety of overlap but also how many 
-false positives we get on similar images that don't overlap at 
+false positives we get on similar images that do not overlap at 
 all\footnote{The set of source images and homographies as well as the 
 	script to generate the cropped test sets based on them have been 
-made available online together with the exact test sets used in this 
+	made available online together with the exact test sets used in this 
 paper on 
-\href{https://github.com/arnfred/Murals}{www.github.com/arnfred/Murals}}.
+\href{https://github.com/arnfred/Murals}{www.github.com/arnfred/Murals}}.  
+In practice the amount of overlap between pairs in a test set will 
+depend on the overlap and viewport change of the source image pair.  To 
+give a rough impression of a typical example, table \ref{table:overlap} 
+shows the overlap of image pairs created from img1 and img3 of the 
+\emph{Graf} image set from \cite{mikolajczyk2005performance}.
 
-To judge whether a possible match ($p_1, p_2$) should be counted as an 
-inlier given a homography $H$ relating two images $I_1$ and $I_2$ we 
-test if $p_1$ and $p_2$ satisfies the following criterium:
-
+Given a potential match between two images $I_1$ and $I_2$, $m = 
+\left(p_1, p_2\right)$ and a homography $H$ relating $I_1$ to $I_2$, we 
+can calculate if $m$ is an inlier by check if the positions $p_1$ and 
+$p_2$ satisfies the following criteria:
 $$\left\vert Hp_1 - p_2 \right\vert + \left\vert H^{-1}p_2 - p_1 
 \right\vert < 5$$
-%
+That is, the distance between $p_1$ translated to $I_2$ and $p_2$ 
+\emph{plus} the distance between $p_2$ translated to $I_1$ should be 
+less than five pixels.
+
+\begin{table}
+	\centering
+	\small
+\begin{tabular}{l*{3}{r}}
+	Overlap: & 0\% & $< 50$\% & $> 50$\%  \\
+	\noalign{\smallskip}
+	%
+	Percent of image pairs: & 21\% & 54\% & 25\% \\
+\end{tabular}
+\caption{Overlap on the testset of 100 image pairs created from img1 and 
+img3 of the \emph{Graf} image set. 21 images had no overlap}
+\label{table:overlap}
+\end{table}
 \section{Results}
 \label{results}
 
@@ -659,7 +688,7 @@ $$\left\vert Hp_1 - p_2 \right\vert + \left\vert H^{-1}p_2 - p_1
 
 \begin{figure}
 	\centering
-	\includegraphics[width=0.45\textwidth]{images/result_accumulated}
+	\includegraphics[width=0.5\textwidth]{images/result_accumulated}
 	\caption{Results on the \emph{Murals} dataset and the pair of img1 
 		and img3 from the \emph{Graf} image set from 	
 		\cite{mikolajczyk2005performance}. For each of the 9 source 
@@ -674,9 +703,9 @@ $$\left\vert Hp_1 - p_2 \right\vert + \left\vert H^{-1}p_2 - p_1
 	\caption{Results on viewport changes using the \emph{Graf} set from 
 		\cite{mikolajczyk2005performance} as image pair sources. Img 1 
 		to 6 in the \emph{Graph} set are images of the same subject but 
-		with gradually increasing view port change. Img1 and 2 are 
+		with gradually increasing viewport change. Img1 and 2 are 
 		almost identical while img1 and 6 are taken from very different 
-		angles. S is a testst of $100$ crops from img1 and img2. M is 
+		angles. S is a testset of $100$ crops from img1 and img2. M is 
 	likewise but based on img1 and img3.  L is img1 and img4 and XL is 
 img1 and img5.  To decrease clutter \emph{MM} is not shown, but it 
 performs alike to \emph{MMC}}
@@ -695,14 +724,14 @@ generalizes over more image sets, we tested the four algorithms on the
 source pairs generating the plot shown in figure 
 \ref{fig:result_accumulated} displaying the accumulated amount of 
 matches on the x-axis. To verify that this performance is independent of 
-the magnitude of view port change, we tested \emph{MMC} and \emph{SIFT} 
+the magnitude of viewport change, we tested \emph{MMC} and \emph{SIFT} 
 on the \emph{Graf} image set as shown in figure 
 \ref{fig:result_viewport}. The figure confirms that \emph{MMC} is 
-generally superior across view port changes.
+generally superior across viewport changes.
 
-For an example of a real life use case figure \ref{fig:result_pitts} 
-shows the results on potentially overlapping image pairs generated from 
-a typical holiday scene with partial overlap and slight view port 
+For an example of a real life use case, figure \ref{fig:result_pitts} 
+shows the results on 100 potentially overlapping image pairs generated 
+from a typical holiday scene featuring occlusion and a slight viewport 
 change.
 
 In terms of performance, table \ref{table:running_times} shows the 
@@ -718,7 +747,6 @@ construction of a similarity matrix of the feature points. It is however
 possible to approximate this in $O(nlogn)$ using search trees, something 
 that could be pursued in future work.
 %
-\begin{savenotes}
 \begin{table}
 	\centering
 	\small
@@ -733,7 +761,6 @@ that could be pursued in future work.
 3.30GHz with 8Gb memory}
 \label{table:running_times}
 \end{table}
-\end{savenotes}
 %
 
 \begin{figure}
