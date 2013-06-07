@@ -402,7 +402,7 @@ clustering the feature points displayed as a graph.
 %
 \begin{SCfigure*}
 	\makebox[0.7\textwidth][c]{%
-		\begin{subfigure}[t]{0.35\textwidth}
+		\begin{subfigure}[t]{0.28\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/MMC_graph_full}
 			\caption{Full Graph}
@@ -410,7 +410,7 @@ clustering the feature points displayed as a graph.
 		\end{subfigure}%
 		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
 		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.3\textwidth}
+		\begin{subfigure}[t]{0.28\textwidth}
 			\centering
 			\includegraphics[width=\textwidth]{images/MMC_graph_cropped}
 			\caption{Cropped Section of Graph}
@@ -479,8 +479,9 @@ The matching for \emph{MMC} \emph{getMatches} finds matches within all
 partitions with more than two elements as done in \emph{MM}. However as 
 can be seen in the example in figure \ref{fig:cropped_graph} many of the 
 partitions contain only two feature points from different images linked 
-by one edge. In this case we compare the ratio of this match to the next 
-best match across all partitions.
+by one edge. In this case we compare the similarity of this match to the 
+next best match across all partitions and filter the matches based on 
+this ratio like in \emph{SIFT}.
 %\begin{algorithm}
 %\caption{Impl. of getMatches (\emph{from MMC algorithm})}
 %\label{alg-getmatches}
@@ -648,12 +649,12 @@ $$\left\vert Hp_1 - p_2 \right\vert + \left\vert H^{-1}p_2 - p_1
 			%\caption{Performance on Scharf}
 		\end{subfigure}%
 	}%
-	\label{fig:results_graf}
 	\caption{Accuracy on the \emph{Graf} set from 
 		\cite{mikolajczyk2005performance} using img1 and img3. The plot 
-	shows the result of $100$ image pairs generated from the source 
-images shown to the left. The number of matches is the total number of 
-matches for all $100$ image pairs.}
+		shows the result of $100$ image pairs generated from the source 
+		images shown to the left. The number of matches is the total 
+		number of matches for all $100$ image pairs.}
+	\label{fig:result_graf}
 \end{figure}
 
 \begin{figure}
@@ -671,29 +672,38 @@ matches for all $100$ image pairs.}
 	\centering
 	\includegraphics[width=0.45\textwidth]{images/result_viewport}
 	\caption{Results on viewport changes using the \emph{Graf} set from 
-		\cite{mikolajczyk2005performance} as image pair sources. S is a 
-		testst of $100$ crops from img1 and img2. M is likewise but 
-	based on img1 and img3.  L is img1 and img4 and XL is img1 and img5.  
-To decrease clutter \emph{MM} is not shown, but it performs alike to 
-\emph{MMC}}
+		\cite{mikolajczyk2005performance} as image pair sources. Img 1 
+		to 6 in the \emph{Graph} set are images of the same subject but 
+		with gradually increasing view port change. Img1 and 2 are 
+		almost identical while img1 and 6 are taken from very different 
+		angles. S is a testst of $100$ crops from img1 and img2. M is 
+	likewise but based on img1 and img3.  L is img1 and img4 and XL is 
+img1 and img5.  To decrease clutter \emph{MM} is not shown, but it 
+performs alike to \emph{MMC}}
 	\label{fig:result_viewport}
 \end{figure}
 
 Figure \ref{fig:result_graf} shows the results for 100 image pairs 
 generated from img1 and img3 of the \emph{Graf} image set. The plot 
-illustrates how \emph{Isodata} performs well to begin with, but as we 
-permit more matches \emph{MM} and \emph{MMC} show superior results. To 
-generalize this result, figure \ref{fig:result_accumulated} displays the 
-accumulated result over the \emph{Murals} dataset as well as the 
-\emph{Graf} pair tested in fig. \ref{fig:result_graf}. In total 900 
-image pairs were generated from 9 source pairs. This plot confirms the 
-accuracy of \emph{MMC} and \emph{MM} over a bigger data set. As can be 
-seen in figure \ref{fig:result_viewport}, the results of \emph{MMC} are 
-general across different magnitudes of the viewport change.
+illustrates the results of \emph{SIFT}, \emph{MM}, \emph{MMC} and 
+\emph{Isodata} as thresholds are varied over a range. \emph{Isodata} 
+performs well with strict thresholds, but when we require more matches 
+\emph{MM} and \emph{MMC} show superior results. To see if this results 
+generalizes over more image sets, we tested the four algorithms on the 
+\emph{Murals} dataset as well as the \emph{Graf} pair tested in fig.  
+\ref{fig:result_graf}. In total 900 image pairs were generated from 9 
+source pairs generating the plot shown in figure 
+\ref{fig:result_accumulated} displaying the accumulated amount of 
+matches on the x-axis. To verify that this performance is independent of 
+the magnitude of view port change, we tested \emph{MMC} and \emph{SIFT} 
+on the \emph{Graf} image set as shown in figure 
+\ref{fig:result_viewport}. The figure confirms that \emph{MMC} is 
+generally superior across view port changes.
 
-For an example of a real life use case \ref{fig:result_pitts} shows the 
-results on potentially overlapping image pairs generated from a typical 
-holiday scene with partial overlap and slight viewport change.
+For an example of a real life use case figure \ref{fig:result_pitts} 
+shows the results on potentially overlapping image pairs generated from 
+a typical holiday scene with partial overlap and slight view port 
+change.
 
 In terms of performance, table \ref{table:running_times} shows the 
 running time of the four algorithms over $100$ image pairs of $250$px by 
@@ -705,8 +715,8 @@ faster. While \emph{SIFT}, \emph{MM} and \emph{Isodata} can be
 implemented in $O(nlogn)$ where $n$ is the total amount of feature 
 points, \emph{MMC} currently has a complexity of $O(n^2)$ due to the 
 construction of a similarity matrix of the feature points. It is however 
-possible to approximate this in $O(nlogn)$, something that might be 
-pursued in future work.
+possible to approximate this in $O(nlogn)$ using search trees, something 
+that could be pursued in future work.
 %
 \begin{savenotes}
 \begin{table}
@@ -740,13 +750,13 @@ pursued in future work.
 			%\caption{Performance on Scharf}
 		\end{subfigure}%
 	}%
-	\label{fig:results_pitts}
 	\caption{Accuracy on an image pair from the Gallagher dataset from 
 		\cite{gallagher2008} using cropped versions of 100\_1941 and 
 		100\_1942. The plot shows the result of $100$ image pairs 
 		generated from the source images shown to the left.  The number 
 	of matches is the total number of matches for all $100$ image 
 pairs.}
+	\label{fig:result_pitts}
 \end{figure}
 
 \section{Summary}
@@ -762,8 +772,8 @@ also address how to test the algorithms by constructing the
 generate testsets based on these pairs.  The proposed approach shows 
 promising results on both the \emph{Murals} dataset as well as a real 
 life example from the Gallagher dataset and the \emph{Graf} image set, 
-beating even a method using geometrical constraints when matching image 
-pairs that might not overlap.
+surpassing even a method using geometrical constraints when matching 
+image pairs that might not overlap.
 %
 \bibliographystyle{IEEEtran}
 \bibliography{bibliography}

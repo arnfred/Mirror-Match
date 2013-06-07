@@ -298,10 +298,10 @@ def accuPlot(correct, total, legends, colors = ["blue", "red", "green", "orange"
 		pylab.plot(xs, ys, '-', label=l, color=color, alpha=0.95)
 		pylab.legend(loc="best")
 	if compareCorrect != None and compareTotal != None and compareLegend != None :
-		for ts,cs,l,color in zip(compareTotal, compareCorrect, legends, ["blue", "cyan", "green", "orange", "red"]) :
+		for ts,cs,l,color in zip(compareTotal, compareCorrect, compareLegend, ["blue", "red", "green", "orange", "red"]) :
 			xs = [sum(t) for t in ts]
 			ys = [1 if sum(t) == 0 else sum(c)/float(sum(t)) for (c, t) in zip(cs, ts)]
-			pylab.plot(xs, ys, '--', label="%s" % (compareLegend), color=color, alpha=1)
+			pylab.plot(xs, ys, '--', label="%s" % (l), color=color, alpha=1)
 			pylab.legend(loc="best")
 	removeDecoration()
 	pylab.xlabel("# of Matches")
