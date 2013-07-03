@@ -113,7 +113,7 @@ def matchPoints(im1, im2, matches, dist = None, filename = None, max_dist = 100,
 	im3 = appendimages(im1,im2, separation)
 
 	# Create figure
-	fig = pylab.figure(frameon=False, figsize=(5.0, 3.0))
+	fig = pylab.figure(frameon=False, figsize=(12.0, 8.0))
 	ax = pylab.Axes(fig, [0., 0., 1., 1.])
 
 	ax.set_axis_off()

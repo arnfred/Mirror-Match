@@ -11,22 +11,12 @@ Jonas Toft Arnfred, 2013-05-22
 ####################################
 
 import numpy
-import isodata
 import features
 import louvain
 import weightMatrix
 import scoring
 from itertools import combinations
 
-
-dist_fun_map = {
-	"SIFT"   : weightMatrix.angleDist,
-	"SURF"   : weightMatrix.angleDist,
-	"ORB"    : weightMatrix.hammingDist,
-	"BRISK"  : weightMatrix.hammingDist,
-	"BRIEF"  : weightMatrix.hammingDist,
-	"FREAK"  : weightMatrix.hammingDist
-}
 
 ####################################
 #                                  #

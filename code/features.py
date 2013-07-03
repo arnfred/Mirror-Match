@@ -39,7 +39,7 @@ supported_descriptor_types = ["SIFT","SURF","ORB","BRISK","BRIEF","FREAK"]
 ####################################
 
 
-def getFeatures(paths, keypoint_type = "ORB", descriptor_type = "BRIEF", size=32) :
+def getFeatures(paths, keypoint_type = "SIFT", descriptor_type = "SIFT", size=32) :
 	""" Given a list of paths to images, the function returns a list of 
 	    descriptors and keypoints
 		Input: paths [list of strings] The paths to the images we are using
@@ -146,7 +146,7 @@ def match(descriptor_type, D1, D2) :
 		# The score of the best and second best match
 		s,t = row[i], row[j]
 		# Uniqueness: The ration between the best and second best match
-		u = s / (1.0 * t)
+		u = s / float(t)
 		return (i,s,u)
 
 	T = dist_fun(D1,D2)
@@ -205,7 +205,7 @@ def bfMatch(descriptor_type, D1, D2, match_same = False) :
 	second = 2 if match_same else 1
 
 	# Convert result
-	data = [(ms[first].trainIdx, ms[first].distance, ms[first].distance*1.0/(ms[second].distance + 0.1)) 
+	data = [(ms[first].trainIdx, ms[first].distance, float(ms[first].distance)/(ms[second].distance + 0.00001)) 
 				for ms in matches_qt if len(ms) == 3]
 
 	if len(data) == 0 : return (None, None, None)

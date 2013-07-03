@@ -175,12 +175,11 @@ def ratioMatch(paths, thresholds, options = {}) :
 	# Check that we have keypoints:
 	if ss == None : return [[] for _ in thresholds]
 
-	# Get matches in usual format
-	def matchFromIndex(i,j) :
-		return (features.getPosition(ks[indices == 0][i]), features.getPosition(ks[indices == 1][j]))
+	# Get all positions
+	(pos_im1, pos_im2) = (features.getPositions(ks[indices == 0]), features.getPositions(ks[indices == 1]))
 
 	# Now for each threshold test the uniqueness of the matches
-	p = lambda t : [matchFromIndex(i,j) for i,j in enumerate(ii) if uu[i] < t] 
+	p = lambda t : [(pos_im1[i], pos_im2[j]) for i,j in enumerate(ii) if uu[i] < t] 
 	match_set = [p(t) for t in thresholds]
 
 	return numpy.array(match_set)
@@ -217,9 +216,6 @@ def standardMatch(paths, thresholds, options = {}) :
 
 
 
-
-
-
 def matchDistance(p1, p2, hom) :
 	""" Given a homography matrix and two points this function calculates
 	    the geometric distance between the first point transformed by the
@@ -230,9 +226,6 @@ def matchDistance(p1, p2, hom) :
 	p2_n = m1to2[0:2]/m1to2[2]
 	p1_n = m2to1[0:2]/m2to1[2]
 	return numpy.linalg.norm(p2_n - p2) + numpy.linalg.norm(p1_n - p1)
-
-
-
 
 
 

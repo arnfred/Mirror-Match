@@ -27,8 +27,8 @@ def match(paths, thresholds, options = {}) :
 		return (features.getPosition(ks[i]), features.getPosition(ks[j]))
 
 	# Get options
-	keypoint_type		= options.get("keypoint_type", "ORB")
-	descriptor_type		= options.get("descriptor_type", "BRIEF")
+	keypoint_type		= options.get("keypoint_type", "SIFT")
+	descriptor_type		= options.get("descriptor_type", "SIFT")
 
 	# Get all feature points
 	indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint_type, descriptor_type = descriptor_type)
