@@ -26,7 +26,7 @@ import pylab
 ####################################
 
 
-def match(paths, thresholds, options = {}) :
+def match(paths, options = {}) :
 
 	# Get matches in usual format
 	def matchFromIndex(i,j) :
@@ -71,16 +71,20 @@ def match(paths, thresholds, options = {}) :
 	partition_links = [getPartitionLinks(row) for row in part_corr]
 
 	# Get all keypoint matches from the matching clusters
-	matches = []
+	match_set = []
 	for i,ms in enumerate(partition_links) :
 		for (j,s) in ms :
-			matches.extend(getPartitionMatches(match_points, part_1 == i, part_2 == j))
+			match_set.extend(getPartitionMatches(match_points, part_1 == i, part_2 == j))
 	
-	# Filter matches by uniqueness
-	p = lambda t : pruneMatches([matchFromIndex(i,j) for ((i,j),u) in matches if u < t])
-	match_set = [p(t) for t in thresholds]
+	# Define a function that given a threshold returns a set of matches
+	def match_fun(threshold) :
+		match_data = [(matchFromIndex(i,j), u, 0) for ((i,j),u) in match_set if u < threshold]
+		if len(match_data) == 0 : return [], [], []
+		matches, ratios, scores = zip(*match_data)
 
-	return match_set
+		return matches, ratios, scores
+
+	return lambda t : match_fun(t)
 
 
 

@@ -18,7 +18,6 @@ Jonas Toft Arnfred, 2013-03-07
 
 import cv2
 import numpy
-import preprocessing
 
 
 
@@ -262,9 +261,6 @@ def loadImage(path) :
 	# Convert to grayscale: First we convert the image to the L*u*v color space
 	# and then return the luminance channel
 	img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2LUV)[:,:,0]
-
-	# Preprocess image
-	#img_processed = preprocessing.faceNorm(img_gray)
 
 	return img_gray
 

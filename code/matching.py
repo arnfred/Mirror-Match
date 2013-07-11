@@ -19,6 +19,7 @@ import isomatch
 import clustermatch
 import isomatch
 import mirrormatch
+import spectralmatch
 import features
 import weightMatrix
 import display
@@ -38,31 +39,16 @@ import random
 ####################################
 
 
-def testMatch(paths, homography, match_fun, options = {}, return_matches = False, verbose = False) :
+def evaluate(match_fun, thresholds, homography, return_matches = False) :
 
-	distinct_threshold = options.get("distinct_threshold", 5)
-	thresholds = options["thresholds"]
-
-	# Get matches over thresholds
-	match_pos_set = match_fun(paths, thresholds, options)
+	match_set = [match_fun(t)[0] for t in thresholds]
 
 	# Get distances
 	getDist = lambda ms : [matchDistance(m1,m2,homography) for (m1,m2) in ms]
-	match_dist = [getDist(ms) for ms in match_pos_set]
+	match_dist = [getDist(ms) for ms in match_set]
 
-	if len(thresholds) == 1 and verbose :
-		display.distHist(match_dist[0], thresholds[0])
-
-	if return_matches : return match_pos_set, match_dist
+	if return_matches : return match_set, match_dist
 	else : return match_dist
-
-
-# Load all files
-def getImagePairs(directory) :
-	dir_path = "../../images/testsets/%s/" % directory
-	pairs = [dir_path + p for p in os.listdir(dir_path) if len(p) <= 6]
-	homographies = [getHomography(p) for p in pairs]
-	return [([p + "_1.jpg", p + "_2.jpg"], h) for (p,h) in zip(pairs, homographies)]
 
 
 def folderMatch(directory, dt, match_fun, thresholds, keypoint, descriptor) : 
@@ -90,6 +76,15 @@ def folderMatch(directory, dt, match_fun, thresholds, keypoint, descriptor) :
 	nb_total_set = [get_total(row) for row in match_sets]
 
 	return nb_correct_set, nb_total_set
+
+
+# Load all files
+def getImagePairs(directory) :
+	dir_path = "../../images/testsets/%s/" % directory
+	pairs = [dir_path + p for p in os.listdir(dir_path) if len(p) <= 6]
+	homographies = [getHomography(p) for p in pairs]
+	return [([p + "_1.jpg", p + "_2.jpg"], h) for (p,h) in zip(pairs, homographies)]
+
 
 
 def getHomography(hom_path) :
@@ -160,7 +155,7 @@ def getACRPaths(orig_id = None, compare_id = 2, img_type = "graf") :
 
 
 
-def ratioMatch(paths, thresholds, options = {}) :
+def ratioMatch(paths, options = {}) :
 
 	keypoint_type		= options.get("keypoint_type", "SIFT")
 	descriptor_type		= options.get("descriptor_type", "SIFT")
@@ -178,41 +173,15 @@ def ratioMatch(paths, thresholds, options = {}) :
 	# Get all positions
 	(pos_im1, pos_im2) = (features.getPositions(ks[indices == 0]), features.getPositions(ks[indices == 1]))
 
-	# Now for each threshold test the uniqueness of the matches
-	p = lambda t : [(pos_im1[i], pos_im2[j]) for i,j in enumerate(ii) if uu[i] < t] 
-	match_set = [p(t) for t in thresholds]
+	# Define a function that given a threshold returns a set of matches
+	def match_fun(threshold) :
+		match_data = [((pos_im1[i], pos_im2[j]), uu[i], ss[i]) for i,j in enumerate(ii) if uu[i] < threshold]
+		if len(match_data) == 0 : return [], [], []
+		matches, ratios, scores = zip(*match_data)
 
-	return numpy.array(match_set)
+		return matches, ratios, scores
 
-
-def standardMatch(paths, thresholds, options = {}) :
-
-	keypoint_type		= options.get("keypoint_type", "SIFT")
-	descriptor_type		= options.get("descriptor_type", "SIFT")
-
-	# Get all feature points
-	indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint_type, descriptor_type = descriptor_type)
-
-	# Use cv2's matcher to get matching feature points
-	jj, ss_j, uu_j = features.bfMatch(descriptor_type, ds[indices == 0], ds[indices == 1])
-	ii, ss_i, uu_i = features.bfMatch(descriptor_type, ds[indices == 1], ds[indices == 0])
-	#bfMatches = features.match("BRIEF", ds[ind == 0], ds[ind == 1])
-	
-	# Check that we have keypoints:
-	if ss_j == None or ss_i == None : return [[] for _ in thresholds]
-
-	# Get matches in usual format
-	def matchFromIndex(i,j) :
-		return (features.getPosition(ks[indices == 0][i]), features.getPosition(ks[indices == 1][j]))
-
-	# See if matches go both ways
-	bothways = [(i,j) for i,j in enumerate(jj) if ii[j] == i]
-
-	# Now for each threshold test the uniqueness of the matches
-	p = lambda t : [matchFromIndex(i,j) for i,j in bothways if uu_j[i] < t] 
-	match_set = [p(t) for t in thresholds]
-
-	return numpy.array(match_set)
+	return lambda t : match_fun(t)
 
 
 
@@ -244,61 +213,78 @@ def getDistinctMatches(matches, threshold = 5) :
 
 
 def clusterMatch(distance_threshold, paths, homography, thresholds, keypoint, descriptor) :
-	return testMatch(
-		paths, 
-		homography, 
-		clustermatch.match,
-		verbose = False,
-		options = {
-			"prune_fun" : weightMatrix.pruneThreshold, 
-			"prune_limit" : 2.5,
-			"min_coherence" : 0.0,
-			"thresholds" : thresholds,
-			"split_limit" : 500,
-			"cluster_prune_limit" : 1.5,
-			"distance_threshold" : distance_threshold,
-			"keypoint_type" : keypoint,
-			"descriptor_type" : descriptor,
-		})
+	options = {
+		"prune_fun" : weightMatrix.pruneThreshold, 
+		"prune_limit" : 2.5,
+		"min_coherence" : 0.0,
+		"thresholds" : thresholds,
+		"split_limit" : 500,
+		"cluster_prune_limit" : 1.5,
+		"distance_threshold" : distance_threshold,
+		"keypoint_type" : keypoint,
+		"descriptor_type" : descriptor,
+		"verbose" : False,
+	}
+	match_fun = clustermatch.match(paths, options)
+	return evaluate(match_fun, thresholds, homography)
+
+
+
+def spectralMatch(distance_threshold, paths, homography, thresholds, keypoint, descriptor) :
+	options = {
+		"thresholds" : thresholds,
+		"distance_threshold" : distance_threshold,
+		"keypoint_type" : keypoint,
+		"descriptor_type" : descriptor,
+		"match_fun" : spectralmatch.getMatches,
+		"threshold" : 0.95,
+	}
+	match_fun = spectralmatch.match(paths, options)
+	return evaluate(match_fun, thresholds, homography)
+
+
+
+def spectralMatchMMC(distance_threshold, paths, homography, thresholds, keypoint, descriptor) :
+	options = {
+		"distance_threshold" : distance_threshold,
+		"keypoint_type" : keypoint,
+		"descriptor_type" : descriptor,
+		"match_fun" : clustermatch.getMatchSet,
+		"threshold" : 0.97,
+	}
+	match_fun = spectralmatch.matchAlt(paths, options)
+	return evaluate(match_fun, thresholds, homography)
+
 
 
 def siftMatch(distance_threshold, paths, homography, thresholds, keypoint, descriptor) :
-	return testMatch(
-		paths,
-		homography, 
-		ratioMatch,
-		verbose = False,
-		options = {
-			"thresholds" : thresholds,
-			"distance_threshold" : distance_threshold,
-			"keypoint_type" : keypoint,
-			"descriptor_type" : descriptor,
-		})
+	options = {
+		"thresholds" : thresholds,
+		"distance_threshold" : distance_threshold,
+		"keypoint_type" : keypoint,
+		"descriptor_type" : descriptor,
+	}
+	match_fun = ratioMatch(paths, options)
+	return evaluate(match_fun, thresholds, homography)
 
 
 def mirrorMatch(distance_threshold, paths, homography, thresholds, keypoint, descriptor) :
-	return testMatch(
-		paths,
-		homography, 
-		mirrormatch.match,
-		verbose = False,
-		options = {
-			"thresholds" : thresholds,
-			"distance_threshold" : distance_threshold,
-			"keypoint_type" : keypoint,
-			"descriptor_type" : descriptor,
-		})
+	options = {
+		"thresholds" : thresholds,
+		"distance_threshold" : distance_threshold,
+		"keypoint_type" : keypoint,
+		"descriptor_type" : descriptor,
+	}
+	match_fun = mirrormatch.match(paths, options)
+	return evaluate(match_fun, thresholds, homography)
 
 
 def isoMatch(distance_threshold, paths, homography, thresholds, keypoint, descriptor) :
-	return testMatch(
-		paths,
-		homography, 
-		isomatch.match,
-		verbose = False,
-		options = {
-			"thresholds" : thresholds,
-			"distance_threshold" : distance_threshold,
-			"keypoint_type" : keypoint,
-			"descriptor_type" : descriptor,
-		})
+	options = {
+		"thresholds" : thresholds,
+		"distance_threshold" : distance_threshold,
+		"keypoint_type" : keypoint,
+		"descriptor_type" : descriptor,
+	}
+	match_fun = isomatch.match(paths, options)
+	return evaluate(match_fun, thresholds, homography)

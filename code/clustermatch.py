@@ -25,8 +25,8 @@ from itertools import combinations
 ####################################
 
 
-def match(paths, thresholds, options = {}) : 
-	
+def match(paths, options = {}) :
+
 	# Get parameters
 	prune_fun = options.get("prune_fun", weightMatrix.pruneThreshold)
 	prune_limit = options.get("prune_limit", 2.5)
@@ -49,15 +49,27 @@ def match(paths, thresholds, options = {}) :
 	partitions = cluster(cluster_weights, indices, split_limit = split_limit, prune_limit = cluster_prune_limit, verbose=verbose)
 	if verbose : print("%i partitions" % len(set(partitions)))
 
-	# For each threshold, get partition matches
-	p = lambda t : getPartitionMatches(partitions, cluster_weights, weights, indices, t)
-	match_set = [p(t) for t in thresholds]
+	def match_fun(threshold) :
+		match_data = list(getPartitionMatches(partitions, cluster_weights, weights, indices, threshold))
+		if len(match_data) == 0 : return [], [], []
+		match_ind, ratios, scores = zip(*match_data)
 
-	# Get positions
-	get_pos = lambda (m_i, m_j) : getMatchPosition(m_i, m_j, ks)
-	match_pos_set = [map(get_pos, ms) for ms in match_set]
-	
-	return match_pos_set
+		# Get positions
+		matches = [getMatchPosition(m_i, m_j, ks) for (m_i, m_j) in match_ind]
+
+		return matches, ratios, scores
+
+	return lambda t : match_fun(t)
+
+
+def getMatchSet(paths, options = {}) :
+
+	# Get parameters
+	threshold = options.get("threshold", 0.94)
+
+	match_fun = match(paths, options)
+
+	return match_fun(threshold)
 
 
 
@@ -66,15 +78,18 @@ def getMatches(m, ind, threshold) :
 	def getMaxMatch(m) :
 		for i,row in enumerate(m) :
 			s = numpy.argsort(row)
-			u = row[s[-2]] / row[s[-1]]
-			if u < threshold : yield (i,s[-1])
-	
+			u = row[s[-2]] / float(row[s[-1]])
+			if u < threshold : yield ((i,s[-1]), u, row[s[-1]])
+
 	# Get best matches for rows and columns
-	matches = list(getMaxMatch(m))
-	
+	match_data = list(getMaxMatch(m))
+	if len(match_data) == 0: return [],[],[]
+	matches, ratios, scores = zip(*match_data)
+
 	# Check that matches are both ways
-	matches = [(i,m) for i,m in matches if (m,i) in matches and ind[i] == 0 and ind[m] != 0]
-	return matches
+	match_data = [((i,m),u,s) for ((i,m),u,s) in zip(matches,ratios,scores) if (m,i) in matches and ind[i] == 0 and ind[m] != 0]
+	if len(match_data) > 0 : return zip(*match_data)
+	else : return [], [], []
 
 
 
@@ -99,7 +114,7 @@ def cluster(weights, indices, split_limit = 10, prune_limit = 3, verbose = False
 			nb_inter_edges = numpy.sum(pij_edges > 0)
 			if (numpy.sum(partition_mask) > split_limit) :
 				# Prune weights
-				p_edges_pruned = weightMatrix.prunethreshold(p_edges, prune_limit)
+				p_edges_pruned = weightMatrix.pruneThreshold(p_edges, prune_limit)
 
 				# If there are no edges left, then skip
 				if numpy.sum(p_edges_pruned) == 0 : continue
@@ -163,19 +178,19 @@ def getPartitionMatches(partitions, weights, full_weights, indices, threshold, v
 					if verbose : 
 						distance = matchDistance(ks[p_i].pt, ks[p_j].pt, homography)
 						print("%4i\tEdges: %i\tDistance: %.2f" % (p, nb_e, distance))
-					yield (p_i, p_j)
+					yield ((p_i, p_j), ratio_row, w)
 
 			# If there are several edges
 			elif nb_e >= 2 :
 
 				# Collect matches and check if they are beyond threshold
-				matches = getMatches(pij_edges_both, indices[mask_both], threshold)
-				for m_i,m in matches :
+				matches, ratios, scores = getMatches(pij_edges_both, indices[mask_both], threshold)
+				for (m_i,m),u,s in zip(matches, ratios, scores) :
 					(p_i, p_j) = (index_both[m_i], index_both[m])
 					if verbose :
 						distance = matchDistance(ks[p_i].pt, ks[p_j].pt, homography)
 						print("%4i\tEdges: %i\tDistance: %.2f" % (p, nb_e, distance))
-					yield (p_i, p_j)
+					yield ((p_i, p_j),u,s)
 
 
 def getCoherence(partition_weights, partition_mask, indices, i, j) :
@@ -196,7 +211,7 @@ def getUniqueness(row) :
 
 def getMatchPosition(i,j, keypoints) :
 	pos = features.getPositions([keypoints[i], keypoints[j]])
-	return (pos[0], pos[1])
+	return numpy.array((pos[0], pos[1]))
 
 
 

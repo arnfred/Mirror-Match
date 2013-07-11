@@ -86,7 +86,6 @@ def cluster(points, k_init=None, max_iterations=100, min_partition_size=5, max_s
 	
 	# Sample nb_partitions points as initial guess
 	random.seed(seed)
-	print("Amount of points: %i, k_init: %i" % (len(points), k_init))
 	centers = numpy.array(random.sample(points, k_init))
 	
 	# Iterate

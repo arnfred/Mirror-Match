@@ -646,7 +646,7 @@ def faceGraph(graph, partitions, paths, filename = "facegraph.png") :
                   vertex_pen_width=10,
                   vertex_color=partition_prop,
                   vertex_surface=path_prop,
-                  vertex_size=40, 
+                  vertex_size=50, 
                   edge_pen_width=graph.ep["weights"], 
                   output=filename)
 

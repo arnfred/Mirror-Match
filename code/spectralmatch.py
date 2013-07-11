@@ -28,29 +28,18 @@ import matching
 ####################################
 
 
-def match(paths, thresholds, options ={}) :
+def match(paths, options ={}) :
 
 	# Get parameters
-	keypoint_type = options.get("keypoint_type", "SIFT")
-	descriptor_type = options.get("descriptor_type", "SIFT")
-	verbose = options.get("verbose", False)
 	affinity_fun = options.get("affinity", affinity_simple)
+	matching_fun = options.get("match_fun", getMatches)
 	sigma = options.get("affinity", 50)
-	nb_sources = options.get("nb_sources", 500)
-	nb_matches = options.get("nb_matches", 100)
+	keep_ratio = options.get("keep_ratio", 0.5)
+	verbose = options.get("verbose", False)
 
-	# Get all feature points
-	indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint_type, descriptor_type = descriptor_type)
-	(pos_im1, pos_im2) = (features.getPositions(ks[indices == 0]), features.getPositions(ks[indices == 1]))
-
-	match_data = features.bfMatch(descriptor_type, ds[indices == 0], ds[indices == 1])
-
-	# Get threshold for n best matches
-	threshold = numpy.sort(match_data[1])[nb_sources]
-
-	# Get matches and scores
-	matches = numpy.array([(pos_im1[i], pos_im2[j]) for (i,(j,s,r)) in enumerate(zip(*match_data)) if s < threshold])
-	scores = numpy.array([s for (j,s,r) in zip(*match_data) if r < threshold])
+	matches, scores, ratios = matching_fun(paths, options)
+	nb_matches = len(matches) * keep_ratio
+	if (nb_matches < 2) : return [[] for t in thresholds]
 
 	# Get affinity matrix
 	M = affinity_matrix(matches, scores, affinity_fun, sigma)
@@ -62,14 +51,70 @@ def match(paths, thresholds, options ={}) :
 	# For some reason I get an all-negative eigenvector at times. I'm just making sure it's positive here
 	if x_star[0] < 0 : x_star = x_star * -1
 		
-	# Pick best n
-	best_m = numpy.array(matches)[numpy.argsort(x_star)[(-1*nb_matches):]]
+	# Pick best half matches
+	best_m = numpy.array(matches)[numpy.argsort(x_star)[int(-1*nb_matches):]]
+	best_ratios = numpy.array(ratios)[numpy.argsort(x_star)[int(-1*nb_matches):]]
+	best_scores = numpy.array(scores)[numpy.argsort(x_star)[int(-1*nb_matches):]]
+
 	if verbose : 
 		images = map(features.loadImage, paths)
 		display.matchPoints(images[0], images[1], best_m)
 		print("Best %i matches picked using geometric constraints" % nb_matches)
+		print("The score of x_star is: %.2f" % (x_star.T.dot(M).dot(x_star)))
 
-	return best_m
+
+	def match_fun(threshold) :
+		match_data = [(pos, u, s) for (pos,u,s) in zip(best_m, best_ratios, best_scores) if u < threshold]
+		if len(match_data) == 0 : return [], [], []
+		matches, ratios, scores = zip(*match_data)
+
+		return matches, ratios, scores
+
+	return lambda t : match_fun(t)
+
+
+def matchAlt(paths, options = {}) :
+	# Get parameters
+	affinity_fun = options.get("affinity", affinity_simple)
+	matching_fun = options.get("match_fun", getMatches)
+	sigma = options.get("affinity", 50)
+	verbose = options.get("verbose", False)
+	threshold = options.get("threshold", 0.94)
+
+	matches, scores, ratios = matching_fun(paths, options)
+	# If we don't have any matches, then return a function that always returns an empty list
+
+	if len(matches) > 0 :
+
+		# Get affinity matrix
+		M = affinity_matrix(matches, scores, affinity_fun, sigma)
+
+		# Get eigenvectors
+		eigvals, eigvecs = numpy.linalg.eigh(M)
+		x_star = eigvecs[:,eigvals.argsort()[-1]]
+
+		# For some reason I get an all-negative eigenvector at times. I'm just making sure it's positive here
+		if x_star[0] < 0 : x_star = x_star * -1
+		
+	def match_fun(threshold) :
+
+		# Pick all matches higher than the threshold ratio
+		nb_matches = len(matches) * threshold
+		if nb_matches == 0 : return [], [], []
+
+		best_m = numpy.array(matches)[numpy.argsort(x_star)[int(-1*nb_matches):]]
+		best_ratios = numpy.array(ratios)[numpy.argsort(x_star)[int(-1*nb_matches):]]
+		best_scores = numpy.array(scores)[numpy.argsort(x_star)[int(-1*nb_matches):]]
+
+		return best_m, best_ratios, best_scores
+
+	return lambda t : match_fun(t)
+
+
+
+def getMatches(paths, options = {}) :
+	match_fun = match(paths, options)
+	return match_fun(1.0)
 
 
 # Fill in the affinity matrix

@@ -20,7 +20,7 @@ import features
 #                                  #
 ####################################
 
-def match(paths, thresholds, options = {}) :
+def match(paths, options = {}) :
 
 	# Returns the position of a match
 	def matchPos(i,j) :
@@ -29,6 +29,7 @@ def match(paths, thresholds, options = {}) :
 	# Get options
 	keypoint_type		= options.get("keypoint_type", "SIFT")
 	descriptor_type		= options.get("descriptor_type", "SIFT")
+	include_keypoints	= options.get("include_keypoints", False)
 
 	# Get all feature points
 	indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint_type, descriptor_type = descriptor_type)
@@ -39,8 +40,17 @@ def match(paths, thresholds, options = {}) :
 	# See if matches go both ways
 	bothways = [(i,j) for i,j in enumerate(jj) if indices[i] == 0 and indices[j] == 1 and jj[j] == i]
 
-	# Now for each threshold test the uniqueness of the matches
-	p = lambda t : [matchPos(i,j) for i,j in bothways if uu[i] < t] 
-	match_set = [p(t) for t in thresholds]
+	# Define a function that given a threshold returns a set of matches
+	def match_fun(threshold) :
+		match_data = [(matchPos(i,j), uu[i], ss[i]) for i,j in bothways if uu[i] < threshold]
 
-	return match_set
+		if include_keypoints : 
+			if len(match_data) == 0 : return [], [], [], (ks[indices == 0], ks[indices == 1])
+			matches, ratios, scores = zip(*match_data)
+			return matches, ratios, scores, (ks[indices == 0], ks[indices == 1])
+		else : 
+			if len(match_data) == 0 : return [], [], []
+			matches, ratios, scores = zip(*match_data)
+			return matches, ratios, scores
+
+	return lambda t : match_fun(t)
