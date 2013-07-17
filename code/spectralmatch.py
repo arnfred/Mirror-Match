@@ -18,7 +18,6 @@ import features
 import display
 import numpy
 import itertools
-import matching
 
 
 ####################################
@@ -110,11 +109,6 @@ def matchAlt(paths, options = {}) :
 
 	return lambda t : match_fun(t)
 
-
-
-def getMatches(paths, options = {}) :
-	match_fun = match(paths, options)
-	return match_fun(1.0)
 
 
 # Fill in the affinity matrix

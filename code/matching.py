@@ -20,6 +20,7 @@ import clustermatch
 import isomatch
 import mirrormatch
 import spectralmatch
+import ratiomatch
 import features
 import weightMatrix
 import display
@@ -154,37 +155,6 @@ def getACRPaths(orig_id = None, compare_id = 2, img_type = "graf") :
 	return getPaths(orig_id, compare_id, img_type, "acr")
 
 
-
-def ratioMatch(paths, options = {}) :
-
-	keypoint_type		= options.get("keypoint_type", "SIFT")
-	descriptor_type		= options.get("descriptor_type", "SIFT")
-
-	# Get all feature points
-	indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint_type, descriptor_type = descriptor_type)
-
-	# Use cv2's matcher to get matching feature points
-	ii, ss, uu = features.bfMatch(descriptor_type, ds[indices == 0], ds[indices == 1])
-	#bfMatches = features.match("BRIEF", ds[ind == 0], ds[ind == 1])
-	
-	# Check that we have keypoints:
-	if ss == None : return [[] for _ in thresholds]
-
-	# Get all positions
-	(pos_im1, pos_im2) = (features.getPositions(ks[indices == 0]), features.getPositions(ks[indices == 1]))
-
-	# Define a function that given a threshold returns a set of matches
-	def match_fun(threshold) :
-		match_data = [((pos_im1[i], pos_im2[j]), uu[i], ss[i]) for i,j in enumerate(ii) if uu[i] < threshold]
-		if len(match_data) == 0 : return [], [], []
-		matches, ratios, scores = zip(*match_data)
-
-		return matches, ratios, scores
-
-	return lambda t : match_fun(t)
-
-
-
 def matchDistance(p1, p2, hom) :
 	""" Given a homography matrix and two points this function calculates
 	    the geometric distance between the first point transformed by the
@@ -236,8 +206,7 @@ def spectralMatch(distance_threshold, paths, homography, thresholds, keypoint, d
 		"distance_threshold" : distance_threshold,
 		"keypoint_type" : keypoint,
 		"descriptor_type" : descriptor,
-		"match_fun" : spectralmatch.getMatches,
-		"threshold" : 0.95,
+		"match_fun" : ratiomatch.getMatchSet,
 	}
 	match_fun = spectralmatch.match(paths, options)
 	return evaluate(match_fun, thresholds, homography)
@@ -250,7 +219,7 @@ def spectralMatchMMC(distance_threshold, paths, homography, thresholds, keypoint
 		"keypoint_type" : keypoint,
 		"descriptor_type" : descriptor,
 		"match_fun" : clustermatch.getMatchSet,
-		"threshold" : 0.97,
+		"threshold" : 0.96,
 	}
 	match_fun = spectralmatch.matchAlt(paths, options)
 	return evaluate(match_fun, thresholds, homography)
@@ -264,7 +233,7 @@ def siftMatch(distance_threshold, paths, homography, thresholds, keypoint, descr
 		"keypoint_type" : keypoint,
 		"descriptor_type" : descriptor,
 	}
-	match_fun = ratioMatch(paths, options)
+	match_fun = ratiomatch.match(paths, options)
 	return evaluate(match_fun, thresholds, homography)
 
 
