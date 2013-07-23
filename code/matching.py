@@ -174,7 +174,8 @@ def getDistinctMatches(matches, threshold = 5) :
         b = numpy.linalg.norm(numpy.array(m[1]) - numpy.array(head[1]))
         return a > threshold or b > threshold
     
-    if len(matches) < 1 : return []
+    if len(matches) < 1 : 
+        return []
     head = matches[0]
     tail = [m for m in matches[1:] if distinctFrom(m, head)]
     return [head] + getDistinctMatches(tail, threshold)
@@ -218,7 +219,7 @@ def spectralMatchMMC(distance_threshold, paths, homography, thresholds, keypoint
         "keypoint_type" : keypoint,
         "descriptor_type" : descriptor,
         "match_fun" : clustermatch.getMatchSet,
-        "threshold" : 0.96,
+        "threshold" : 0.94,
     }
     match_fun = spectralmatch.matchAlt(paths, options)
     return evaluate(match_fun, thresholds, homography)

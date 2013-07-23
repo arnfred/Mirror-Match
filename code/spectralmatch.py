@@ -35,7 +35,7 @@ def match(paths, options ={}) :
     affinity_fun = options.get("affinity", affinity_simple)
     matching_fun = options.get("match_fun", ratiomatch.getMatchSet)
     sigma = options.get("affinity", 50)
-    keep_ratio = options.get("keep_ratio", 0.5)
+    keep_ratio = options.get("keep_ratio", 0.75)
     verbose = options.get("verbose", False)
 
     matches, scores, ratios = matching_fun(paths, options)
@@ -53,7 +53,7 @@ def match(paths, options ={}) :
     # For some reason I get an all-negative eigenvector at times. I'm just making sure it's positive here
     if x_star[0] < 0 : 
         x_star = x_star * -1
-        
+
     # Pick best half matches
     best_m = numpy.array(matches)[numpy.argsort(x_star)[int(-1*nb_matches):]]
     best_ratios = numpy.array(ratios)[numpy.argsort(x_star)[int(-1*nb_matches):]]
