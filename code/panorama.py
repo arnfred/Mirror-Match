@@ -61,6 +61,9 @@ def match(testset, verbose = False, threshold = 0.95) :
     # Initialize the panorama graph
     g = initGraph(edges, homographies, images, paths)
 
+    # Run steps and return
+    return runSteps(g)
+
 
 def runSteps(graph) :
     nb_vertices = graph.num_vertices()
