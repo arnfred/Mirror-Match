@@ -36,6 +36,48 @@ from scipy.misc import imresize
 #                                  #
 ####################################
 
+
+def match(testset, verbose = False, threshold = 0.95) :
+
+    # Get a list of all images
+    paths = [testset + f for (_,_,filenames) in os.walk(testset) for f in fnmatch.filter(filenames, "*.jpg")]
+    path_pairs = list(combinations(paths, 2))
+    label_pairs = list(combinations(map(features.getLabel, paths), 2))
+    images = map(features.loadImage, paths)
+
+    indices, keypoints, match_fun = getPartitions(paths, options = {"verbose" : verbose, "split_limit" : 5000})
+
+    # Get match data
+    match_data = match_fun(threshold)
+
+    # Get positions and images
+    pos, img = getPos(indices, keypoints, match_data)
+
+    # Create a sorted list of number of matches per image pair
+    edges = occurences(img)
+
+    homographies = [getHomography(filterPositions(pair, pos, img)) for (nb, pair) in edges]
+
+    # Initialize the panorama graph
+    g = initGraph(edges, homographies, images, paths)
+
+
+def runSteps(graph) :
+    nb_vertices = graph.num_vertices()
+    steps = 0
+    images = graph.vp["images"]
+
+    # Contract all images
+    while steps < nb_vertices - 1 and graph.num_edges() > 0 :
+        step(graph)
+
+    # Now spit out all images left
+    result = [images[v] for v in graph.vertices()]
+    return result
+
+
+
+
 def cropAndResize(images) : 
     """ Crop and resize images to make the less expensive to work with """
 
@@ -213,6 +255,7 @@ def combine(im1, im2, h_1_2, scale = 0.5) :
 
     # Debug output
     path = "%s.jpg" % getRandPath()
+    print("Path of image: %s" % path)
     #imshow(im_r)
     pylab.imsave(path, im_r)
 
