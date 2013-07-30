@@ -65,7 +65,11 @@ def folderMatch(directory, dt, match_fun, thresholds, keypoint, descriptor) :
     # Get a set of matches varied over image pairs (matrix of size N x T where N
     # is amount of image pairs and T is the amount of thresholds. Each element in
     # the matrix is a zipped list of matches and distances
-    match_sets = numpy.array([numpy.array(match_fun(dt, p, h, thresholds, keypoint, descriptor)) for p, h in imagePairs]).T
+    def do_match(p,h) :
+        print("Matching pairs: %s" % features.getLabel(p[0]))
+        return numpy.array(match_fun(dt, p, h, thresholds, keypoint, descriptor))
+
+    match_sets = numpy.array([do_match(p,h) for p, h in imagePairs]).T
 
     # Now collect an x axis with nb correct matches per threshold
     get_correct_matches = lambda match_row : [nb_correct_matches(d) for d in match_row]
@@ -226,7 +230,7 @@ def spectralMatchMMC(distance_threshold, paths, homography, thresholds, keypoint
 
 
 
-def siftMatch(distance_threshold, paths, homography, thresholds, keypoint, descriptor) :
+def ratioMatch(distance_threshold, paths, homography, thresholds, keypoint, descriptor) :
     options = {
         "thresholds" : thresholds,
         "distance_threshold" : distance_threshold,

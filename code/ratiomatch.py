@@ -43,9 +43,6 @@ def match(paths, options = {}) :
 	# Use cv2's matcher to get matching feature points
 	ii, ss, uu = features.bfMatch(descriptor_type, ds[indices == 0], ds[indices == 1])
 	
-	# Check that we have keypoints:
-	if ss == None : return [[] for _ in thresholds]
-
 	# Get all positions
 	(pos_im1, pos_im2) = (features.getPositions(ks[indices == 0]), features.getPositions(ks[indices == 1]))
 

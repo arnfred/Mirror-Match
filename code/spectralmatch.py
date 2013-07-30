@@ -38,7 +38,7 @@ def match(paths, options ={}) :
     keep_ratio = options.get("keep_ratio", 0.75)
     verbose = options.get("verbose", False)
 
-    matches, scores, ratios = matching_fun(paths, options)
+    matches, ratios, scores = matching_fun(paths, options)
     nb_matches = len(matches) * keep_ratio
     if (nb_matches < 1) : 
         return lambda t : [], [], []
