@@ -65,11 +65,11 @@ def folderMatch(directory, dt, match_fun, thresholds, keypoint, descriptor) :
     # Get a set of matches varied over image pairs (matrix of size N x T where N
     # is amount of image pairs and T is the amount of thresholds. Each element in
     # the matrix is a zipped list of matches and distances
-    def do_match(p,h) :
-        print("Matching pairs: %s" % features.getLabel(p[0]))
+    def do_match(p, h) :
+        print("%s " % features.getLabel(p[0])),
         return numpy.array(match_fun(dt, p, h, thresholds, keypoint, descriptor))
 
-    match_sets = numpy.array([do_match(p,h) for p, h in imagePairs]).T
+    match_sets = numpy.array([do_match(p, h) for p, h in imagePairs]).T
 
     # Now collect an x axis with nb correct matches per threshold
     get_correct_matches = lambda match_row : [nb_correct_matches(d) for d in match_row]
@@ -192,7 +192,7 @@ def clusterMatch(distance_threshold, paths, homography, thresholds, keypoint, de
         "prune_limit" : 2.5,
         "min_coherence" : 0.0,
         "thresholds" : thresholds,
-        "split_limit" : 500,
+        "split_limit" : 50000,
         "cluster_prune_limit" : 1.5,
         "distance_threshold" : distance_threshold,
         "keypoint_type" : keypoint,
@@ -224,6 +224,7 @@ def spectralMatchMMC(distance_threshold, paths, homography, thresholds, keypoint
         "descriptor_type" : descriptor,
         "match_fun" : clustermatch.getMatchSet,
         "threshold" : 0.94,
+        "verbose" : True,
     }
     match_fun = spectralmatch.matchAlt(paths, options)
     return evaluate(match_fun, thresholds, homography)
