@@ -31,15 +31,16 @@ def cluster(weights, verbose=False) :
     moved = 1
     m = 0
     delta_Q = 1
+    m_diff = 1
     #while (moved > 0) :
-    while (delta_Q > 0) :
+    while (m_diff > 0 and moved > 0) :
         deltas = [move(weights, i, partitions, K, False) for i in indices]
         moved = sum([1 for d in deltas if d > 0])
         delta_Q = sum(deltas)
+        m_old = m
+        m = modularity(weights, partitions)
+        m_diff = m - m_old
         if verbose : 
-            m_old = m
-            m = modularity(weights, partitions)
-            m_diff = m - m_old
             print("Moved %i vertices (modularity now: %.6f, change of %.6f (%.6f))" % (moved,m,m_diff,delta_Q))
     return partitions
 
@@ -56,7 +57,7 @@ def move(weights, index, partitions, K, verbose = False) :
     max_gained_Q = max(prospect_Q) if (len(prospect_Q) > 0) else (-1,-1)
     # Is it worth moving?
     delta = max_gained_Q[0] - lost_Q
-    if (delta > 0.0001) : 
+    if (delta > 0.000001) : 
         if verbose :
             print("Delta is %.8f, moving node from partition %i to partition %i" % (delta, old_partition, max_gained_Q[1]))
             print(weights[partitions == old_partition][:,partitions == old_partition])
@@ -73,7 +74,7 @@ def deltaQ(weights, index, partition, K) :
     v_edges = weights[index]
     v_weight = 2.0 * v_edges[partition].sum()
     p_weight = weights[partition]
-    k_neighbours = 2.0 * p_weight.sum() - p_weight[:,partition].sum()
+    k_neighbours = 2.0 * p_weight.sum() - p_weight[:, partition].sum()
     k_v = v_edges.sum()
     Q_iv = 1.0/K * (v_weight - (k_v * k_neighbours + k_v**2) / K)
     #print("new: %.6f, old: %.6f" % (Q_iv, Q_iv_old))
