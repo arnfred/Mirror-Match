@@ -34,34 +34,34 @@ import numpy
 
 def match(paths, options = {}) :
 
-	keypoint_type		= options.get("keypoint_type", "SIFT")
-	descriptor_type		= options.get("descriptor_type", "SIFT")
+    keypoint_type		= options.get("keypoint_type", "SIFT")
+    descriptor_type		= options.get("descriptor_type", "SIFT")
 
-	# Get all feature points
-	indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint_type, descriptor_type = descriptor_type)
+    # Get all feature points
+    indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint_type, descriptor_type = descriptor_type)
 
-	# Use cv2's matcher to get matching feature points
-	ii, ss, uu = features.bfMatch(descriptor_type, ds[indices == 0], ds[indices == 1])
-	
-	# Get all positions
-	(pos_im1, pos_im2) = (features.getPositions(ks[indices == 0]), features.getPositions(ks[indices == 1]))
+    # Use cv2's matcher to get matching feature points
+    ii, ss, uu = features.bfMatch(descriptor_type, ds[indices == 0], ds[indices == 1])
+    
+    # Get all positions
+    (pos_im1, pos_im2) = (features.getPositions(ks[indices == 0]), features.getPositions(ks[indices == 1]))
 
-	# Define a function that given a threshold returns a set of matches
-	def match_fun(threshold) :
-		match_data = [(numpy.array((pos_im1[i], pos_im2[j])), uu[i], ss[i]) for i,j in enumerate(ii) if uu[i] < threshold]
-		if len(match_data) == 0 : return [], [], []
-		matches, ratios, scores = zip(*match_data)
+    # Define a function that given a threshold returns a set of matches
+    def match_fun(threshold) :
+        match_data = [(numpy.array((pos_im1[i], pos_im2[j])), uu[i], ss[i]) for i,j in enumerate(ii) if uu[i] < threshold]
+        if len(match_data) == 0 : return [], [], []
+        matches, ratios, scores = zip(*match_data)
 
-		return matches, ratios, scores
+        return matches, ratios, scores, (pos_im1, pos_im2)
 
-	return lambda t : match_fun(t)
+    return lambda t : match_fun(t)
 
 
 def getMatchSet(paths, options = {}) :
 
-	# Get parameters
-	threshold = options.get("threshold", 1.0)
+    # Get parameters
+    threshold = options.get("threshold", 1.0)
 
-	match_fun = match(paths, options)
+    match_fun = match(paths, options)
 
-	return match_fun(threshold)
+    return match_fun(threshold)
