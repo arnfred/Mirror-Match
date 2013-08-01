@@ -93,11 +93,10 @@ areas when correspondence pairs are mainly found going from one area to
 another. This allows for the filtering of all correspondences that do 
 not fall within paired areas. Examples include \emph{Isodata} 
 \cite{das2008event}, which clusters feature points according to their 
-position in the image,
-and the method from \cite{wu2011robust}, which uses maximally stable 
-extremal regions (MSER) feature points to designate areas. %In this 
-paper the algorithm from \cite{das2008event} will later be referred to 
-as \emph{Isodata}.
+position in the image, and the method from \cite{wu2011robust}, which 
+uses maximally stable extremal regions (MSER) feature points to 
+designate areas. In this paper the algorithm from \cite{das2008event} 
+will later be referred to as \emph{Isodata}.
 
 %proposes clustering feature points by using their geometric position 
 %and exclude correspondences that are geometrically deviant. A more 
@@ -107,50 +106,53 @@ as \emph{Isodata}.
 %certain radius around the interest points. The feature points that fall 
 %within this ellipse are then matched according to epipolar constraints.  
 
-In practice there are many situations where relying on the geometry of the 
-image to filter correspondences is not possible, for example images without overlap, or adjacent objects in one image are that are separated in 
-another.  %Another example is images that do not overlap where algorithms might still find matches adhering to the imposed geometric constraints.
-Furthermore, methods using geometric constraints all require an initial 
-set of correspondences. If this set of correspondences can be narrowed down 
-to the most probable correct matches, the geometric matching algorithm will benefit in terms of speed and accuracy. 
-Finally some use cases might require a speed that simply cannot be achieved by 
-complex geometric methods.% where simple non geometric methods might be able to provide sufficient matching accuracy with a smaller performance penalty.
+In practice there are many situations where relying on the geometry of 
+the image to filter correspondences is not possible, for example images 
+without overlap, or adjacent objects in one image are that are separated 
+in another.  Furthermore, methods using geometric constraints all 
+require an initial set of correspondences. If this set of 
+correspondences can be narrowed down to the most probable correct 
+matches, the geometric matching algorithm will benefit in terms of speed 
+and accuracy.  Finally some use cases might require a speed that simply 
+cannot be achieved by complex geometric methods.
 
-In the absence of geometric constraints, only few methods are available. 
-As pointed out in \cite{szeliski2010}, the simplest 
-approach to matching feature points is to return all matches above a given 
-threshold of similarity.  This can be done with a fixed threshold or by 
-finding the nearest neighbors for each point (still filtering by a threshold to avoid including matches for feature points that have no counterpart in the other image).  
-Lowe \cite{lowe2004sift} proposed the scale-invariant feature transform (SIFT) together with 
-an alternative measure, where the uniqueness of a given match is found by 
-looking at the two nearest neighbors of each feature point and 
-calculating the matching score as the ratio of similarities.  Ranking the 
-scores by their uniqueness and picking the $n$ best produces a set of 
-correspondences that are distinctly matched across two images. %This method will be referred to as \emph{SIFT} in this paper. 
-Of these three methods (fixed threshold, nearest neighbors, and \emph{SIFT}), 
-\emph{SIFT} was found to perform best by a slight margin 
+In the absence of geometric constraints, only few methods are available.  
+As pointed out in \cite{szeliski2010}, the simplest approach to matching 
+feature points is to return all matches above a given threshold of 
+similarity.  This can be done with a fixed threshold or by finding the 
+nearest neighbors for each point (still filtering by a threshold to 
+avoid including matches for feature points that have no counterpart in 
+the other image).  Lowe \cite{lowe2004sift} proposed the scale-invariant 
+feature transform (SIFT) together with an alternative measure, where the 
+uniqueness of a given match is found by looking at the two nearest 
+neighbors of each feature point and calculating the matching score as 
+the ratio of similarities.  Ranking the scores by their uniqueness and 
+picking the $n$ best produces a set of correspondences that are 
+distinctly matched across two images.
+Of these three methods (fixed threshold, nearest neighbors, and 
+\emph{SIFT}), \emph{SIFT} was found to perform best by a slight margin 
 \cite{mikolajczyk2005performance}.
 
-The two methods we propose in this paper are inspired by a simple 
-but novel idea. If a given feature point in one image is better matched with other feature points from the 
-\emph{same} image than points in the other image, then any matches from 
-this feature point to points in the other image are considered unreliable and should be 
-discarded.  This approach carries no implicit assumptions about the 
-geometric consistency of matches and as such can easily be extended with 
-other geometric solutions when appropriate or necessary.
+The two methods we propose in this paper are inspired by a simple but 
+novel idea. If a given feature point in one image is better matched with 
+other feature points from the \emph{same} image than points in the other 
+image, then any matches from this feature point to points in the other 
+image are considered unreliable and should be discarded.  This approach 
+carries no implicit assumptions about the geometric consistency of 
+matches and as such can easily be extended with other geometric 
+solutions when appropriate or necessary.
 
-Based on this idea,  we determine reliable matches as 
-follows. \emph{Mirror Match (MM)} matches every feature from both 
-images with all other features and filters matches based on the ratio of 
-best to second best match as in \emph{SIFT}. \emph{Mirror Match with 
-Clustering (MMC)} on the other hand takes the combined set of feature 
-points from both images and clusters these points according to their 
-descriptors.  If a resulting partition contains only feature points from one image, no matches are 
-returned.  If the 
-partition contains points from both images, \emph{Mirror Match} is used 
-to find the best matches within this partition.  The experimental results 
-show that both approaches generally outperform existing 
-correspondence matching methods.
+Based on this idea,  we determine reliable matches as follows. 
+\emph{Mirror Match (MM)} matches every feature from both images with all 
+other features and filters matches based on the ratio of best to second 
+best match as in \emph{SIFT}. \emph{Mirror Match with Clustering (MMC)} 
+on the other hand takes the combined set of feature points from both 
+images and clusters these points according to their descriptors.  If a 
+resulting partition contains only feature points from one image, no 
+matches are returned.  If the partition contains points from both 
+images, \emph{Mirror Match} is used to find the best matches within this 
+partition.  The experimental results show that both approaches generally 
+outperform existing correspondence matching methods.
 
 %Matching feature points against the entire set of points from both 
 %images ensures that the distinctiveness of a returned correspondence is 
@@ -188,7 +190,12 @@ correspondence matching methods.
 %using \emph{MM} but with much lower thresholds.
 %
 
-The paper is organized as follows.  Section~\ref{S:MatchingMethods} describes the proposed \emph{Mirror Match (MM)} and \emph{Mirror Match with Clustering (MMC)} algorithms.  Section~\ref{S:Experiments} presents the dataset used for evaluation and the experimental setup.  Section~\ref{S:Results} discusses the benchmarking results obtained.  Section~\ref{S:Summary} concludes the paper.  
+The paper is organized as follows.  Section~\ref{S:MatchingMethods} 
+describes the proposed \emph{Mirror Match (MM)} and \emph{Mirror Match 
+with Clustering (MMC)} algorithms.  Section~\ref{S:Experiments} presents 
+the dataset used for evaluation and the experimental setup.  
+Section~\ref{S:Results} discusses the benchmarking results obtained.  
+Section~\ref{S:Summary} concludes the paper.  
 
 \section{Matching Methods}
 \label{S:MatchingMethods}
@@ -355,7 +362,9 @@ that are not symmetric.
 %\end{figure*}%
 
 
-Figure~\ref{fig:comparemirror} illustrates the benefits of \emph{MM} using an example image pair from the Gallagher dataset \cite{gallagher2008}.
+Figure~\ref{fig:comparemirror} illustrates the benefits of \emph{MM} 
+using an example image pair from the Gallagher dataset 
+\cite{gallagher2008}.
 With \emph{SIFT} (Figure~\ref{fig:unique}), many incorrect matches occur 
 in the fence towards the bottom of the image.
 When we match all feature points together, many of these incorrect 
