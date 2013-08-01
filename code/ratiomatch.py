@@ -52,7 +52,7 @@ def match(paths, options = {}) :
         if len(match_data) == 0 : return [], [], []
         matches, ratios, scores = zip(*match_data)
 
-        return matches, ratios, scores, (pos_im1, pos_im2)
+        return matches, ratios, scores
 
     return lambda t : match_fun(t)
 

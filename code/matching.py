@@ -44,7 +44,7 @@ def evaluate(match_fun, thresholds, homography, return_matches = False) :
     match_set = [match_fun(t)[0] for t in thresholds]
 
     # Get distances
-    getDist = lambda ms : [matchDistance(m1,m2,homography) for (m1,m2) in ms]
+    getDist = lambda ms : [matchDistance(m1, m2, homography) for (m1, m2) in ms]
     match_dist = [getDist(ms) for ms in match_set]
 
     if return_matches : return match_set, match_dist
@@ -69,6 +69,7 @@ def folderMatch(directory, dt, match_fun, thresholds, keypoint, descriptor) :
         print("%s " % features.getLabel(p[0])),
         return numpy.array(match_fun(dt, p, h, thresholds, keypoint, descriptor))
 
+    # Get matches
     match_sets = numpy.array([do_match(p, h) for p, h in imagePairs]).T
 
     # Now collect an x axis with nb correct matches per threshold
@@ -82,18 +83,46 @@ def folderMatch(directory, dt, match_fun, thresholds, keypoint, descriptor) :
     return nb_correct_set, nb_total_set
 
 
+def folderCorrespondences(directory, dt, keypoint, descriptor) :
+
+    # Get image pairs of folder
+    imagePairs = getImagePairs(directory)
+
+    # Calculate the number of correspondences
+    correspondences = [getCorrespondences(p, h, keypoint, descriptor, dt) for p, h in imagePairs]
+
+    return correspondences
+
+
 # Load all files
 def getImagePairs(directory) :
     dir_path = "../../images/testsets/%s/" % directory
     pairs = [dir_path + p for p in os.listdir(dir_path) if len(p) <= 6]
     homographies = [getHomography(p) for p in pairs]
-    return [([p + "_1.jpg", p + "_2.jpg"], h) for (p,h) in zip(pairs, homographies)]
+    return [([p + "_1.jpg", p + "_2.jpg"], h) for (p, h) in zip(pairs, homographies)]
 
 
 
 def getHomography(hom_path) :
     h = numpy.loadtxt(hom_path)
     return h
+
+
+def getCorrespondences(paths, homography, keypoint, descriptor, distance_threshold) :
+
+    print("%s " % features.getLabel(paths[0])),
+
+    # Get all feature points
+    indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint, descriptor_type = descriptor)
+
+    # Get all positions
+    (pos_im1, pos_im2) = (features.getPositions(ks[indices == 0]), features.getPositions(ks[indices == 1]))
+
+    # For all possible combinations, check if the match is acceptable
+    correspondences = sum([1 for (p1, p2) in itertools.product(pos_im1, pos_im2) if matchDistance(p1, p2, homography) <= distance_threshold])
+
+    return correspondences
+
 
 
 def getTestsetPaths(collection, index = None) :
@@ -224,7 +253,7 @@ def spectralMatchMMC(distance_threshold, paths, homography, thresholds, keypoint
         "descriptor_type" : descriptor,
         "match_fun" : clustermatch.getMatchSet,
         "threshold" : 0.94,
-        "verbose" : True,
+        "verbose" : False,
     }
     match_fun = spectralmatch.matchAlt(paths, options)
     return evaluate(match_fun, thresholds, homography)
