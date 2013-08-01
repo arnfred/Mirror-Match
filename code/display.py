@@ -303,6 +303,20 @@ def recallPlot(correct, total, nb_correspondences, legends, colors = ["blue", "r
     pylab.ylim(ylim[0],ylim[1])
     if xlim != None : pylab.xlim(0,xlim)
 
+def recallInvPlot(correct, total, nb_correspondences, legends, colors = ["blue", "red", "green", "orange", "cyan"], ylim=(0.0,1.01), xlim = None, size = (4,6)) :
+    fig = pylab.figure(figsize=size)
+    ax = pylab.subplot(111)
+    for ts, cs, l, color in zip(total, correct, legends, colors) :
+        ys = [1 if sum(t) == 0 else sum(c)/float(sum(t)) for c, t in zip(cs,ts)]
+        xs = [sum(c)/float(nb_correspondences) for c in cs]
+        pylab.plot(xs, ys, '-', label=l, color=color, alpha=0.95)
+        pylab.legend(loc="best")
+    removeDecoration()
+    pylab.ylabel("precision")
+    pylab.xlabel("#correct / %i" % nb_correspondences)
+    pylab.ylim(ylim[0],ylim[1])
+    if xlim != None : pylab.xlim(0,xlim)
+
 def accuPlot(correct, total, legends, colors = ["blue", "red", "green", "orange", "cyan"], ylim=(0.0,1.01), xlim = None, size = (4,6), compareCorrect = None, compareTotal = None, compareLegend = None, outside = False) :
     fig = pylab.figure(figsize=size)
     ax = pylab.subplot(111)
