@@ -37,7 +37,10 @@ from scipy.misc import imresize
 ####################################
 
 
-def match(testset, verbose = False, threshold = 0.95) :
+def match(testset, scale = 0.5, verbose = False, threshold = 0.95) :
+
+    # Save images as greyscale
+    pylab.gray()
 
     # Get a list of all images
     paths = [testset + f for (_,_,filenames) in os.walk(testset) for f in fnmatch.filter(filenames, "*.jpg")]
@@ -62,17 +65,17 @@ def match(testset, verbose = False, threshold = 0.95) :
     g = initGraph(edges, homographies, images, paths)
 
     # Run steps and return
-    return runSteps(g)
+    return runSteps(g, scale)
 
 
-def runSteps(graph) :
+def runSteps(graph, scale = 0.5) :
     nb_vertices = graph.num_vertices()
     steps = 0
     images = graph.vp["images"]
 
     # Contract all images
     while steps < nb_vertices - 1 and graph.num_edges() > 0 :
-        step(graph)
+        step(graph, scale)
 
     # Now spit out all images left
     result = [images[v] for v in graph.vertices()]
@@ -225,10 +228,10 @@ def combine(im1, im2, h_1_2, scale = 0.5) :
         im_data[k,:] = numpy.array((x_new, y_new, im1[y,x]))
 
     # Get max and min values
-    max_x = min(numpy.max(im_data[:,0])+1, 1000)
-    max_y = min(numpy.max(im_data[:,1])+1, 1000)
-    min_x = max(numpy.min(im_data[:,0]), -1000)
-    min_y = max(numpy.min(im_data[:,1]), -1000)
+    max_x = min(numpy.max(im_data[:,0])+1, 2000)
+    max_y = min(numpy.max(im_data[:,1])+1, 2000)
+    min_x = max(numpy.min(im_data[:,0]), -2000)
+    min_y = max(numpy.min(im_data[:,1]), -2000)
 
     # Calculate padding for canvas
     padding_min_x = max(min_x,0)
@@ -282,7 +285,7 @@ def combine(im1, im2, h_1_2, scale = 0.5) :
 
 
 
-def step(graph) :
+def step(graph, scale = 0.5) :
 
     def getInv(h) :
         h_inv = numpy.linalg.inv(h)
@@ -307,7 +310,7 @@ def step(graph) :
     h_1_2 = homographies[max_edge]
 
     # Combine the images of the two vertices linked by the edge
-    r, h_1_r, h_2_r, r_path = combine(im1, im2, h_1_2)
+    r, h_1_r, h_2_r, r_path = combine(im1, im2, h_1_2, scale = scale)
 
     # Calculate inverse homographies and identity
     h_r_1 = getInv(h_1_r)
