@@ -241,58 +241,55 @@ non-geometric feature matching by clustering feature points by
 similarity. This process yields partitions of fairly similar feature 
 points that we can match using the same approach as \emph{MM}.  
 Algorithm~\ref{alg-mmc} shows the pseudocode implementation of \emph{MMC}.
-%
-%Before we introduce the implementation details we will go over the 
-%problem of graph clustering and how it relates to feature matching.
-%
-%\subsubsubsection{Graph Clustering}
-%
-%Given a set of feature points from two images, $im_1$ and $im_2$: $F_k = 
-%\{k_i, k_j$ for $k_i \in im_1, k_j \in im_2\}$ as well as a matching 
-%function $M(k_i, k_j) \rightarrow \mathbb{R}$ that takes two feature 
-%points in an image and returns their matching score, we can define a 
-%matrix $A$ where each element $A_ij = M(k_i, k_j)$. A can be interpreted 
-%as the \emph{adjecency matrix} of the fully connected graph where each 
-%vertex corresponds to a keypoint and the edge between two vertices has a 
-%weight equal to the distance between the two corresponding keypoints.
-%
-%This representation reduces the problem of partitioning the keypoints 
-%into groups to that of graph clustering or community structure depending 
-%on the context. In the literature there are various ways of clustering a 
-%graph according to different measures of what constitutes an optimal 
-%partitioning. Traditionally the most used clustering algorithms have 
-%been K-means and spectral clustering, but in recent years a host of new 
-%algorithms have been proposed based on both Newman's concept of graph 
-%modularity\footnote{Introduced in \cite{girvan2002}, discussed in 
-%\cite{brandes2007} and used in \cite{blondel2008} as well as others} as 
-%well as information theoretical measures\footnote{See for example 
-%\cite{rosvall2008}} and the Potts spin model from physics\footnote{Used 
-%in \cite{ronhovde2009}} just to mention a few approaches. Many of the 
-%new algorithms differ from K-means clustering and Spectral clustering 
-%in that they do not require the number of expected to clusters to be 
-%specified beforehand\footnote{Among the aforementioned methods, this is 
-%true for \cite{blondel2008} and \cite{rosvall2008}}.  Furthermore, on 
-%tests done using randomly generated graphs with a known partitioning 
-%\cite{blondel2008}, \cite{rosvall2008} and \cite{ronhovde2009} perform 
-%markedly better than spectral clustering and 
-%K-means\cite{lancichinetti2009}.
-%
-%The performance of clustering algorithms is a complicated issue, since 
-%an optimal clustering given the same graph can vary depending on the 
-%application. Spectral clustering for example will usually return a 
-%partitioning where each partition is roughly equal in size\footnote{As 
-%mentioned in \cite{von2007}} while the Louvain 
-%clustering\cite{blondel2008} might return partitions of very uneven 
-%size, even if the modularity measurement has been shown to penalize very 
-%small clusters\cite{brandes2007}. Both behaviours can be beneficial 
-%depending on the application, but when clustering feature points, 
-%maintaining clusters of an even size usually means that some clusters 
-%will be '\emph{catch-all}' clusters where the feature points that do 
-%not fit anywhere else are grouped together. The necessity of specifying 
-%the amount of partitions in for example Spectral clustering or Pott's 
-%model clustering further exacerbates the issue since smaller partitions 
-%are then combined into one to achieve the right amount of partitions.
-%
+
+Before we introduce the implementation details we will go over the 
+problem of graph clustering and how it relates to feature matching.
+
+Given a set of feature points from two images, $im_1$ and $im_2$: $F_k = 
+\{k_i, k_j$ for $k_i \in im_1, k_j \in im_2\}$ as well as a matching 
+function $M(k_i, k_j) \rightarrow \mathbb{R}$ that takes two feature 
+points in an image and returns their matching score, we can define a 
+matrix $A$ where each element $A_ij = M(k_i, k_j)$. A can be interpreted 
+as the \emph{adjecency matrix} of the fully connected graph where each 
+vertex corresponds to a keypoint and the edge between two vertices has a 
+weight equal to the distance between the two corresponding keypoints.
+
+This representation reduces the problem of partitioning the keypoints 
+into groups to that of graph clustering or community structure depending 
+on the context. In the literature there are various ways of clustering a 
+graph according to different measures of what constitutes an optimal 
+partitioning. Traditionally the most used clustering algorithms have 
+been K-means and spectral clustering, but in recent years a host of new 
+algorithms have been proposed based on both Newman's concept of graph 
+modularity\footnote{Introduced in \cite{girvan2002}, discussed in 
+\cite{brandes2007} and used in \cite{blondel2008} as well as others} as 
+well as information theoretical measures\footnote{See for example 
+\cite{rosvall2008}} and the Potts spin model from physics\footnote{Used 
+in \cite{ronhovde2009}} just to mention a few approaches. Many of the 
+new algorithms differ from K-means clustering and Spectral clustering 
+in that they do not require the number of expected to clusters to be 
+specified beforehand\footnote{Among the aforementioned methods, this is 
+true for \cite{blondel2008} and \cite{rosvall2008}}.  Furthermore, on 
+tests done using randomly generated graphs with a known partitioning 
+\cite{blondel2008}, \cite{rosvall2008} and \cite{ronhovde2009} perform 
+markedly better than spectral clustering and 
+K-means\cite{lancichinetti2009}.
+
+The performance of clustering algorithms is a complicated issue, since 
+an optimal clustering given the same graph can vary depending on the 
+application. Spectral clustering for example will usually return a 
+partitioning where each partition is roughly equal in size\footnote{As 
+mentioned in \cite{von2007}} while the Louvain 
+clustering\cite{blondel2008} might return partitions of very uneven 
+size, even if the modularity measurement has been shown to penalize very 
+small clusters\cite{brandes2007}. Both behaviours can be beneficial 
+depending on the application, but when clustering feature points, 
+maintaining clusters of an even size usually means that some clusters 
+will be '\emph{catch-all}' clusters where the feature points that do 
+not fit anywhere else are grouped together. The necessity of specifying 
+the amount of partitions in for example Spectral clustering or Pott's 
+model clustering further exacerbates the issue since smaller partitions 
+are then combined into one to achieve the right amount of partitions.
 
 %
 \begin{algorithm}
@@ -319,26 +316,19 @@ Algorithm~\ref{alg-mmc} shows the pseudocode implementation of \emph{MMC}.
 %}
 \end{algorithm}
 
-\begin{figure}[h]
-	\centering
-	\begin{subfigure}{0.8\columnwidth}
-		\includegraphics[width=\columnwidth]{images/MMC_graph_full}
-		\caption{Full Graph}
-		\label{fig:full_graph}
-	\end{subfigure}%
-
-	%add desired spacing between images, e. g. ~, \quad, \qquad		  
-	%(or a blank line to force the subfigure onto a new line)
-	\begin{subfigure}{0.7\columnwidth}
-		\includegraphics[width=\columnwidth]{images/MMC_graph_cropped}
-		\caption{Cropped subsection of Graph}
-		\label{fig:cropped_graph}
-	\end{subfigure}%
-	\caption{The partitioned feature graph (a). Each vertex represents a 
-		feature point; lines indicate high similarity between 
-		points. A partition is a connected group with the same color. The border color of each node 
-		indicates which image it belongs to.  Zooming into a subsection of the graph (b), the various cluster sizes can be seen, ranging from 
-	hundreds of feature points to only two or three.}
+\begin{figure}[t]
+    \centering
+\makebox[\textwidth][c]{%
+    \includegraphics[width=1.1\textwidth]{images/MMC_graph}
+    \label{fig:graph}
+}
+    \caption{The partitioned feature graph. Each vertex represents a 
+        feature point; lines indicate high similarity between points. A 
+        partition is a connected group with the same color. The border 
+        color of each node indicates which image it belongs to.  Zooming 
+    into a subsection of the graph (right part), the various cluster 
+sizes can be seen, ranging from hundreds of feature points to only two 
+or three.}
 	\label{fig:graph}
 \end{figure}
 
@@ -749,6 +739,38 @@ correct image alignment. Using local feature points carry the additional
 advantage that it is feasible to automatically recognize where each 
 source image belong in the final panorama.
 
+\begin{figure}[h]
+	\begin{subfigure}[t]{0.8\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{images/pano_narrow}
+        \label{fig:pano_images}
+		\caption{Source images}
+    \end{subfigure}%
+	\\
+	\centering
+	\begin{subfigure}{0.4\textwidth}
+		\includegraphics[width=\textwidth]{images/panorama-autostitch}
+        \label{fig:pano_autostitch}
+		\caption{Panorama by Autostitch}
+    \end{subfigure}%
+	~%add desired spacing between images, e. g. ~, \quad, \qquad
+	%(or a blank line to force the subfigure onto a new line)
+	\begin{subfigure}{0.4\textwidth}
+		\includegraphics[width=\textwidth]{images/panorama-MMC}
+		\caption{Panorama by MMC}
+		\label{fig:pano_MMC}
+	\end{subfigure}%
+    \label{fig:pano_example}
+	\caption{An example of a difficult case for panorama recognition and 
+		alignment.  In a) the source images used to generate the 
+		panorama are displayed.\ b) shows the result of the Autostitch 
+		program from \cite{brown2007automatic} which fails to combine 
+		all images, while c) demonstrates the result of the simple 
+		panorama stitcher
+	using the proposed MMC algorithm. Here the two left images are 
+correctly linked}
+\end{figure}
+
 In \cite{brown2007automatic}, Brown and Lowe demonstrate how a panoramic 
 image can be assembled by collecting the feature points of all source 
 images and matching them to obtain a set of inter image matches.  By 
@@ -781,37 +803,13 @@ the end product, they don't influence the performance of panorama
 alignment and recognition and haven't been included in the simple 
 comparison algorithm.
 
-\begin{figure}[h]
-	\begin{subfigure}[t]{0.8\columnwidth}
-		\centering
-		\includegraphics[width=\columnwidth]{images/pano_narrow}
-		\caption{Source images}
-		\label{fig:pano_images}
-	\end{subfigure}%
-	\\
-	\centering
-	\begin{subfigure}{0.4\columnwidth}
-		\includegraphics[width=\columnwidth]{images/panorama-autostitch}
-		\caption{Panorama by Autostitch}
-		\label{fig:pano_autostitch}
-	\end{subfigure}%
-	~%add desired spacing between images, e. g. ~, \quad, \qquad
-	%(or a blank line to force the subfigure onto a new line)
-	\begin{subfigure}{0.4\columnwidth}
-		\includegraphics[width=\columnwidth]{images/panorama-MMC}
-		\caption{Panorama by MMC}
-		\label{fig:pano_MMC}
-	\end{subfigure}%
-	\caption{An example of a difficult case of panorama recognition and 
-		alignment.  In a) the source images used to generate the 
-		panorama are displayed.\ b) shows the result of the Autostitch 
-		program from \cite{brown2007automatic} which fails to combine 
-		all images, while c) demonstrates the result of the simple 
-		panorama stitcher
-	using the proposed MMC algorithm. Here the two left images are 
-correctly linked}
-	\label{fig:pano_example}
-\end{figure}
+Figure~\ref{fig:pano_example} shows an example where the added accuracy 
+of MMC enables us to correctly recognitize and align source images that 
+fail to be combined by Autostitch, a program using the algorithm 
+proposed by Brown and Lowe \cite{brown2007automatic}. In this particular
+case the matching algorithm used in Autostitch fails to find sufficient 
+matches between two images pairs to correctly position them and fails to
+produce a panorama as a result.
 
 % About near duplicates mention how we can't use ransac to find inliers 
 % since we can't necessarily construct a homography between two images
