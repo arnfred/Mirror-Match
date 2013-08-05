@@ -767,10 +767,10 @@ that link feature points which don't correspond.
 
 To demonstrate the usefulness of \emph{MMC} applied to panorama 
 recognition and alignment we construct a simple panorama stitcher taking
-as input a set of $n$ source images $\left{I_0, \ldots, I_n\right}$ and 
-returns as output a panoramic image stitched together from the source 
-images. Based on the matches found by applying \emph{MMC} to $I$, the 
-images are combined in an order corresponding to how many matches 
+as input a set of $n$ source images $\left\{I_0, \ldots, I_n\right\}$ 
+and returns as output a panoramic image stitched together from the 
+source images. Based on the matches found by applying \emph{MMC} to $I$, 
+the images are combined in an order corresponding to how many matches 
 connect them, as done by Brown and Lowe \cite{brown2007automatic}.
 
 Brown and Lowe make use of bundle adjustment\footnote{Bundle adjustment 
@@ -779,7 +779,39 @@ and a lot of image enhancements such as exposure adjustment and edge
 blurring to provide a seamless panorama. While these additions improve 
 the end product, they don't influence the performance of panorama 
 alignment and recognition and haven't been included in the simple 
-comparison algorithm. 
+comparison algorithm.
+
+\begin{figure}[h]
+	\begin{subfigure}[t]{0.8\columnwidth}
+		\centering
+		\includegraphics[width=\columnwidth]{images/pano_narrow}
+		\caption{Source images}
+		\label{fig:pano_images}
+	\end{subfigure}%
+	\\
+	\centering
+	\begin{subfigure}{0.4\columnwidth}
+		\includegraphics[width=\columnwidth]{images/panorama-autostitch}
+		\caption{Panorama by Autostitch}
+		\label{fig:pano_autostitch}
+	\end{subfigure}%
+	~%add desired spacing between images, e. g. ~, \quad, \qquad
+	%(or a blank line to force the subfigure onto a new line)
+	\begin{subfigure}{0.4\columnwidth}
+		\includegraphics[width=\columnwidth]{images/panorama-MMC}
+		\caption{Panorama by MMC}
+		\label{fig:pano_MMC}
+	\end{subfigure}%
+	\caption{An example of a difficult case of panorama recognition and 
+		alignment.  In a) the source images used to generate the 
+		panorama are displayed.\ b) shows the result of the Autostitch 
+		program from \cite{brown2007automatic} which fails to combine 
+		all images, while c) demonstrates the result of the simple 
+		panorama stitcher
+	using the proposed MMC algorithm. Here the two left images are 
+correctly linked}
+	\label{fig:pano_example}
+\end{figure}
 
 % About near duplicates mention how we can't use ransac to find inliers 
 % since we can't necessarily construct a homography between two images
