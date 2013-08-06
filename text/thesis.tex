@@ -83,7 +83,7 @@ Basically c/p from paper, but better figures and maybe more explanations
 		\begin{subfigure}[t]{\columnwidth}
 			\centering
 			\includegraphics[width=0.85\columnwidth]{images/mirror_match_off}
-			\caption{\emph{SIFT}}
+			\caption{\emph{Ratio}}
 			\label{fig:unique}
 		\end{subfigure}%
 		\\ %add desired spacing between images, e. g. ~, \quad, 
@@ -109,7 +109,7 @@ Basically c/p from paper, but better figures and maybe more explanations
 			\label{fig:pitts_partition}
 		\end{subfigure}%
 	\caption{Feature matching with \emph{MM} and \emph{MMC}. Dots represent feature points; green/red lines indicate correct/incorrect matches, respectively; black lines represent edges in the feature graph.  
-	(c) Result of \emph{SIFT} matching. 
+	(c) Result of \emph{Ratio} matching. 
   (d) All matches found by \emph{MM}, including intra-image matches. 
 	(e) Final \emph{MM} result. 
 	(f) Example of a partition of feature points after clustering, which 
@@ -186,7 +186,7 @@ that are not symmetric.
 %		\begin{subfigure}[t]{0.32\textwidth}
 %			\centering
 %			\includegraphics[width=\textwidth]{images/mirror_match_off}
-%			\caption{\emph{SIFT}}
+%			\caption{\emph{Ratio}}
 %			\label{fig:unique}
 %		\end{subfigure}%
 %	}
@@ -214,7 +214,7 @@ that are not symmetric.
 %		\end{subfigure}%
 %	}%
 %	\caption{Illustration of feature matching with \emph{MM} and \emph{MMC}. Dots represent feature points; green/red lines indicate %correct/incorrect matches, respectively; black lines represent edges in the feature graph.  
-%(c) Result of \emph{SIFT} matching the two images.% 
+%(c) Result of \emph{Ratio} matching the two images.% 
 %  (d) All matches found by \emph{MM}, including matches between points in the same image. 
 %	(e) Final \emph{MM} result with the intra-image matches removed. 
 %	(f) Example of a partition of feature points after clustering. This partition 
@@ -226,7 +226,7 @@ that are not symmetric.
 Figure~\ref{fig:comparemirror} illustrates the benefits of \emph{MM} 
 using an example image pair from the Gallagher dataset 
 \cite{gallagher2008}.
-With \emph{SIFT} (Figure~\ref{fig:unique}), many incorrect matches occur 
+With \emph{Ratio} (Figure~\ref{fig:unique}), many incorrect matches occur 
 in the fence towards the bottom of the image.
 When we match all feature points together, many of these incorrect 
 matches are eliminated, because points in the fence match with other 
@@ -401,7 +401,7 @@ Figure~\ref{fig:cropped_graph}, many of the partitions contain only two
 feature points from different images linked by one edge. In such a case, 
 we compare the similarity of the these two feature points with their 
 second best match and remove matches where this ratio lies above a 
-certain threshold, like in the \emph{SIFT} algorithm. For example in the 
+certain threshold, like in the \emph{Ratio} algorithm. For example in the 
 case of Figure~\ref{fig:pitts_partition}, we have feature points from a 
 building in one image grouped together with points from a shirt pattern 
 in another.  The nearest neighbor method would have returned wrong 
@@ -538,11 +538,11 @@ $900\times 600$ pixels.  This dataset will be referred to as the
 %
 %\subsubsection{Experimental setup}
 We compare the \emph{MM} and \emph{MMC} algorithms to 
-\emph{SIFT} \cite{lowe2004sift} as well 
+\emph{Ratio} \cite{lowe2004sift} as well 
 as \emph{Isodata} \cite{das2008event}. 
-\emph{Isodata} uses geometric constraints, whereas \emph{SIFT} does not.
+\emph{Isodata} uses geometric constraints, whereas \emph{Ratio} does not.
 %, which uses geometric information to improve the matching. 
-%The comparison  with \emph{SIFT} serves to illustrate the relative performance of 
+%The comparison  with \emph{Ratio} serves to illustrate the relative performance of 
 %\emph{MM} and \emph{MMC} to a state of the art algorithm without 
 %geometric constraints. \emph{Isodata} is included to 
 %illustrate the performance of an algorithm relying on geometric 
@@ -606,8 +606,8 @@ less than a certain threshold (we use $d_{\max}=5$ pixels here).
 
 Figure~\ref{fig:result_graf} shows the results for 100 patch pairs 
 generated from images 1 and 3 of the \emph{Graf} image set (cf.~Figure~\ref{fig:Graf}). The plot 
-compares the accuracy of \emph{SIFT}, \emph{MM}, \emph{MMC}, and 
-\emph{Isodata} as a function of the number of matches produced (which is achieved by varying thresholds over a certain range). The results show that \emph{MM} and \emph{MMC} consistently outperform \emph{SIFT}; \emph{MMC} generally lies 2-3 percentage points above \emph{MM} when both are performing at optimal accuracy. 
+compares the accuracy of \emph{Ratio}, \emph{MM}, \emph{MMC}, and 
+\emph{Isodata} as a function of the number of matches produced (which is achieved by varying thresholds over a certain range). The results show that \emph{MM} and \emph{MMC} consistently outperform \emph{Ratio}; \emph{MMC} generally lies 2-3 percentage points above \emph{MM} when both are performing at optimal accuracy. 
 Although \emph{Isodata} exhibits a good performance on strict thresholds (small number of matches), that quickly diminishes when more matches are desired.
 
 
@@ -651,8 +651,8 @@ algorithms on the \emph{Graf} image set (Figure~\ref{fig:Graf}), which
 contains 5 images of the same mural taken with gradually increasing 
 viewpoint changes.  The first images are almost identical, while the 
 last are taken from very different angles. The results from   \emph{MMC} 
-and \emph{SIFT} as shown in Figure~\ref{fig:result_viewpoint}, 
-confirming that \emph{MMC} is generally superior to \emph{SIFT} across 
+and \emph{Ratio} as shown in Figure~\ref{fig:result_viewpoint}, 
+confirming that \emph{MMC} is generally superior to \emph{Ratio} across 
 viewpoint changes.
 The performance of \emph{MM} (not shown in the plot) is similar to 
 \emph{MMC}.
@@ -691,7 +691,7 @@ change from the Gallagher dataset \cite{gallagher2008}.  The performance is comp
 \end{figure}
 
 
-In terms of computational complexity, \emph{SIFT}, \emph{MM}, and \emph{Isodata} can be 
+In terms of computational complexity, \emph{Ratio}, \emph{MM}, and \emph{Isodata} can be 
 implemented in $O(n\log n)$, where $n$ is the total number of feature 
 points.  Our current \emph{MMC} implementation has a complexity of $O(n^2)$ due to the 
 construction of a similarity matrix of the feature points. However, it is 
@@ -701,7 +701,7 @@ In terms of speed, Table~\ref{table:running_times} shows the
 running time of the four algorithms over 100 image pairs of $250\!\times\!250$ pixels. 
 These numbers should be taken with a grain of salt, given that 
 much of the code behind \emph{MMC} and \emph{Isodata} is implemented in 
-Python, whereas \emph{MM} and \emph{SIFT} make use of OpenCV to execute 
+Python, whereas \emph{MM} and \emph{Ratio} make use of OpenCV to execute 
 computationally intensive operations in C++, which makes them much 
 faster. 
 
@@ -713,7 +713,7 @@ faster.
 %	\small
 \begin{tabular}{r*{4}{c}}
 \hline
-	Algorithm: & \emph{SIFT} & \emph{MM} & \emph{MMC} & \emph{Isodata} 
+	Algorithm: & \emph{Ratio} & \emph{MM} & \emph{MMC} & \emph{Isodata} 
 	\\
 	\noalign{\smallskip} 
 	%
@@ -741,7 +741,7 @@ algorithms from relying on geometric assumptions, since we have very few
 guarantees between two potential near duplicates that they should be 
 matched using any particular geometric heuristic. In this section, we 
 will first see \emph{MMC} applied to panorama recognition and alignment,
-and next \emph{MMC} and \emph{MM} applied to near duplicate detection.
+and next \emph{MM} and \emph{MMC} applied to near duplicate detection.
 
 
 \subsection{Panorama Recognition and Alignment}
@@ -759,22 +759,22 @@ advantage that it is feasible to automatically recognize where each
 source image belong in the final panorama.
 
 \begin{figure}[h]
-	\begin{subfigure}[t]{0.8\textwidth}
+	\begin{subfigure}[t]{0.9\textwidth}
 		\centering
-		\includegraphics[width=\textwidth]{images/pano_narrow}
+        \includegraphics[width=\textwidth]{images/pano_wide}
         \label{fig:pano_images}
 		\caption{Source images}
     \end{subfigure}%
 	\\
 	\centering
-	\begin{subfigure}{0.4\textwidth}
+    \begin{subfigure}[b]{0.4\textwidth}
 		\includegraphics[width=\textwidth]{images/panorama-autostitch}
         \label{fig:pano_autostitch}
 		\caption{Panorama by Autostitch}
     \end{subfigure}%
 	~%add desired spacing between images, e. g. ~, \quad, \qquad
 	%(or a blank line to force the subfigure onto a new line)
-	\begin{subfigure}{0.4\textwidth}
+    \begin{subfigure}[b]{0.4\textwidth}
 		\includegraphics[width=\textwidth]{images/panorama-MMC}
 		\caption{Panorama by MMC}
 		\label{fig:pano_MMC}
@@ -885,39 +885,52 @@ experiments were performed exactly as documented in
 \end{tabular}
 \end{table}
 
-The results of the comparison can be seen in Table~\ref{table:nnd} where
-\emph{MMC} improves performance by 8.05\% over the original framework 
-using \emph{Ratio} to match images. For comparison, the performance 
-improvement of \emph{PhotoCluster} compared to XMatch 
+The results of the comparison can be seen in Table~\ref{table:nnd}. It 
+shows that \emph{MMC} improves performance by 8.05\% over the original 
+framework using \emph{Ratio} to match images. For comparison, the 
+performance improvement of \emph{PhotoCluster} compared to XMatch 
 \cite{zhao2009scale}, the second best performing algorithm on the 
-California-nd dataset according to \cite{vas2013cluster} is 2.52\%.
+California-nd dataset according to \cite{vas2013cluster}, is 2.52\%.
 
 \section{Summary}
 \label{S:Summary}
 
-We have addressed the problem of matching feature points without using 
-geometrical constraints, proposing \emph{Mirror Match 
-(MM)} and \emph{Mirror Match with Clustering (MMC)}.  The two algorithms 
-share the common idea that feature points should have better 
-matches in another image than in the image they came from to be 
-considered good matches.  \emph{MMC} further improves on this idea by 
-using the structure of the similarity graph of the feature points. 
+This thesis has addressed the problem of matching feature points without 
+using geometrical constraints, proposing \emph{Mirror Match (MM)} and 
+\emph{Mirror Match with Clustering (MMC)}.  The two algorithms share the 
+common idea that feature points should have better matches in another 
+image than in the image they came from to be considered good matches.  
+\emph{MMC} further improves on this idea by using the structure of the 
+similarity graph of the feature points. 
 
-The algorithms show promising results when tested on the \emph{Murals} data 
-set. %, where pairs of the same object seen from different angles are %cropped to have different degrees of overlap ranging from full to non at all. The results on 900 patch pairs show that 
-\emph{MM} and \emph{MMC} 
-generally outperform existing matching algorithms \emph{SIFT} and \emph{Isodata}, and \emph{MMC} 
-outperforms \emph{MM}. We show that this result generalizes to 
-variations in viewpoint change as well as more realistic photos featuring occlusions. 
-% by comparing \emph{MMC} to \emph{SIFT} over a set of image pairs with an increasing magnitude of perspective difference. 
-%We go on to apply the algorithms to a real life image case 
-%featuring occlusion and a slight viewpoint change and show that the 
-%performance of \emph{MM} and \emph{MMC} is consistent with the results 
-%on \emph{Murals}.  
+The algorithms show promising results when tested on the \emph{Murals} 
+data set. The results on 900 image pairs show that \emph{MM} and 
+\emph{MMC} generally outperform existing matching algorithms 
+\emph{Ratio}, \emph{Isodata} and \emph{Spectral}. In addition \emph{MMC} 
+outperforms \emph{MM}.  We show that this result generalizes to 
+variations in viewpoint change by comparing \emph{MMC} to \emph{Ratio} 
+over a set of image pairs with an increasing magnitude of perspective 
+difference. We go on to apply the algorithms to a real life image case 
+featuring occlusion and a slight viewpoint change and show that the 
+performance of \emph{MM} and \emph{MMC} is consistent with the results 
+on \emph{Murals}. To show that \emph{MM} or \emph{MMC}
+can further improve the results of a geometrical method, we create 
+\emph{Spectral-MMC} by combining \emph{Spectral} and \emph{MMC} and 
+compare the three on the full \emph{Murals} dataset where it yields 
+results better than both \emph{Spectral} and \emph{MMC}.
 
-Given the versatility of the proposed algorithms, we are planning to apply them to problems that require high 
-reliability faced with images that might not match, such as near 
-duplicate detection or face recognition.
+The practical application of \emph{MM} and \emph{MMC} is demonstrated by 
+applying the algorithms to the problems of near duplicate detected and 
+for the case of \emph{MMC} to panorama recognition and alignment. For 
+the case of near duplicate detection, \emph{MMC} provides an 8.02\% 
+improvement over the state of the art \emph{Ratio} in a near duplicate 
+detection framework making use of local features. Similarly for panorama 
+recognition and alignment a simple panorama stitching method based on 
+\emph{MMC} succeeds in cases where Autostitch is unable to recognize and 
+align the source images correctly. Both applications illustrate the 
+central role that performance of the matching algorithm has on tasks 
+that makes use of local features to match image pairs with potential 
+overlap.
 %
 
 \bibliographystyle{IEEEtran}
