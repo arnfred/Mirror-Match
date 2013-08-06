@@ -808,14 +808,71 @@ of MMC enables us to correctly recognitize and align source images that
 fail to be combined by Autostitch, a program using the algorithm 
 proposed by Brown and Lowe \cite{brown2007automatic}. In this particular
 case the matching algorithm used in Autostitch fails to find sufficient 
-matches between two images pairs to correctly position them and fails to
-produce a panorama as a result.
+matches between two images pairs to correctly position them and 
+consequently doesn't produce a panorama containing all images as a 
+result.
+
+This example illustrates how an improved matching algorithm can be 
+applied to panorama recognition and alignment to allow for panoramas 
+created with images that have little overlap.
+% Maybe find example of images with identical features that would be 
+% hard to match?
+
+\subsection{Near Duplicate Detection}
+Both with regards to corporate intellectual property as well as consumer 
+photo albums, being able to automatically find near duplicates of images 
+provides useful across several scenarios. A company might be interested 
+in finding images that are derived from their intellectual property, 
+while consumers taking vacation photos might be interested in grouping 
+duplicate images to allow for easier photo organization.
+
+Local features are often used to group similar images, either by looking
+at a histogram of descriptors \cite{wu2009bundling} or by looking at how
+well feature points match between images \cite{zhao2009scale},
+\cite{chu2010consumer}, \cite{vas2013cluster}. In the latter case 
+finding near duplicates means that we will be matching image pairs that 
+might or might not contain any actual matches. In this case we would 
+benefit from a reliable matching algorithm that minimizes false 
+positives, which is a characteristic of both \emph{MM} and \emph{MMC}.
+
+The PhotoCluster method introduced by Vonikakis et al.  
+\cite{vas2013cluster} shows the best clustering performance on the 
+California-nd dataset \cite{jinda2012california} which contains a set of
+annotated vacation images similar to a typical photo album in a consumer
+product. PhotoCluster works by grouping images in several steps using 
+first image metadata and global features to obtain a set of proposed 
+clusters. Then local features are used to find the best matching images 
+in these proposed clusters yielding the final groups of near duplicate 
+images. To show the viability of \emph{MMC} in the application of near 
+duplicated detection, we modify the PhotoCluster method to use 
+\emph{MMC} for matching images instead of \emph{Ratio} which was 
+previously used. Due to the time consumption of \emph{MMC}, all images 
+where resized to to 10\% before being compared. Outside of that, the 
+experiments were performed exactly as documented in 
+\cite{vas2013cluster}.
+
+\begin{table}[htb]
+\caption{Results from Near Duplicate Detection at 10\% scale}
+\label{table:ndd}
+	\centering
+%	\small
+\begin{tabular}{r*{2}{r}}
+\hline
+    Method: & Ratio & MMC   \\
+	\noalign{\smallskip}
+	%
+    F1 score: & 0.4654 & 0.5459 \\
+	\hline
+\end{tabular}
+\end{table}
+
+The results of the comparison can be seen in Table~\ref{table:nnd} where
+\emph{MMC} improves performance by 8.05\% over the original framework 
+using \emph{Ratio} to match images.
+
 
 % About near duplicates mention how we can't use ransac to find inliers 
 % since we can't necessarily construct a homography between two images
-
-When we are performing panorama alignment and recognition with feature 
-points, oth recognition and alignment of the source images is
 
 There are two important steps to image stitching which i- Describe in 
 general why better matching improves the results and speed on a broad 
