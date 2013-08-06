@@ -725,6 +725,25 @@ faster.
 
 \section{Applications}
 
+In many areas of computer vision matching local feature points is a key 
+component, and matching algorithms have applications in problems such as
+scene matching, object recognition, near duplicate detection and 
+panorama recognition. To show the practical applications of the proposed 
+matching algorithms, \emph{MM} and \emph{MMC}, we use show how they 
+improve existing methods in near duplicate detection and panorama 
+recognition. These two problems were chosen because they both involve 
+matching images that might or might not overlap. These cases requires 
+matching algorithms that limit false positives since e.g. returning the 
+top $n$ matches for any given image pair would make it hard to 
+distinguish adjacent or duplicate images from non-adjacent or dissimilar
+image pairs. Near duplicate detection also constraints normal matching 
+algorithms from relying on geometric assumptions, since we have very few
+guarantees between two potential near duplicates that they should be 
+matched using any particular geometric heuristic. In this section, we 
+will first see \emph{MMC} applied to panorama recognition and alignment,
+and next \emph{MMC} and \emph{MM} applied to near duplicate detection.
+
+
 \subsection{Panorama Recognition and Alignment}
 One of the oldest practical problems approached in computer vision is 
 the automatic stitching of several source images into a bigger image, 
@@ -868,19 +887,10 @@ experiments were performed exactly as documented in
 
 The results of the comparison can be seen in Table~\ref{table:nnd} where
 \emph{MMC} improves performance by 8.05\% over the original framework 
-using \emph{Ratio} to match images.
-
-
-% About near duplicates mention how we can't use ransac to find inliers 
-% since we can't necessarily construct a homography between two images
-
-There are two important steps to image stitching which i- Describe in 
-general why better matching improves the results and speed on a broad 
-range of different computer vision problems
- - Elaborate on why the two examples where chosen (are there any 
- particular reasons?)
- - Near duplicate detection
- - Panorama application
+using \emph{Ratio} to match images. For comparison, the performance 
+improvement of \emph{PhotoCluster} compared to XMatch 
+\cite{zhao2009scale}, the second best performing algorithm on the 
+California-nd dataset according to \cite{vas2013cluster} is 2.52\%.
 
 \section{Summary}
 \label{S:Summary}
