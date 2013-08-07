@@ -481,12 +481,60 @@ not.
 %}
 \end{algorithm}
 
-\emph{Ratio} (Algorithm~\ref{alg-ratio}) is the most straightforward of 
-the three reference algorithms. Feature points are matched using K 
-Nearest Neighbor and the similarity ratio between the best and second 
-best match is then compared to a threshold to decide if the match is 
-kept.
+\emph{Ratio} (Algorithm~\ref{alg-ratio}) \cite{lowe2004sift} is the most 
+straightforward of the three reference algorithms. Feature points are 
+matched using K Nearest Neighbor and the similarity ratio between the 
+best and second best match is then compared to a threshold to decide if 
+the match is kept.
 
+\begin{algorithm}
+\caption{Isodata Match (\emph{Isodata})}
+\label{alg-isodata}
+%{\fontsize{10}{10}\selectfont
+\begin{algorithmic}
+\Require $im_1$ : image, $im_2$ : image, $t \in \mathbb{R}$
+\State $matches_{init}\gets \varnothing$
+\State $matches_{final}\gets \varnothing$
+\State $features_1 \gets getFeatures(im_1)$
+\State $features_2 \gets getFeatures(im_2)$
+\ForAll{$f_i \in features_1$}
+    \State $f_m,f_n \gets get2NNs(f_i, features_2)$
+    \State $matches_{init} \gets \left(f_i, f_m\right)$
+\EndFor
+\State $partitions_1 \gets isodata(getPositions(features_1))$
+\State $partitions_2 \gets isodata(getPositions(features_2))$
+\State $P_{corr} \gets getMatchMat(partitions_1, partitions_2, 
+matches_{init})$
+\ForAll{$(i,j) \in indices(P)$}
+    \If{$\left(P_{i,j} > 5\right) \wedge \left(P_{i,j} / sum(P_{i}) > 
+    0.5\right)$}
+        \State $matches_{final} \gets getMatches(matches_{init}, 
+        partitions_1, partitions_2, i, j)$
+    \EndIf
+\EndFor
+\Return $matches_{final}$
+\end{algorithmic}
+%}
+\end{algorithm}
+
+The \emph{Isodata} algorithm (Algorithm~\ref{alg-isodata}) 
+\cite{das2008event} is based on the idea that local feature points 
+within a region in one image often matches to features within a 
+corresponding region in the other image. To find these regions the 
+algorithm uses the Isodata algorithm \cite{ball1965isodata} to perform 
+unsupervised clustering on the feature points given their positions in 
+the two images. The Isodata algorithm is similar to K-means with the 
+addition that clusters are merged and split during the clustering 
+process. The initial set of matches are then filtered based on the 
+resulting regions. A match is kept only if it belongs to a region with 
+more than 5 matches and where half of the matches link the same two 
+regions. $P_{corr}$ in Algorithm~\ref{alg-isodata} is a matrix where 
+each row corresponds to a region in $im_1$, each column corresponds to a 
+region in $im_2$ and $P_{i,j}$ is the amount of matches going from 
+region $i$ to region $j$.
+
+There is no inherent threshold parameter in \emph{Isodata} so to show 
+how the algorithm performs over.
 %, which uses geometric information to improve the matching.  The 
 %comparison  with \emph{Ratio} serves to illustrate the relative 
 %performance of \emph{MM} and \emph{MMC} to a state of the art algorithm 
