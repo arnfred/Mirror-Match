@@ -351,152 +351,89 @@ The partitions group feature points by similarity, which means that
 repetitive structures such as buildings often appear in larger 
 partitions, as exemplified in Figure~\ref{fig:pitts_partition}.
 %
-%\begin{figure}
-%	\makebox[0.5\textwidth][c]{%
-%		\begin{subfigure}[t]{0.24\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/MMC_pitts_source}
-%			\caption{Source image}
-%			\label{fig:pitts_source}
-%		\end{subfigure}%
-%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-%		%(or a blank line to force the subfigure onto a new line)
-%	}%
-%	\\
-%	\makebox[0.5\textwidth][c]{
-%		%~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-%		%(or a blank line to force the subfigure onto a new line)
-%		
-%		\begin{subfigure}[t]{0.5\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/MMC_partition}
-%			\caption{A Partition Example}
-%			\label{fig:pitts_partition}
-%		\end{subfigure}%
-%	}%
-%	\caption{Example of a partition of keypoints in an image pair. The 
-%		partition shown contains window corners from a building in the 
-%		left image and similar corners on the shirt in the right image.  
-%	}
-%	\label{fig:compare_mirror}
-%\end{figure}
-%
-%The matching algorithm for \emph{MMC} (algorithm \ref{alg-getmatches}) 
-%goes through the partitions one by one and selects matches in the 
-%following way: If the partition has no edges going from a feature point 
-%in one image to a feature point in another image, the partition is 
-%discarded. If we have more than one edge going between images then 
-%$getMatches$ will behave as \emph{MM} and make sure that a 
-%correspondence is symmetric, that it has a ratio above the desired 
-%threshold and that it isn't matching two feature points from the same 
-%image. Since feature points are all guaranteed to be fairly similar 
-%this means that we can set the ratio threshold much higher than in 
-%\emph{MM} and include matches that would normally have been discarded 
-%for not being sufficiently unique.
 
-The matching algorithm for \emph{MMC}, \emph{getMatches}, finds matches 
-within all partitions with more than two elements using the \emph{MM} 
-approach.  However, as can be seen in the example in 
-Figure~\ref{fig:cropped_graph}, many of the partitions contain only two 
-feature points from different images linked by one edge. In such a case, 
-we compare the similarity of the these two feature points with their 
-second best match and remove matches where this ratio lies above a 
-certain threshold, like in the \emph{Ratio} algorithm. For example in the 
-case of Figure~\ref{fig:pitts_partition}, we have feature points from a 
-building in one image grouped together with points from a shirt pattern 
-in another.  The nearest neighbor method would have returned wrong 
-matches, but since we match the partition with \emph{MM}, points in the 
-building end up matching other points in the building, and no matches 
-are returned.
+\begin{algorithm}
+\caption{Impl.\ of getMatches (\emph{from MMC algorithm})}
+\label{alg-getmatches}
+    \fontsize{10}{10}\selectfont
+    \begin{algorithmic}
+    \Require $p$ : set of features, $t\in \mathbb{R}$, $features$ : Set of 
+    all features
+    \State $edges \gets \left\{similarity(f_i, f_j) \mid getImg(f_i)
+        \neq getImg(f_j) \wedge f_i, f_j \in p \right\}$
+    \If{$\left\vert edges \right\vert > 1$}
+        \State $matches \gets MMGet(p, t)$
+    \ElsIf{$\left\vert edges \right\vert = 1$}
+        \State $matches \gets RatioGet(p, features, t)$
+    \Else
+        \State $matches \gets \varnothing$
+    \EndIf
 
-%\begin{algorithm}
-%\caption{Impl. of getMatches (\emph{from MMC algorithm})}
-%\label{alg-getmatches}
-%{\fontsize{10}{10}\selectfont
-%\begin{algorithmic}
-%\Require $p$ : set of features, $t\in \mathbb{R}$, $features$ : Set of 
-%all features
-%\State $matches \gets \varnothing$
-%\State $edges \gets \left\{similarity(f_i, f_j) \mid getImg(f_i) \neq 
-%	getImg(f_j)$
-%\State $\wedge f_i, f_j \in p \right\}$
-%\If{$\left\vert edges \right\vert = 1$} \Comment If $\exists$ one edge 
-%between images
-%	\State $f_i,f_j \gets getFeatures(edges_{inter}, p)$
-%	\State $f_m,f_n \gets get2NNs(f_i, features ~ 
-%\setminus ~ \left\{f_i\right\})$
-%	\State $f_s,f_t \gets get2NNs(f_j, features ~ 
-%\setminus ~ \left\{f_j\right\})$
-%	\State $ratio_i \gets similarity(f_i, f_n) / similarity(f_i, 
-%f_j)$
-%	\State $ratio_j \gets similarity(f_j, f_t) / similarity(f_j, 
-%f_i)$
-%	\If{$ratio_i < t\wedge ratio_j < t$}
-%		\State $matches \gets matches \cup (f_i, f_j)$
-%	\EndIf
-%\ElsIf{$\left\vert edges \right\vert > 1$} \Comment If $\exists$ more 
-%than one edge between images
-%	\ForAll{$f_i \in p$}
-%		\State $f_m,f_n \gets get2NNs(f_i, p \setminus 
-%\left\{f_i\right\})$
-%		\State $ratio \gets similarity(f_i, f_n) / similarity(f_i, 
-%f_m)$
-%		\If{$getImg(f_i) \neq getImg(f_m) \wedge ratio < t
-%\wedge (f_m, f_i) \not\in matches$}
-%			\State $matches \gets matches \cup (f_i, f_m)$
-%		\EndIf
-%	\EndFor
-%\EndIf
-%
-%\Return matches
-%\end{algorithmic}
-%}
-%\end{algorithm}
+    \Return matches
+    \end{algorithmic}
+\end{algorithm}
+
+The matching algorithm for \emph{MMC} detailed in 
+Algorithm~\ref{alg-getmatches} finds matches within all partitions with 
+more than two elements using the \emph{MM} approach.  However, as can be 
+seen in the example in Figure~\ref{fig:MMC_graph}, many of the 
+partitions contain only two feature points from different images linked 
+by one edge. In this case, we compare the similarity of the these two 
+feature points with their second best match and remove matches where 
+this ratio lies above a certain threshold, like in the \emph{Ratio} 
+algorithm.  For example in the case of Figure~\ref{fig:pitts_partition}, 
+we have feature points from a building in one image grouped together 
+with points from a shirt pattern in another.  The nearest neighbor 
+method would have returned wrong matches, but since we match the 
+partition with \emph{MM}, points in the building end up matching other 
+points in the building, and no matches are returned.
+
+
+
 
 \subsection{Experiments}
 \label{S:Experiments}
 %
 To reliably measure the accuracy of a matching method on real images, we 
-either need a set of image pairs tied by a homography, or we have to manually count 
-the number of inliers. The latter becomes prohibitive for large numbers of (non-trivial) images. 
+either need a set of image pairs tied by a homography, or we have to 
+manually count the number of inliers. The latter becomes prohibitive for 
+large numbers of (non-trivial) images. 
 
-Mikolajczyk and Schmid  \cite{mikolajczyk2005performance} introduced a set of test images
-to compare the performance of feature detectors. The 
+Mikolajczyk and Schmid  \cite{mikolajczyk2005performance} introduced a 
+set of test images to compare the performance of feature detectors. The 
 set covers different types of image variations, such as lighting change, 
-blur, rotation, and viewpoint change. Inspired by this 
-dataset (in particular the `Graf' image set) and motivated by 
-the need for more image pairs featuring viewpoint changes, we have 
-compiled a set of 8 image pairs consisting of subjects taken from two 
-different angles. The images are collected from Flickr's database of 
-images published under a creative commons 
-licence %\footnote{\href{http://creativecommons.org/}{www.creativecommons.org}, 
-%a copyleft license permitting redistribution} 
-and feature murals, which 
-makes it possible to relate points in the image pairs with a homography.  
-The images have been cropped to show the same motive and resized to 
-$900\times 600$ pixels.  This dataset will be referred to as the 
-\emph{Murals} dataset.  Figure~\ref{fig:murals} shows one image from each pair.
+blur, rotation, and viewpoint change. Inspired by this dataset (in 
+particular the `Graf' image set) and motivated by the need for more 
+image pairs featuring viewpoint changes, we have compiled a set of 8 
+image pairs consisting of subjects taken from two different angles. The 
+images are collected from Flickr's database of images published under a 
+creative commons licence and feature murals, which makes it possible to 
+relate points in the image pairs with a homography since most of the 
+points in the images will be lying on a plane.  The images have been 
+cropped to show the same motive and resized to $900\times 600$ pixels.  
+This dataset will be referred to as the \emph{Murals} dataset.  
+Figure~\ref{fig:murals} shows one image from each pair.
 
 \begin{figure}[htb]
-%	\makebox[0.5\textwidth][c]{%
-%		\begin{subfigure}[t]{0.048\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/pair_example1}
-%			\label{fig:fairey1}
-%	\end{subfigure}%
-%		\enspace %add desired spacing between images, e. g. ~, \quad, 
-%		%(or a blank line to force the subfigure onto a new line)
-%		\begin{subfigure}[t]{0.048\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/pair_example2}
-%			\label{fig:fairey2}
-%		\end{subfigure}%
-%		\enspace %
-%		\begin{subfigure}[t]{0.36\textwidth}
+    \makebox[1.0\textwidth][c]{%
+        \begin{subfigure}[t]{0.102\textwidth}
 			\centering
-			\includegraphics[width=\columnwidth]{images/crop_examples}
-%		\end{subfigure}%
-%	}%
+			\includegraphics[width=\textwidth]{images/pair_example1}
+			\label{fig:fairey1}
+	\end{subfigure}%
+		\enspace %add desired spacing between images, e. g. ~, \quad, 
+		%(or a blank line to force the subfigure onto a new line)
+        \begin{subfigure}[t]{0.102\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{images/pair_example2}
+			\label{fig:fairey2}
+		\end{subfigure}%
+		\enspace %
+        \begin{subfigure}[t]{0.77\textwidth}
+   		\centering
+   		\includegraphics[width=\columnwidth]{images/crop_examples}
+		\end{subfigure}%
+	}%
 	\caption{Sample test patches produced from an image pair.}
 	\label{fig:fairey}
 \end{figure}
@@ -516,42 +453,51 @@ $900\times 600$ pixels.  This dataset will be referred to as the
 \end{figure}
 
 
-%However in practice the view point change has gone on to be used the 
-%most for later tests given that most of the other test pairs have since 
-%become easy to match\footnote{see \cite{wu2011robust} or 
-%\cite{delponte2006svd} for examples}.
+\subsubsection{Experimental setup}
+We compare the \emph{MM} and \emph{MMC} algorithms to \emph{Ratio} 
+\cite{lowe2004sift} as well as \emph{Isodata} \cite{das2008event} and 
+\emph{Spectral} \cite{leordeanu2005spectral}.  \emph{Isodata} and 
+\emph{Spectral} uses geometric constraints, whereas \emph{Ratio} does 
+not.
 
-%Inspired by the graffiti image we have collected a set of image pairs 
-%featuring murals of a few different artists\footnote{Including Banksy, 
-%Blu and Shepard Fairey among others}. Each pair consist of images of 
-%the same motive taken from different angles, often including repetitive 
-%patterns and texture. Based on this image set the two algorithms are 
-%tested on a series of image patches from each pair. To verify that the 
-%algorithms proposed are reliable we need to test that we get good 
-%matches when images overlap and that we get no matches when they do 
-%not.  This means that it isn't enough just testing against pairs of 
-%images that we know match.  We also need to test against pairs that 
-%might look like they could match but in fact do not.
+\begin{algorithm}
+\caption{Ratio Match (\emph{Ratio})}
+\label{alg-ratio}
+%{\fontsize{10}{10}\selectfont
+\begin{algorithmic}
+\Require $im_1$ : image, $im_2$ : image, $t \in \mathbb{R}$
+\State $matches\gets \varnothing$
+\State $features_1 \gets getFeatures(im_1)$
+\State $features_2 \gets getFeatures(im_2)$
+\ForAll{$f_i \in features_1$}
+    \State $f_m,f_n \gets get2NNs(f_i, features_2)$
+	\State $ratio \gets similarity(f_i, f_n) / similarity(f_i, f_m)$
+	\If{$ratio < t$}
+        \State $matches \gets \left(f_i, f_m\right)$
+	\EndIf
+\EndFor
+\Return $matches$
+\end{algorithmic}
+%}
+\end{algorithm}
 
+\emph{Ratio} (Algorithm~\ref{alg-ratio}) is the most straightforward of 
+the three reference algorithms. Feature points are matched using K 
+Nearest Neighbor and the similarity ratio between the best and second 
+best match is then compared to a threshold to decide if the match is 
+kept.
 
-%
-%
-%\subsubsection{Experimental setup}
-We compare the \emph{MM} and \emph{MMC} algorithms to 
-\emph{Ratio} \cite{lowe2004sift} as well 
-as \emph{Isodata} \cite{das2008event}. 
-\emph{Isodata} uses geometric constraints, whereas \emph{Ratio} does not.
-%, which uses geometric information to improve the matching. 
-%The comparison  with \emph{Ratio} serves to illustrate the relative performance of 
-%\emph{MM} and \emph{MMC} to a state of the art algorithm without 
-%geometric constraints. \emph{Isodata} is included to 
-%illustrate the performance of an algorithm relying on geometric 
-%constraints faced with image pairs that might not have any overlap.  
-The 
-comparison was done using the \emph{Murals} dataset (Figure~\ref{fig:murals}), the 
-\emph{Graf} set (Figure~\ref{fig:Graf}) from \cite{mikolajczyk2005performance}, and two 
-images %\footnote{100\_1942.jpg and 100\_1941.jpg} 
-from the Gallagher dataset \cite{gallagher2008} (Figure~\ref{fig:comparemirror}).
+%, which uses geometric information to improve the matching.  The 
+%comparison  with \emph{Ratio} serves to illustrate the relative 
+%performance of \emph{MM} and \emph{MMC} to a state of the art algorithm 
+%without geometric constraints. \emph{Isodata} is included to illustrate 
+%the performance of an algorithm relying on geometric constraints faced 
+%with image pairs that might not have any overlap.  
+The comparison was done using the \emph{Murals} dataset 
+(Figure~\ref{fig:murals}), the \emph{Graf} set (Figure~\ref{fig:Graf}) 
+from \cite{mikolajczyk2005performance}, and two 
+images\footnote{100\_1942.jpg and 100\_1941.jpg} from the Gallagher 
+dataset \cite{gallagher2008} (Figure~\ref{fig:comparemirror}).
 
 Test sets were generated from the image pairs by cropping square patches of
 $250\!\times\!250$ pixels with a random vertical and horizontal offset.  
@@ -562,37 +508,33 @@ part of their area. Figure~\ref{fig:fairey} shows an example of
 possible pairs of test image patches produced from a source image pair.  
 Producing $n$ such pairs allows us to test not just how well the 
 matching algorithm performs on a variety of overlaps but also how many 
-false positives we get on similar images that do not overlap at 
-all.\footnote{~The set of source images and homographies as well as the 
-script to generate the cropped test sets based on them will be made 
-available online, together with the exact test sets used in this paper 
-upon acceptance.}
-%\href{https://github.com/arnfred/Murals}{www.github.com/arnfred/Murals}}.  
-In practice the amount of overlap between pairs in a test set will 
-depend on the overlap and viewpoint change in the source image pair.  To 
-give a rough idea, Table~\ref{table:overlap} 
-shows the overlap of patch pairs created from images 1 and 3 of the 
-\emph{Graf} image set from \cite{mikolajczyk2005performance}.
+false positives we get on similar images that do not overlap at all. In 
+practice the amount of overlap between pairs in a test set will depend 
+on the overlap and viewpoint change in the source image pair.  To give a 
+rough idea, Table~\ref{table:overlap} shows the overlap of patch pairs 
+created from images 1 and 3 of the \emph{Graf} image set from 
+\cite{mikolajczyk2005performance}.
 
 \begin{table}[htb]
-\caption{Overlap in the set of 100 patch pairs created from two images of the \emph{Graf} image set (Figure~\ref{fig:Graf}).}
+\caption{Overlap in the set of 100 patch pairs created from two images 
+of the \emph{Graf} image set (Figure~\ref{fig:Graf}).}
 \label{table:overlap}
-	\centering
-%	\small
+    \centering
+%   \small
 \begin{tabular}{r*{3}{r}}
 \hline
-	Amount of overlap: & 0\% & $< 50$\% & $> 50$\%  \\
-	\noalign{\smallskip}
+    Amount of overlap: & 0\% & $< 50$\% & $> 50$\%  \\
+    \noalign{\smallskip}
 	%
-	Number of patch pairs: & 21 & 54 & 25 \\
-	\hline
+    Number of patch pairs: & 21 & 54 & 25 \\
+    \hline
 \end{tabular}
 \end{table}
 
-
-Given a potential match between two pixels $p_1$ and 
-$p_2$, $m = \left(p_1, p_2\right)$, and a homography $H$ relating the two images $I_1$ and $I_2$, we 
-can calculate if $m$ is an inlier by checking if the two points satisfy the following criteria:
+Given a potential match between two pixels $p_1$ and $p_2$, $m = 
+\left(p_1, p_2\right)$, and a homography $H$ relating the two images 
+$I_1$ and $I_2$, we can calculate if $m$ is an inlier by checking if the 
+two points satisfy the following criteria:
 \begin{equation*}
 \left\vert H p_1 - p_2 \right\vert + \left\vert H^{-1}p_2 - p_1 \right\vert < d_{\max}
 \end{equation*}
@@ -605,10 +547,16 @@ less than a certain threshold (we use $d_{\max}=5$ pixels here).
 \label{S:Results}
 
 Figure~\ref{fig:result_graf} shows the results for 100 patch pairs 
-generated from images 1 and 3 of the \emph{Graf} image set (cf.~Figure~\ref{fig:Graf}). The plot 
-compares the accuracy of \emph{Ratio}, \emph{MM}, \emph{MMC}, and 
-\emph{Isodata} as a function of the number of matches produced (which is achieved by varying thresholds over a certain range). The results show that \emph{MM} and \emph{MMC} consistently outperform \emph{Ratio}; \emph{MMC} generally lies 2-3 percentage points above \emph{MM} when both are performing at optimal accuracy. 
-Although \emph{Isodata} exhibits a good performance on strict thresholds (small number of matches), that quickly diminishes when more matches are desired.
+generated from images 1 and 3 of the \emph{Graf} image set 
+(cf.~Figure~\ref{fig:Graf}). The plot compares the accuracy of 
+\emph{Ratio}, \emph{MM}, \emph{MMC}, and \emph{Isodata} as a function of 
+the number of matches produced (which is achieved by varying thresholds 
+over a certain range). The results show that \emph{MM} and \emph{MMC} 
+consistently outperform \emph{Ratio}; \emph{MMC} generally lies 2-3 
+percentage points above \emph{MM} when both are performing at optimal 
+accuracy.  Although \emph{Isodata} exhibits a good performance on strict 
+thresholds (small number of matches), that quickly diminishes when more 
+matches are desired.
 
 
 \begin{figure}[htb]
@@ -697,11 +645,11 @@ points.  Our current \emph{MMC} implementation has a complexity of $O(n^2)$ due 
 construction of a similarity matrix of the feature points. However, it is 
 possible to approximate this in $O(n\log n)$ using search trees.  
 
-In terms of speed, Table~\ref{table:running_times} shows the 
-running time of the four algorithms over 100 image pairs of $250\!\times\!250$ pixels. 
-These numbers should be taken with a grain of salt, given that 
-much of the code behind \emph{MMC} and \emph{Isodata} is implemented in 
-Python, whereas \emph{MM} and \emph{Ratio} make use of OpenCV to execute 
+As for speed, Table~\ref{table:running_times} shows the running time of 
+the four algorithms over 100 image pairs of $250\!\times\!250$ pixels.  
+These numbers should be taken with a grain of salt, given that much of 
+the code behind \emph{MMC} and \emph{Isodata} is implemented in Python, 
+whereas \emph{MM} and \emph{Ratio} make use of OpenCV to execute 
 computationally intensive operations in C++, which makes them much 
 faster. 
 
@@ -838,12 +786,19 @@ created with images that have little overlap.
 % hard to match?
 
 \subsection{Near Duplicate Detection}
-Both with regards to corporate intellectual property as well as consumer 
-photo albums, being able to automatically find near duplicates of images 
-provides useful across several scenarios. A company might be interested 
-in finding images that are derived from their intellectual property, 
-while consumers taking vacation photos might be interested in grouping 
-duplicate images to allow for easier photo organization.
+If we look at two images, we can often easily tell if one image 
+resembles the other enough to be redundant in a photo album. In computer 
+vision this task becomes a lot less trivial because our idea of a 
+duplicate image might only require there being some object or scene in 
+common between the image pair. In addition the object or scene might 
+have been taken from a different angle and under different camera 
+settings. Facing these challenges, a lot of work has been done trying to 
+reliably recognize duplicaes both with regards to corporate intellectual 
+property as well as consumer photo albums because both applications 
+provide useful tools.  A company might be interested in finding images 
+that are derived from their intellectual property, while consumers 
+taking vacation photos might be interested in grouping duplicate images 
+to allow for easier photo organization.
 
 Local features are often used to group similar images, either by looking
 at a histogram of descriptors \cite{wu2009bundling} or by looking at how
@@ -854,20 +809,20 @@ might or might not contain any actual matches. In this case we would
 benefit from a reliable matching algorithm that minimizes false 
 positives, which is a characteristic of both \emph{MM} and \emph{MMC}.
 
-The PhotoCluster method introduced by Vonikakis et al.  
+The \emph{PhotoCluster} method introduced by Vonikakis et al.  
 \cite{vas2013cluster} shows the best clustering performance on the 
 California-nd dataset \cite{jinda2012california} which contains a set of
 annotated vacation images similar to a typical photo album in a consumer
-product. PhotoCluster works by grouping images in several steps using 
-first image metadata and global features to obtain a set of proposed 
-clusters. Then local features are used to find the best matching images 
-in these proposed clusters yielding the final groups of near duplicate 
-images. To show the viability of \emph{MMC} in the application of near 
-duplicated detection, we modify the PhotoCluster method to use 
-\emph{MMC} for matching images instead of \emph{Ratio} which was 
-previously used. Due to the time consumption of \emph{MMC}, all images 
-where resized to to 10\% before being compared. Outside of that, the 
-experiments were performed exactly as documented in 
+product. \emph{PhotoCluster} works by grouping images in several steps 
+using first image metadata and global features to obtain a set of 
+proposed clusters. Then local features are used to find the best 
+matching images in these proposed clusters yielding the final groups of 
+near duplicate images. To show the viability of \emph{MMC} in the 
+application of near duplicated detection, we modify the PhotoCluster 
+method to use \emph{MMC} for matching images instead of \emph{Ratio} 
+which was previously used. Due to the time consumption of \emph{MMC}, 
+all images where resized to to 10\% before being compared. Outside of 
+that, the experiments were performed exactly as documented in 
 \cite{vas2013cluster}.
 
 \begin{table}[htb]
@@ -920,13 +875,13 @@ compare the three on the full \emph{Murals} dataset where it yields
 results better than both \emph{Spectral} and \emph{MMC}.
 
 The practical application of \emph{MM} and \emph{MMC} is demonstrated by 
-applying the algorithms to the problems of near duplicate detected and 
+applying the algorithms to the problems of near duplicate detection and 
 for the case of \emph{MMC} to panorama recognition and alignment. For 
 the case of near duplicate detection, \emph{MMC} provides an 8.02\% 
-improvement over the state of the art \emph{Ratio} in a near duplicate 
-detection framework making use of local features. Similarly for panorama 
-recognition and alignment a simple panorama stitching method based on 
-\emph{MMC} succeeds in cases where Autostitch is unable to recognize and 
+improvement over \emph{Ratio} in a near duplicate detection framework 
+making use of local features. Similarly for panorama recognition and 
+alignment a simple panorama stitching method based on \emph{MMC} 
+succeeds in cases where \emph{Autostitch} is unable to recognize and 
 align the source images correctly. Both applications illustrate the 
 central role that performance of the matching algorithm has on tasks 
 that makes use of local features to match image pairs with potential 
