@@ -289,53 +289,38 @@ def accuDetail(correct, total, legend, ylim = 100, treshold=1000) :
     accuHist(accu, legend, ylim=ylim)
 
 
-def recallPlot(correct, total, nb_correspondences, legends, colors = ["blue", "red", "green", "orange", "cyan"], ylim=(0.0,1.01), xlim = None, size = (4,6)) :
+
+def accuPlot(correct, total, legends, colors = ["blue", "red", "green", "orange", "cyan"], ylim=(0.0, 1.01), xlim = None, size = (4,6), nb_correspondences = None, compareCorrect = None, compareTotal = None, compareLegend = None, outside = False, output = None) :
     fig = pylab.figure(figsize=size)
     ax = pylab.subplot(111)
     for ts, cs, l, color in zip(total, correct, legends, colors) :
-        xs = [(sum(t) - sum(c))/float(sum(t)) for c, t in zip(cs,ts)]
-        ys = [sum(c)/float(nb_correspondences) for c in cs]
-        pylab.plot(xs, ys, '-', label=l, color=color, alpha=0.95)
-        pylab.legend(loc="best")
-    removeDecoration()
-    pylab.xlabel("1 - precision")
-    pylab.ylabel("# correct / %i" % nb_correspondences)
-    pylab.ylim(ylim[0],ylim[1])
-    if xlim != None : pylab.xlim(0,xlim)
-
-def recallInvPlot(correct, total, nb_correspondences, legends, colors = ["blue", "red", "green", "orange", "cyan"], ylim=(0.0,1.01), xlim = None, size = (4,6)) :
-    fig = pylab.figure(figsize=size)
-    ax = pylab.subplot(111)
-    for ts, cs, l, color in zip(total, correct, legends, colors) :
-        ys = [1 if sum(t) == 0 else sum(c)/float(sum(t)) for c, t in zip(cs,ts)]
-        xs = [sum(c)/float(nb_correspondences) for c in cs]
-        pylab.plot(xs, ys, '-', label=l, color=color, alpha=0.95)
-        pylab.legend(loc="best")
-    removeDecoration()
-    pylab.ylabel("precision")
-    pylab.xlabel("#correct / %i" % nb_correspondences)
-    pylab.ylim(ylim[0],ylim[1])
-    if xlim != None : pylab.xlim(0,xlim)
-
-def accuPlot(correct, total, legends, colors = ["blue", "red", "green", "orange", "cyan"], ylim=(0.0,1.01), xlim = None, size = (4,6), compareCorrect = None, compareTotal = None, compareLegend = None, outside = False) :
-    fig = pylab.figure(figsize=size)
-    ax = pylab.subplot(111)
-    for ts,cs,l,color in zip(total, correct, legends, colors) :
-        xs = [sum(t) for t in ts]
+        if nb_correspondences != None :
+            xs = [sum(c)/float(nb_correspondences) for c in cs]
+        else :
+            xs = [sum(t) for t in ts]
         ys = [1 if sum(t) == 0 else sum(c)/float(sum(t)) for (c, t) in zip(cs, ts)]
         pylab.plot(xs, ys, '-', label=l, color=color, alpha=0.95)
         pylab.legend(loc="best")
     if compareCorrect != None and compareTotal != None and compareLegend != None :
-        for ts,cs,l,color in zip(compareTotal, compareCorrect, compareLegend, ["blue", "red", "green", "orange", "red"]) :
-            xs = [sum(t) for t in ts]
+        for ts, cs, l, color in zip(compareTotal, compareCorrect, compareLegend, ["blue", "red", "green", "orange", "red"]) :
+            if nb_correspondences != None :
+                xs = [sum(c)/float(nb_correspondences) for c in cs]
+            else :
+                xs = [sum(t) for t in ts]
             ys = [1 if sum(t) == 0 else sum(c)/float(sum(t)) for (c, t) in zip(cs, ts)]
             pylab.plot(xs, ys, '--', label="%s" % (l), color=color, alpha=1)
             pylab.legend(loc="best")
+
+    # Remove superflous lines and add axis labels
     removeDecoration()
-    pylab.xlabel("# of Matches")
-    pylab.ylabel("Accuracy")
+    if nb_correspondences != None :
+        pylab.xlabel("#Correct / %i" % nb_correspondences)
+    else :
+        pylab.xlabel("# of Matches")
+    pylab.ylabel("Precision")
     pylab.ylim(ylim[0],ylim[1])
 
+    # Put legend outside of plot
     if outside == True :
         # Shink current axis by 20%
         box = ax.get_position()
@@ -345,6 +330,10 @@ def accuPlot(correct, total, legends, colors = ["blue", "red", "green", "orange"
         ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
     if xlim != None : pylab.xlim(0,xlim)
+
+    # Print to file
+    if output != None :
+        pylab.savefig(output, bbox_inches=0, dpi=80)
 
 
 def distHist(dist, dist_treshold = 5, dist_distinct = None, accuracity = None, accu_y_lim = 100) :
