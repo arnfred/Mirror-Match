@@ -142,7 +142,7 @@ the implementation of \emph{MM}.
 	\left\{f_i\right\})$
 	\State $ratio \gets similarity(f_i, f_n) / similarity(f_i, f_m)$
 	\If{$ratio < t$}
-		\State $matches_{init} \gets \left(f_i, f_m\right)$
+		\State $matches_{init} \gets matches_{init} \cup \left(f_i, f_m\right)$
 	\EndIf
 \EndFor
 \ForAll{$\left(f_i, f_j \right) \in matches_{init}$} \Comment Filter 
@@ -455,8 +455,8 @@ Figure~\ref{fig:murals} shows one image from each pair.
 
 \subsubsection{Experimental setup}
 We compare the \emph{MM} and \emph{MMC} algorithms to \emph{Ratio} 
-\cite{lowe2004sift} as well as \emph{Isodata} \cite{das2008event} and 
-\emph{Spectral} \cite{leordeanu2005spectral}.  \emph{Isodata} and 
+\cite{lowe2004sift} as well as \emph{Isomatch} \cite{das2008event} and 
+\emph{Spectral} \cite{leordeanu2005spectral}.  \emph{Isomatch} and 
 \emph{Spectral} uses geometric constraints, whereas \emph{Ratio} does 
 not.
 
@@ -488,7 +488,7 @@ best and second best match is then compared to a threshold to decide if
 the match is kept.
 
 \begin{algorithm}
-\caption{Isodata Match (\emph{Isodata})}
+\caption{Isodata Match (\emph{Isomatch})}
 \label{alg-isodata}
 %{\fontsize{10}{10}\selectfont
 \begin{algorithmic}
@@ -517,7 +517,7 @@ matches_{init})$
 %}
 \end{algorithm}
 
-The \emph{Isodata} algorithm (Algorithm~\ref{alg-isodata}) 
+The \emph{Isomatch} algorithm (Algorithm~\ref{alg-isodata}) 
 \cite{das2008event} is based on the idea that local feature points 
 within a region in one image often matches to features within a 
 corresponding region in the other image. To find these regions the 
@@ -533,14 +533,96 @@ each row corresponds to a region in $im_1$, each column corresponds to a
 region in $im_2$ and $P_{i,j}$ is the amount of matches going from 
 region $i$ to region $j$.
 
-There is no inherent threshold parameter in \emph{Isodata} so to show 
-how the algorithm performs over.
+To threshold the \emph{Isomatch} algorithm we filter the results using 
+the ratio between first and second best match as in \emph{Ratio}, since 
+\emph{Isomatch} itself doesn't readily admit any thresholding parameter.  
+
+\begin{algorithm}
+\caption{Spectral Match (\emph{Spectral})}
+\label{alg-spectral}
+%{\fontsize{10}{10}\selectfont
+\begin{algorithmic}
+\Require $im_1$ : image, $im_2$ : image, $t \in \mathbb{R}$
+\State $matches_{init}\gets \varnothing$
+\State $matches_{final} \gets \varnothing$
+\State $features_1 \gets getFeatures(im_1)$
+\State $features_2 \gets getFeatures(im_2)$
+\ForAll{$f_i \in features_1$}
+	\State $f_m,f_n \gets get2NNs(f_i, features_2)$
+	\State $matches_{init} \gets \left(f_i, f_m\right)$
+\EndFor
+\State $M \gets matrix(\left\vert matches_{init} \right\vert, \left\vert 
+matches_{init} \right\vert)$
+\ForAll{$m_i \in matches_{init}$}
+	\ForAll{$m_j \in matches_{init}$}
+		\If{$i = j$}
+			\State $M \gets matchSimilarity(m_i)$
+		\Else
+			\State $M \gets affinity(m_i, m_j)$
+		\EndIf
+	\EndFor
+\EndFor
+\State $x^{*} \gets maximumEigenvector(M)$
+\ForAll{$\left(m_i, x_i\right) \in \left(matches_{init}, x^{*}\right)$}
+	\If{$x_i > t$}
+		\State $matches_{final} \gets matchtes_{final} \cup m_i$
+	\EndIf
+\EndFor
+\Return $matches_{final}$
+\end{algorithmic}
+%}
+\end{algorithm}
+
+The \emph{Spectral} algorithm (Algorithm~\ref{alg-spectral}) is a 
+slightly modified version of the spectral matching algorithm proposed by
+Leordeanu and Herbert \cite{leordeanu2005spectral}. It is based on the 
+idea that the set of actual correspondences of feature points between 
+two images should be pairwise consistent. That is, given two feature 
+points that are geometrically close in one image, for most cases we 
+would assume that the closest correspondences in another image would be 
+similarly close. We want to pick out a set of matches $T \subset S$ 
+where $S$ is the initial set of possible matches such that the matches 
+in $T$ are as pairwise consistent as possible. If we let $x$ be a binary 
+vector corresponding in length to the set of initial matches $S$, where 
+$x_i = 1$ if $m_i \subset T$, then we can formulate a subset-score as:
+\begin{equation*}
+	S = \sum_{m_i, m_j \in T} M(m_i, m_j) = x^TMx
+\end{equation*}
+The solution $x^{*}$ that maximizes this equation is then $x^{*} = 
+argmax(x^TMx)$. By relaxing the constraints on $x$ such that it can take
+values in the range of $\left[0, 1\right]$ we can interpret $x_i$ as the
+association of $m_i$ with the optimal subset of matches $T$. Because we 
+only worry about the relative values of $x$ we can fix the norm of $x$ 
+to $1$, in which case by Raleigh's ratio theorem, the $x^{*}$ that 
+optimizes $x^TMx$ is the principal eigenvector of $M$.
+
+Leordeanu and Herbert proposes a simple affinity function to map the 
+pairwise closeness of two matches. Given a simple scene where no 
+rotation and excessive affine transformation takes place, it can 
+generally be assumed that the length and direction of the vector between
+the two feature points constituting the first match corresponds to the 
+length and direction of the vector between the two feature points 
+constituting the second match. They formulated an affinity function as 
+follows: \TODO: change this to real function
+\begin{equation*}
+	S = \sum_{m_i, m_j \in T} M(m_i, m_j) = x^TMx
+\end{equation*}
+There are a number of occasions where this assumption no longer holds 
+true. A simple example would be matches between two images of the same 
+scene where one image is rotated $180\degrees$. However for a lot of 
+applications like panorama stitching
+where we assume that images are generally not rotated a lot in between 
+each other the assumption is accurate.
+
+
+
+
 %, which uses geometric information to improve the matching.  The 
 %comparison  with \emph{Ratio} serves to illustrate the relative 
 %performance of \emph{MM} and \emph{MMC} to a state of the art algorithm 
-%without geometric constraints. \emph{Isodata} is included to illustrate 
-%the performance of an algorithm relying on geometric constraints faced 
-%with image pairs that might not have any overlap.  
+%without geometric constraints. \emph{Isomatch} is included to 
+%illustrate the performance of an algorithm relying on geometric 
+%constraints faced with image pairs that might not have any overlap.  
 The comparison was done using the \emph{Murals} dataset 
 (Figure~\ref{fig:murals}), the \emph{Graf} set (Figure~\ref{fig:Graf}) 
 from \cite{mikolajczyk2005performance}, and two 
@@ -597,12 +679,12 @@ less than a certain threshold (we use $d_{\max}=5$ pixels here).
 Figure~\ref{fig:result_graf} shows the results for 100 patch pairs 
 generated from images 1 and 3 of the \emph{Graf} image set 
 (cf.~Figure~\ref{fig:Graf}). The plot compares the accuracy of 
-\emph{Ratio}, \emph{MM}, \emph{MMC}, and \emph{Isodata} as a function of 
+\emph{Ratio}, \emph{MM}, \emph{MMC}, and \emph{Isomatch} as a function of 
 the number of matches produced (which is achieved by varying thresholds 
 over a certain range). The results show that \emph{MM} and \emph{MMC} 
 consistently outperform \emph{Ratio}; \emph{MMC} generally lies 2-3 
 percentage points above \emph{MM} when both are performing at optimal 
-accuracy.  Although \emph{Isodata} exhibits a good performance on strict 
+accuracy.  Although \emph{Isomatch} exhibits a good performance on strict 
 thresholds (small number of matches), that quickly diminishes when more 
 matches are desired.
 
@@ -687,7 +769,7 @@ change from the Gallagher dataset \cite{gallagher2008}.  The performance is comp
 \end{figure}
 
 
-In terms of computational complexity, \emph{Ratio}, \emph{MM}, and \emph{Isodata} can be 
+In terms of computational complexity, \emph{Ratio}, \emph{MM}, and \emph{Isomatch} can be 
 implemented in $O(n\log n)$, where $n$ is the total number of feature 
 points.  Our current \emph{MMC} implementation has a complexity of $O(n^2)$ due to the 
 construction of a similarity matrix of the feature points. However, it is 
@@ -696,7 +778,7 @@ possible to approximate this in $O(n\log n)$ using search trees.
 As for speed, Table~\ref{table:running_times} shows the running time of 
 the four algorithms over 100 image pairs of $250\!\times\!250$ pixels.  
 These numbers should be taken with a grain of salt, given that much of 
-the code behind \emph{MMC} and \emph{Isodata} is implemented in Python, 
+the code behind \emph{MMC} and \emph{Isomatch} is implemented in Python, 
 whereas \emph{MM} and \emph{Ratio} make use of OpenCV to execute 
 computationally intensive operations in C++, which makes them much 
 faster. 
@@ -709,7 +791,7 @@ faster.
 %	\small
 \begin{tabular}{r*{4}{c}}
 \hline
-	Algorithm: & \emph{Ratio} & \emph{MM} & \emph{MMC} & \emph{Isodata} 
+	Algorithm: & \emph{Ratio} & \emph{MM} & \emph{MMC} & \emph{Isomatch} 
 	\\
 	\noalign{\smallskip} 
 	%
@@ -909,7 +991,7 @@ similarity graph of the feature points.
 The algorithms show promising results when tested on the \emph{Murals} 
 data set. The results on 900 image pairs show that \emph{MM} and 
 \emph{MMC} generally outperform existing matching algorithms 
-\emph{Ratio}, \emph{Isodata} and \emph{Spectral}. In addition \emph{MMC} 
+\emph{Ratio}, \emph{Isomatch} and \emph{Spectral}. In addition \emph{MMC} 
 outperforms \emph{MM}.  We show that this result generalizes to 
 variations in viewpoint change by comparing \emph{MMC} to \emph{Ratio} 
 over a set of image pairs with an increasing magnitude of perspective 
