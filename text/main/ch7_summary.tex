@@ -1,0 +1,40 @@
+\chapter{Summary}
+\label{S:Summary}
+
+This thesis has addressed the problem of matching feature points without 
+using geometrical constraints, proposing \emph{Mirror Match (MM)} and 
+\emph{Mirror Match with Clustering (MMC)}.  The two algorithms share the 
+common idea that feature points should have better matches in another 
+image than in the image they came from to be considered good matches.  
+\emph{MMC} further improves on this idea by using the structure of the 
+similarity graph of the feature points. 
+
+The algorithms show promising results when tested on the \emph{Murals} 
+data set. The results on 900 image pairs show that \emph{MM} and 
+\emph{MMC} generally outperform existing matching algorithms 
+\emph{Ratio}, \emph{Isomatch} and \emph{Spectral}. In addition \emph{MMC} 
+outperforms \emph{MM}.  We show that this result generalizes to 
+variations in viewpoint change by comparing \emph{MMC} to \emph{Ratio} 
+over a set of image pairs with an increasing magnitude of perspective 
+difference. We go on to apply the algorithms to a real life image case 
+featuring occlusion and a slight viewpoint change and show that the 
+performance of \emph{MM} and \emph{MMC} is consistent with the results 
+on \emph{Murals}. To show that \emph{MM} or \emph{MMC}
+can further improve the results of a geometrical method, we create 
+\emph{Spectral-MMC} by combining \emph{Spectral} and \emph{MMC} and 
+compare the three on the full \emph{Murals} dataset where it yields 
+results better than both \emph{Spectral} and \emph{MMC}.
+
+The practical application of \emph{MM} and \emph{MMC} is demonstrated by 
+applying the algorithms to the problems of near duplicate detection and 
+for the case of \emph{MMC} to panorama recognition and alignment. For 
+the case of near duplicate detection, \emph{MMC} provides an 8.02\% 
+improvement over \emph{Ratio} in a near duplicate detection framework 
+making use of local features. Similarly for panorama recognition and 
+alignment a simple panorama stitching method based on \emph{MMC} 
+succeeds in cases where \emph{Autostitch} is unable to recognize and 
+align the source images correctly. Both applications illustrate the 
+central role that performance of the matching algorithm has on tasks 
+that makes use of local features to match image pairs with potential 
+overlap.
+%
