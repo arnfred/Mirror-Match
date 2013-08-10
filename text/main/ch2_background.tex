@@ -1,4 +1,4 @@
-\chapter{Matching local image features}
+\chapter{Matching Local Image Features}
 
 In this chapter we will introduce local feature points in images and 
 explain how they are used. We will start out by discussing why we need 
@@ -7,7 +7,7 @@ of modern local image features. Finally we will look at how they are
 used, in particular how corresponding pairs are found in between two or 
 more images.
 
-\section{A brief look at computer vision}
+\section{A Brief Look at Computer Vision}
 
 The field of computer vision is anecdotally said to have been founded 
 when Marvin Minsky assigned the problem of making a computer see as an 
@@ -29,34 +29,38 @@ difficult at all, yet consistently recognizing an object under different
 lighting conditions and from different angles can still cause problems 
 for even the best object recognition algorithms.
 
-The main difficulty lies in how the world we see around us constantly 
-varies. Try for a moment to imagine that you enter a room and recognize 
-the newspaper that is lying on the table, illuminated from the grey 
-light coming in of the window on the opposing wall. You move across the 
-room and switch on the light make out if the paper is from today, and 
-then you sit down and put on your glasses to read the headline. Try to 
-imagine the newspaper as you see it on three different stages. First as 
-you enter the room, then as you turn after turning on the light, now 
-standing on the other side of the table, and last when you are sitting 
-with the paper in your hand after you put on your glasses. For each of 
-these stages, picture the situation as a photography and look at how the 
-newspaper changes as you move around. At first you see it at an angle 
-lying in a fairly dark and grey room, the white pages reflecting the 
-light from the window with a cold bluish hue and the words too far away 
-to make out. Then in the second stage with light on, the object you are 
-looking at has suddenly changed. When you turned on the light in the 
-room, you also changed the color of the newspaper, which now has a warm 
-and yellowy white color. The angle you are looking at the paper from has 
-changed too, and the words and pictures are no longer upside down, 
-although still slightly rotated and with the increased light in the room 
-the contrast of the words and pictures of the page makes it possible for 
-you to make recognize that the newspaper is from today. Finally as you 
-sit down and put your glasses on the newspaper changes again. The color 
-might be the same, but if you imagine taking a photography as you are 
-sitting with the paper in your hand, the newspaper will look much bigger 
-almost taking up the entire frame. Now that your glasses are on, the 
-words stand out much clearer and you can see what is in the pictures on 
-the front page.
+\subsection{A Thought Experiment}
+
+The main factor that makes computer vision difficult is how the world we 
+see around us constantly varies. This is not something that is 
+immediately obvious to the casual observer, so for the sake of clarity 
+let us do a small thought experiment. Try for a moment to imagine that 
+you enter a room and recognize the newspaper that is lying on the table, 
+illuminated from the grey light coming in of the window on the opposing 
+wall. You move across the room and switch on the light make out if the 
+paper is from today, and then you sit down and put on your glasses to 
+read the headline. Try to imagine the newspaper as you see it on three 
+different stages. First as you enter the room, then as you turn after 
+turning on the light, now standing on the other side of the table, and 
+last when you are sitting with the paper in your hand after you put on 
+your glasses. For each of these stages, picture the situation as a 
+photography and look at how the newspaper changes as you move around. At 
+first you see it at an angle lying in a fairly dark and grey room, the 
+white pages reflecting the light from the window with a cold bluish hue 
+and the words too far away to make out. Then in the second stage with 
+light on, the object you are looking at has suddenly changed. When you 
+turned on the light in the room, you also changed the color of the 
+newspaper, which now has a warm and yellowy white color.  The angle you 
+are looking at the paper from has changed too, and the words and 
+pictures are no longer upside down, although still slightly rotated and 
+with the increased light in the room the contrast of the words and 
+pictures of the page makes it possible for you to make recognize that 
+the newspaper is from today. Finally as you sit down and put your 
+glasses on the newspaper changes again. The color might be the same, but 
+if you imagine taking a photography as you are sitting with the paper in 
+your hand, the newspaper will look much bigger almost taking up the 
+entire frame. Now that your glasses are on, the words stand out much 
+clearer and you can see what is in the pictures on the front page.
 
 Intuitively you know that the paper you sat down to read is the same 
 object as the paper you saw when you entered the room, but if we limit 
@@ -83,7 +87,7 @@ light on, the image in focus and the paper taking up the entire photo.
 Now we ask the algorithm: "Is this the same newspaper?". In this case it 
 is fair to ask how the algorithm can reliably make this judgement.
 
-\section{Introducing local features}
+\section{Introducing Local Features}
 
 The example of the newspaper focuses on a particular branch of computer 
 vision; object recognition, but the exact same problem remains for most 
@@ -222,9 +226,94 @@ using a descriptor like SIFT\@. BRIEF however fails to be rotation
 invariant making it less useful in cases where images are not 
 necessarily upright.
 
-\section{Finding the perfect match}
+\section{Finding the Perfect Match}
 
-Matching feature points
- - What applications require matching?
- - How is matching usually done
- - Segue into related work from paper
+Most applications of feature points use them to match features across 
+different images. The standard out of the box way most feature points 
+are matched involve comparing the feature descriptor using some kind of 
+distance measure. If we match all features of one image with all 
+features of another and discard all matches that are below a certain 
+threshold of similarity, we have in essence a set of matches between the
+two images. For most feature points (for example SIFT and SURF), this 
+similarity is measured by the cosine similarity. Binary descriptors such
+as BRIEF can take advantage of the faster computation of the hamming 
+distance.
+
+\subsection{Geometric Constraints}
+
+While the standard matching method is often computationally efficient, 
+it isn't necessarily the best way to match feature points. Many matching 
+methods make use of the knowledge of the position of the keypoints in 
+the image, i.e.\ the geometrical meta data. Using this information can 
+often yield more accurate outcomes, but they inevitably make assumptions
+about the geometric relationship between the images that are being 
+matched which might not hold true.  
+
+A simple example would be to only consider matches that aren't deviating 
+too much with respect to the average angle and distancen as considered 
+by \cite{kim2008efficient}.  This performs well in situations where no 
+camera rotation occurs between the two images, but fails when this 
+assumption isn't met. Various scenarios have been proposed to improve on 
+this simple assumption such as epipolar constraints 
+(\cite{torr2000mlesac}, \cite{chum2005matching}) and pairwise 
+constraints (\cite{choi2009robust}, \cite{leordeanu2005spectral}). The 
+Epipolar constraint carries the assumption that the two images matched 
+are related by an affine transformation. That is, that there is no 
+relative movement of objects in between images and either the viewpoint 
+is fixed or the image resides entirely on a plane. In practice this 
+assumption largely holds true when all objects we are interested in 
+matching are roughly the same distance from the camera given that 
+objects don't move across images.  Pairwise constraints provide a more 
+robust approach to the same problem by looking at a set of proposed 
+correspondences and defining a pairwise error between any two matches 
+for example based on the assumption that two neighboring correspondences 
+will usually have similar angles and distances. We can then convert the 
+problem to an optimization problem and return a set of correspondences 
+that minimizes this error such as proposed in \cite{choi2009robust} and 
+\cite{leordeanu2005spectral}.  This approach provides more robustness in 
+cases where assumptions that are violated globally still hold on a local 
+scale.
+
+An alternative is to pick out different areas in each image and pair 
+areas when correspondence pairs are mainly found going from one area to 
+another. This allows for the filtering of all correspondences that do 
+not fall within paired areas. Examples include \emph{Isodata} 
+\cite{das2008event}, which clusters feature points according to their 
+position in the image, and the method from \cite{wu2011robust}, which 
+uses maximally stable extremal regions (MSER) feature points to 
+designate areas. 
+
+\subsection{Matching Without Assumptions}
+
+In practice there are many situations where relying on the geometry of 
+the image to filter correspondences is not possible, for example images 
+without overlap, or adjacent objects in one image are that are separated 
+in another. Furthermore, methods using geometric constraints all require 
+an initial set of correspondences. If this set of correspondences can be 
+narrowed down to the most probable correct matches, the geometric 
+matching algorithm will benefit in terms of speed and accuracy.  Finally 
+some use cases might require a speed that simply cannot be achieved by 
+complex geometric methods.
+
+In the absence of geometric constraints, only few methods are available.  
+As pointed out in \cite{szeliski2010} and mentioned above, the simplest 
+approach to matching feature points is to return all matches above a 
+given threshold of similarity.  This can be done with a fixed threshold 
+or by finding the nearest neighbors for each point (still filtering by a 
+threshold to avoid including matches for feature points that have no 
+counterpart in the other image).  When Lowe \cite{lowe2004sift} proposed 
+the scale-invariant feature transform he included an alternative 
+matching measure. Instead of rating matching by similarity assessed the 
+uniqueness of a given match by looking at the two nearest neighbors of 
+each feature point and calculating the matching score as the ratio of 
+similarities. This method will later be referred to as \emph{Ratio}.  
+Ranking the scores by their uniqueness and picking the $n$ best produces 
+a set of correspondences that are distinctly matched across two images.  
+Of these three methods (fixed threshold, nearest neighbors, and 
+\emph{RATIO}), \emph{RATIO} was found to perform best by a slight margin 
+\cite{mikolajczyk2005performance}.
+
+%Matching feature points
+% - What applications require matching?
+% - How is matching usually done
+% - Segue into related work from paper
