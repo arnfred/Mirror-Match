@@ -13,48 +13,48 @@ Basically c/p from paper, but better figures and maybe more explanations
 
 \subsubsection{Mirror Match (\emph{MM})}
 
-\begin{figure}
+\begin{figure}[h]
 	\centering%
-		\begin{subfigure}[t]{\columnwidth}
+		\begin{subfigure}[t]{0.5\columnwidth}
 			\centering
-			\includegraphics[width=0.85\columnwidth]{images/MMC_pitts_source}
+			\includegraphics[width=0.95\columnwidth]{images/MMC_pitts_source}
 			\caption{Source image pair}
 			\label{fig:pitts_source}
 		\end{subfigure}%
-		\\ %
-		\begin{subfigure}[t]{\columnwidth}
+		~ %
+		\begin{subfigure}[t]{0.5\columnwidth}
 			\centering
-			\includegraphics[width=0.85\columnwidth]{images/MMC_pitts_keypoints}
+			\includegraphics[width=0.95\columnwidth]{images/MMC_pitts_keypoints}
 			\caption{Feature points}
 			\label{fig:pitts_keypoints}
 		\end{subfigure}%
 		\\ %add desired spacing between images, e. g. ~, \quad, 
 		%\qquad (or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{\columnwidth}
+		\begin{subfigure}[t]{0.5\columnwidth}
 			\centering
-			\includegraphics[width=0.85\columnwidth]{images/mirror_match_off}
+			\includegraphics[width=0.95\columnwidth]{images/mirror_match_off}
 			\caption{\emph{Ratio}}
 			\label{fig:unique}
 		\end{subfigure}%
-		\\ %add desired spacing between images, e. g. ~, \quad, 
-		\begin{subfigure}[t]{\columnwidth}
+		~ %add desired spacing between images, e. g. ~, \quad, 
+		\begin{subfigure}[t]{0.5\columnwidth}
 			\centering
-			\includegraphics[width=0.85\columnwidth]{images/mirror_match_with_pruned}
+			\includegraphics[width=0.95\columnwidth]{images/mirror_match_with_pruned}
 			\caption{\emph{MM} intermediate result}
 			\label{fig:within}
 		\end{subfigure}%
 		\\ %add desired spacing between images, e. g. ~, \quad, 
 		%\qquad (or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{\columnwidth}
+		\begin{subfigure}[t]{0.5\columnwidth}
 			\centering
-			\includegraphics[width=0.85\columnwidth]{images/mirror_match}
+			\includegraphics[width=0.95\columnwidth]{images/mirror_match}
 			\caption{\emph{MM} final result}
 			\label{fig:without}
 		\end{subfigure}%
-		\\ %add desired spacing between images, e. g. ~, \quad, 
-		\begin{subfigure}[t]{\columnwidth}
+		~ %add desired spacing between images, e. g. ~, \quad, 
+		\begin{subfigure}[t]{0.5\columnwidth}
 			\centering
-			\includegraphics[width=0.85\columnwidth]{images/MMC_partition}
+			\includegraphics[width=0.95\columnwidth]{images/MMC_partition}
 			\caption{\emph{MMC} Partition Example}
 			\label{fig:pitts_partition}
 		\end{subfigure}%
@@ -75,7 +75,7 @@ other feature from the same set. We can then discard the correspondences
 that match two points within the same image. Algorithm~\ref{alg-mm} details  
 the implementation of \emph{MM}.
 %
-\begin{algorithm}
+\begin{algorithm}[h]
 \caption{Mirror Match (\emph{MM})}
 \label{alg-mm}
 %{\fontsize{10}{10}\selectfont
@@ -168,24 +168,7 @@ tests done using randomly generated graphs with a known partitioning
 markedly better than spectral clustering and 
 K-means\cite{lancichinetti2009}.
 
-The performance of clustering algorithms is a complicated issue, since 
-an optimal clustering given the same graph can vary depending on the 
-application. Spectral clustering for example will usually return a 
-partitioning where each partition is roughly equal in size\footnote{As 
-mentioned in \cite{von2007}} while the Louvain 
-clustering\cite{blondel2008} might return partitions of very uneven 
-size, even if the modularity measurement has been shown to penalize very 
-small clusters\cite{brandes2007}. Both behaviours can be beneficial 
-depending on the application, but when clustering feature points, 
-maintaining clusters of an even size usually means that some clusters 
-will be '\emph{catch-all}' clusters where the feature points that do 
-not fit anywhere else are grouped together. The necessity of specifying 
-the amount of partitions in for example Spectral clustering or Pott's 
-model clustering further exacerbates the issue since smaller partitions 
-are then combined into one to achieve the right amount of partitions.
-
-%
-\begin{algorithm}
+\begin{algorithm}[h]
 \caption{Mirror Match with Clustering (\emph{MMC})}
 \label{alg-mmc}
 %{\fontsize{10}{10}\selectfont
@@ -209,17 +192,33 @@ are then combined into one to achieve the right amount of partitions.
 %}
 \end{algorithm}
 
+The performance of clustering algorithms is a complicated issue, since 
+an optimal clustering given the same graph can vary depending on the 
+application. Spectral clustering for example will usually return a 
+partitioning where each partition is roughly equal in size\footnote{As 
+mentioned in \cite{von2007}} while the Louvain 
+clustering\cite{blondel2008} might return partitions of very uneven 
+size, even if the modularity measurement has been shown to penalize very 
+small clusters\cite{brandes2007}. Both behaviours can be beneficial 
+depending on the application, but when clustering feature points, 
+maintaining clusters of an even size usually means that some clusters 
+will be '\emph{catch-all}' clusters where the feature points that do 
+not fit anywhere else are grouped together. The necessity of specifying 
+the amount of partitions in for example Spectral clustering or Pott's 
+model clustering further exacerbates the issue since smaller partitions 
+are then combined into one to achieve the right amount of partitions.
+
+
+
 \begin{figure}[t]
     \centering
-\makebox[\textwidth][c]{%
-    \includegraphics[width=1.1\textwidth]{images/MMC_graph}
+	\includegraphics[width=\textwidth]{images/MMC_graph}
     \label{fig:graph}
-}
-    \caption{The partitioned feature graph. Each vertex represents a 
-        feature point; lines indicate high similarity between points. A 
-        partition is a connected group with the same color. The border 
-        color of each node indicates which image it belongs to.  Zooming 
-    into a subsection of the graph (right part), the various cluster 
+	\caption{The partitioned feature graph. Each vertex represents a 
+		feature point; lines indicate high similarity between points. A 
+		partition is a connected group with the same color. The border 
+		color of each node indicates which image it belongs to.  Zooming 
+	into a subsection of the graph (right part), the various cluster 
 sizes can be seen, ranging from hundreds of feature points to only two 
 or three.}
 	\label{fig:graph}
@@ -245,7 +244,7 @@ repetitive structures such as buildings often appear in larger
 partitions, as exemplified in Figure~\ref{fig:pitts_partition}.
 %
 
-\begin{algorithm}
+\begin{algorithm}[h]
 \caption{Impl.\ of getMatches (\emph{from MMC algorithm})}
 \label{alg-getmatches}
     \fontsize{10}{10}\selectfont

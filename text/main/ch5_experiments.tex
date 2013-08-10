@@ -156,23 +156,21 @@ short of \emph{MM} and \emph{MMC}.
 
 
 \begin{figure}[htb]
-	\makebox[0.5\textwidth][c]{%
-		\begin{subfigure}[t]{.13\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/graf}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-   	%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{.27\textwidth}
-   		\centering
-   		\includegraphics[width=0.6\columnwidth]{images/result_graf}
-   		%\caption{Performance on Scharf}
-		\end{subfigure}%
-	}%
-	\caption{Accuracy for image pair 1\&3 from the \emph{Graf} set. The plot 
-		shows the result of 100 patch pairs generated from the source 
-		images shown to the left. The number of matches is the total 
-		number of matches for all 100 patch pairs.}
+	\begin{subfigure}[c]{0.2\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{images/graf}
+	\end{subfigure}%
+	~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+	%(or a blank line to force the subfigure onto a new line)
+	\begin{subfigure}[c]{0.8\textwidth}
+	\centering
+	\includegraphics[width=\columnwidth]{images/result_graf}
+	%\caption{Performance on Scharf}
+	\end{subfigure}%
+	\caption{Accuracy for image pair 1\&3 from the \emph{Graf} set. The 
+	plot shows the result of 100 patch pairs generated from the source 
+images shown to the left. The number of matches is the total number of 
+matches for all 100 patch pairs.}
 	\label{fig:result_graf}
 \end{figure}
 
@@ -205,12 +203,28 @@ The performance of \emph{MM} (not shown in the plot) is similar to
 
 \begin{figure}[htb]
 	\centering
-	\includegraphics[width=0.45\textwidth]{images/result_viewpoint}
-	\caption{Results for viewpoint changes using the \emph{Graf} set from 
-		\cite{mikolajczyk2005performance}.  S: img1\&2; M: img1\&3; L: img1\&4; XL: img1\&5.}
+	\includegraphics[width=1\textwidth]{images/result_viewpoint}
+	\caption{Results for viewpoint changes using the \emph{Graf} set 
+	from \cite{mikolajczyk2005performance}.  S: img1\&2; M: img1\&3; L: 
+	img1\&4; XL: img1\&5.}
 	\label{fig:result_viewpoint}
 \end{figure}
 
+In order to investigate whether a geometric algorithm can be improved by
+pruning the initial matching set, we tested a hybrid algorithm 
+\emph{Spectral-MMC} where matches are pruned by \emph{MMC} before being 
+applied to \emph{Spectral}. The results are shown in 
+Figure~\ref{fig:result_spectral-mmc} and show that \emph{Spectral-MMC} 
+not only outperforms \emph{Spectral} but also improves on \emph{MMC} at 
+similar recall rates, illustrating how a geometric algorithm can be 
+complemented by a reliable non-geometric pruning of matches.
+\begin{figure}[htb]
+	\centering
+	\includegraphics[width=1\textwidth]{images/result_spectral-mmc}
+	\caption{Results for filtering matches with \emph{MMC} before 
+	applying the \emph{Spectral} algorithm.}
+	\label{fig:result_spectral-mmc}
+\end{figure}
 
 Finally, as an example of a real life use case, 
 Figure~\ref{fig:result_pitts} shows the results on 100 patch pairs 
@@ -222,19 +236,18 @@ homographic mapping between the images.
 
 
 \begin{figure}[htb]
-	\makebox[\textwidth][c]{%
-		\begin{subfigure}[t]{.2\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/pitts}
-		\end{subfigure}%
-		~%add desired spacing between images, e. g. ~, \quad, \qquad
-		%(or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{.8\textwidth}
-   		\centering
-   		\includegraphics[width=0.6\columnwidth]{images/result_pitts}
-		\end{subfigure}%
-	}%
-	\caption{Results for the image pair in Figure~\ref{fig:pitts_source}.}
+	\begin{subfigure}[c]{.2\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{images/pitts}
+	\end{subfigure}%
+	~%add desired spacing between images, e. g. ~, \quad, \qquad
+	%(or a blank line to force the subfigure onto a new line)
+	\begin{subfigure}[c]{.8\textwidth}
+	\centering
+	\includegraphics[width=1\columnwidth]{images/result_pitts}
+	\end{subfigure}%
+	\caption{Results for the image pair in 
+	Figure~\ref{fig:pitts_source}.}
 	\label{fig:result_pitts}
 \end{figure}
 
