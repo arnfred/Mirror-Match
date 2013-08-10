@@ -1,7 +1,91 @@
-\chapter{Background}
+\chapter{Matching local image features}
 
 In this chapter we will introduce local feature points in images and 
-explain how they work and their applications. First 
+explain how they are used. We will start out by discussing why we need 
+local features in the first place before looking at the inner workings 
+of modern local image features. Finally we will look at how they are 
+used, in particular how corresponding pairs are found in between two or 
+more images.
+
+\section{A brief look at computer vision}
+
+The field of computer vision is anecdotally said to have been founded 
+when Marvin Minsky assigned the problem of making a computer see as an 
+undergraduate summer project back in 1966\footnote{This is the same 
+Marvin who invented neural networks and went on to serve as scientific 
+adviser on Kubrick's movie \emph{Space Odyssey 2001}}. Whether or not 
+the anecdote is true, the idea that the field of computer vision should 
+be solvable in a summer's worth of time but still to this days remains 
+an active field of research, illustrates an interesting notion: Making 
+computers solve tasks involving seeing turns out to be much harder than 
+we would initially assume.
+
+Part of this notion stems from the fact that vision is a problem that we 
+as humans are very good at. We can easily recognize objects under 
+different light, or stitch together photographies to a panorama, or 
+navigate a corridor identifying obstacles along the way. In fact these 
+things are so easy to us, that it seems strange that they should be 
+difficult at all, yet consistently recognizing an object under different 
+lighting conditions and from different angles can still cause problems 
+for even the best object recognition algorithms.
+
+The main difficulty lies in how the world we see around us constantly 
+varies. Try for a moment to imagine that you enter a room and recognize 
+the newspaper that is lying on the table, illuminated from the grey 
+light coming in of the window on the opposing wall. You move across the 
+room and switch on the light make out if the paper is from today, and 
+then you sit down and put on your glasses to read the headline. Try to 
+imagine the newspaper as you see it on three different stages. First as 
+you enter the room, then as you turn after turning on the light, now 
+standing on the other side of the table, and last when you are sitting 
+with the paper in your hand after you put on your glasses. For each of 
+these stages, picture the situation as a photography and look at how the 
+newspaper changes as you move around. At first you see it at an angle 
+lying in a fairly dark and grey room, the white pages reflecting the 
+light from the window with a cold bluish hue and the words too far away 
+to make out. Then in the second stage with light on, the object you are 
+looking at has suddenly changed. When you turned on the light in the 
+room, you also changed the color of the newspaper, which now has a warm 
+and yellowy white color. The angle you are looking at the paper from has 
+changed too, and the words and pictures are no longer upside down, 
+although still slightly rotated and with the increased light in the room 
+the contrast of the words and pictures of the page makes it possible for 
+you to make recognize that the newspaper is from today. Finally as you 
+sit down and put your glasses on the newspaper changes again. The color 
+might be the same, but if you imagine taking a photography as you are 
+sitting with the paper in your hand, the newspaper will look much bigger 
+almost taking up the entire frame. Now that your glasses are on, the 
+words stand out much clearer and you can see what is in the pictures on 
+the front page.
+
+Intuitively you know that the paper you sat down to read is the same 
+object as the paper you saw when you entered the room, but if we limit 
+ourselves to only looking at the object itself, almost everything about 
+it changed in the process, from the color of the pages to the sharpness 
+of the lines. On top of that the paper has changed in size and rotation 
+from lying on the table to being in your hand. In our daily lives we are 
+aided in the process of recognizing the paper by our memory and idea of 
+how the world works. When we walked in to the dark room and saw 
+something on the table, it was probably safe to assume that it was a 
+newspaper. Maybe the newspaper always lies like that on the table, or 
+maybe we left it there ourselves. Afterwards as we move around in the 
+room, we can safely assume that the paper didn't move and even if it 
+might not look exactly the same after we turned on the light, it's safe 
+to guess that nobody took the old newspaper and replaced it with a new 
+and yellower version.
+
+On the other hand a computer algorithm trying to recognize objects will 
+not be able to make the same assumptions about the world. We might just 
+give as input to the program to pictures of the newspaper. One from the 
+first stage where the light was turned off, the paper was far away and 
+the lens wasn't focused correctly, and one from the third stage with the 
+light on, the image in focus and the paper taking up the entire photo.  
+Now we ask the algorithm: "Is this the same newspaper?". In this case it 
+is fair to ask how the algorithm can reliably make this judgement.
+
+\section{Introducing local features}
+
+
 
 Introduction to Computer Vision
  - Introduce common tasks that we are good at that computers aren't

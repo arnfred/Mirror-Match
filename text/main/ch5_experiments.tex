@@ -169,8 +169,8 @@ short of \emph{MM} and \emph{MMC}.
 	\end{subfigure}%
 	\caption{Accuracy for image pair 1\&3 from the \emph{Graf} set. The 
 	plot shows the result of 100 patch pairs generated from the source 
-images shown to the left. The number of matches is the total number of 
-matches for all 100 patch pairs.}
+	images shown to the left. The x-axis shows the recall based on the 
+accumulated amount of potential matches for all 100 patch pairs. }
 	\label{fig:result_graf}
 \end{figure}
 
@@ -185,8 +185,8 @@ generated from 9 source image pairs.  The results are shown in Figure
 	\includegraphics[width=\columnwidth]{images/result_accumulated}
 	\caption{Results for 900 patch pairs extracted from the 
 	\emph{Murals} dataset and the image pair 1\&3 from the \emph{Graf} 
-	set.  The x-axis shows the accumulated returned matches for all 
-pairs.}
+	set.  The x-axis shows the recall based on the accumulated amount of 
+potential matches for all patch pairs.}
 	\label{fig:result_accumulated}
 \end{figure}
 
@@ -218,11 +218,15 @@ Figure~\ref{fig:result_spectral-mmc} and show that \emph{Spectral-MMC}
 not only outperforms \emph{Spectral} but also improves on \emph{MMC} at 
 similar recall rates, illustrating how a geometric algorithm can be 
 complemented by a reliable non-geometric pruning of matches.
+
 \begin{figure}[htb]
 	\centering
 	\includegraphics[width=1\textwidth]{images/result_spectral-mmc}
 	\caption{Results for filtering matches with \emph{MMC} before 
-	applying the \emph{Spectral} algorithm.}
+	applying the \emph{Spectral} algorithm. The algorithm is tested on 
+900 patch pairs extracted from the \emph{Murals} dataset and the image 
+pair 1\&3 from the \emph{Graf} set. The x-axis shows the recall based on 
+the accumulated amount of potential matches for all patch pairs.}
 	\label{fig:result_spectral-mmc}
 \end{figure}
 
@@ -246,7 +250,7 @@ homographic mapping between the images.
 	\centering
 	\includegraphics[width=1\columnwidth]{images/result_pitts}
 	\end{subfigure}%
-	\caption{Results for the image pair in 
+	\caption{Results for 100 patch pairs based on the image pair in 
 	Figure~\ref{fig:pitts_source}.}
 	\label{fig:result_pitts}
 \end{figure}
