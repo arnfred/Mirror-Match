@@ -85,22 +85,144 @@ is fair to ask how the algorithm can reliably make this judgement.
 
 \section{Introducing local features}
 
+The example of the newspaper focuses on a particular branch of computer 
+vision; object recognition, but the exact same problem remains for most 
+of the various subfields. In automatic panorama stitching where we try 
+to create a panorama from a set of images, we need to recognize which 
+images fit together even if they are taken with different camera 
+settings. In near duplicate detection where we try to find images that 
+appear to be duplicates of other images we need to recognize if the same 
+scene appears from slightly different angles under slightly different 
+light. In scene matching where we try to find out if two images are 
+taken of the same scene the two images could be taken on different days 
+under different conditions. The list continues and it should hopefully 
+be clear that in order to solve a lot of problems in computer vision, we 
+need a way to deal with these variations.
 
+One particularly successful approach over recent years has been to use 
+\emph{local image features}. As opposed to global image features like 
+the image histogram or the position of edges, local features are each 
+constrained to a small point-like area in the image. The idea behind 
+local features is that we pick distinct points in the image and describe 
+the local neighborhood in a way that remains stable even if the image is 
+taken under different light or from slightly different angles. Then 
+given two images we can find some local feature points of each and see 
+if any correspond across images.
 
-Introduction to Computer Vision
- - Introduce common tasks that we are good at that computers aren't
- - Single in on tasks that we can solve using feature points
+\begin{figure}[t]
+	\centering
+	\includegraphics[width=1\columnwidth]{images/feature_point}
+	\caption{Example of feature point location. In the image, feature a) 
+is ambiguous because it can match any location along the left edge of 
+the building, while feature b) is distinct because only one left corner 
+of that building exists. The background image is originally from the 
+Gallagher dataset \cite{gallagher2008}}
+	\label{fig:feature_point}
+\end{figure}
 
-Introduction to feature points
- - Global explanation of what they are and how they serve to solve the 
-problems mentioned before
- - How do we find them? (Examples making it intuitive why corners are 
-nice)
- - How do we describe them? (Relate invariance: Light, Rotation, Noise, 
- Scale, \ldots, Affine)
- - Introduce SIFT and explain how the different problems are tackled in 
-SIFT)
- - Talk about other methods and how they are different
+For this two work we need two components. First we need to find spots in 
+an image that are distinct, since if we have similar points we can't 
+uniquely match them. Secondly we need to take information around the 
+local area of the point and describe it in a way that is invariant to 
+changes like illumination and geometric distortion as well as noise, 
+blur and scale. Finding unique points in the image is called 
+\emph{feature detection} and it yields a \emph{key point}, where as we 
+describe the key point with a \emph{feature descriptor}. The key point 
+will contain the position of the point in the image while the descriptor 
+will contain information about the image data surrounding that position.
+
+\subsection{Finding Feature Points}
+
+As Figure~\ref{fig:feature_point} illustrates, an easy heuristic for 
+finding a unique point in an image is to find corners. A point lying on 
+a smooth part of the image would look identical to the surrounding 
+points, and points along an edge will look the same as other points 
+along the same edge. While corners aren't necessarily a sufficient 
+condition for finding a good feature point, they provide a good starting 
+point. Intuitively the simplest way to find corners would be to detect 
+edges in the image (for example using a high pass filter), and follow 
+these edges until they turn. Some of these approaches are detailed in 
+\cite{university1978comparison}. 
+
+A different (and it turns out, better) approach is to look at the 
+gradient across the image and find spots where there is a gradient in 
+two perpendicular directions.  That is, along a dark edge on a bright 
+background there will be a gradient perpendicular to the edge, but no 
+gradient along the edge.  However in a corner we would have a gradient 
+in two different directions. The idea was originally introduced by 
+Morevec \cite{hans1977towards} and later improved upon by Harris and 
+Stephens who introduced what is now commonly known as the Harris corner 
+detector \cite{harris1988combined}.
+
+Alternatively a fast way of deciding if a point is a corner is to look 
+at all pixels surrounding the point of interest and compute the fraction 
+of pixels that have higher intensities than the center\footnote{i.e.\ 
+are brighter}. We can then find corners by thresholding on this 
+intensity difference as proposed by Smith and Brady 
+\cite{smith1997susan} as the SUSAN edge detector. Lepetit and Fua 
+proposed a similar algorithm but only looking at the pixels on the 
+circumference of a circle surrounding the point 
+\cite{lepetit2006keypoint}. This is also the central idea behind the 
+FAST detector by Rosten and Drummond \cite{rosten2006machine}.
+
+For a thorough review of the history of feature detectors, Tuytelaars 
+and Mikolajczyk presents an excellent historical retrospect in 
+\cite{tuytelaars2008local}.
+
+\subsection{Describing Feature Points}
+
+Once we have found a point of interest, we need to describe it. The 
+simplest way is to save the values of the pixels in the immediate 
+neighborhood, but this would not be very flexible. Take the case where 
+we take two images of the same scene, but overexpose one of them. Two 
+corresponding feature points would not look remotely alike in this case.
+In the feature descriptor of bright photography all the pixel values 
+would be high, while the values in the descriptor of the darker image 
+would all be low. A similar situation arise if one image is rotated or 
+there is a change in perspective.
+
+A way to work around these issues is to compile a histogram of the 
+pixels surrounding the key point. This way we would get the same 
+descriptor now matter how the image is rotated. To a certain extend this
+method is also invariant to affine transformations, that is change in 
+perspective as long as approximately the same pixels fall within the 
+zone we are taking a histogram of. If we use the raw values of the 
+pixels, the descriptor is still not invariant with respect to 
+brightness, but this is easily solved by creating a histogram of the 
+pixel values relative to the center pixel. Lazebnik et al.\ introduced 
+this method in \cite{lazebnik2003sparse} adding the distance from the 
+key point as another dimension in the histogram.
+
+Instead of using the pixel values, we can create a histogram of the 
+gradients surrounding the feature point as Lowe did in his Scale 
+Invariant Feature Detector (SIFT) \cite{lowe2004sift}. The histogram he 
+proposes is based on the gradient locations and orientations weighted by
+the gradient magnitude. To make sure that the histogram is rotation 
+invariant, the bins of the histogram are normalized and start with the 
+bin of the highest magnitude. The SIFT descriptor has been very widely 
+used since it's introduction and has become a de facto standard in 
+computer vision. To enhance the computational time needed to compute 
+descriptors, Bay et al.\ introduced the Speeded Up Robust Features 
+(SURF) that rely on a histogram of wavelets instead of gradients as used 
+in SIFT \cite{bay2006surf}. 
+
+A radically different approach to a feature descriptor is to measure the
+intensity difference between a number of pixels surrounding the key 
+point and simply assign the bits to a vector that is returned as the 
+feature descriptor. Calonder et al.\ \cite{calonder2010brief} introduced 
+a feature descriptor, Binary Robust Independent Elementary Features 
+(BRIEF), based on this idea. The main advantage of their approach is 
+reduced processing and memory needed to create, store and match the 
+feature descriptors. Interestingly the positions used for pixel wise 
+comparisons were selected at random and tested against similar random 
+configurations using the configuration yielding the best result. The 
+simplicity of this method allows for real time matching of objects from 
+a video stream, something that would be too computationally tolling when 
+using a descriptor like SIFT\@. BRIEF however fails to be rotation 
+invariant making it less useful in cases where images are not 
+necessarily upright.
+
+\section{Finding the perfect match}
 
 Matching feature points
  - What applications require matching?
