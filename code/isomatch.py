@@ -41,6 +41,7 @@ def match(paths, options = {}) :
     verbose				= options.get("verbose", False)
     keypoint_type		= options.get("keypoint_type", "SIFT")
     descriptor_type		= options.get("descriptor_type", "SIFT")
+    ratio_threshold		= options.get("ratio_threshold", 1.0)
 
     # Get images
     images = map(features.loadImage, paths)
@@ -61,7 +62,7 @@ def match(paths, options = {}) :
     part_2 = isodata.cluster(positions[indices==1], k_init=k_init, max_iterations=max_iterations, min_partition_size=min_partition_size, max_sd=max_sd, min_distance=min_distance)
 
     # Show the clusters
-    if verbose : showPartitions(part_1, part_2, indices, images, positions)
+    if verbose : display.showTwoPartitions(part_1, part_2, indices, images, positions)
 
     # Get a matrix of the matches so that part_corr_{i,j} is equal to the
     # amount of matches between partition i and j
@@ -76,6 +77,20 @@ def match(paths, options = {}) :
         for (j,s) in ms :
             match_set.extend(getPartitionMatches(match_points, part_1 == i, part_2 == j))
     
+    # def match_fun(threshold) :
+    #     # For each partition figure out which partitions correspond
+    #     partition_links = [getPartitionLinks(row, threshold) for row in part_corr]
+
+    #     # Get all keypoint matches from the matching clusters
+    #     match_set = []
+    #     for i, ms in enumerate(partition_links) :
+    #         for (j, s) in ms :
+    #             match_set.extend(getPartitionMatches(match_points, part_1 == i, part_2 == j))
+    #     match_data = [(matchFromIndex(i, j), u, 0) for((i,j),u) in match_set if u < ratio_threshold]
+    #     if len(match_data) == 0 : return [], [], []
+    #     matches, ratios, scores = zip(*match_data)
+    #     return matches, ratios, scores
+
     # Define a function that given a threshold returns a set of matches
     def match_fun(threshold) :
         match_data = [(matchFromIndex(i,j), u, 0) for ((i,j),u) in match_set if u < threshold]
@@ -132,15 +147,6 @@ def getLinkMat(part_1, part_2, match_points) :
     return part_corr
 
 
-def showPartitions(part_1, part_2, indices, images, positions) :
-    pylab.figure(frameon=False, figsize=(14,5))
-    pylab.subplot(1,2,1)
-    display.showPartitions(positions[indices==0], part_1, image = images[0])
-    pylab.subplot(1,2,2)
-    display.showPartitions(positions[indices==1], part_2, image = images[1])
-    pylab.show()
-
-
 def getMatchPoints(indices, ks, ds, descriptor_type = "SIFT") :
 
     # Use cv2's matcher to get matching feature points
@@ -163,8 +169,8 @@ def linkCount(match_points, part_1_mask, part_2_mask) :
 
 
 # For each partition figure out which partitions correspond
-def getPartitionLinks(row) :
+def getPartitionLinks(row, threshold = 0.5) :
     max_links = numpy.max(row)
-    pm = [(p_2, ls) for p_2,ls in enumerate(row) if (ls/(float(max_links)) > 0.5 and ls > 5)]
+    pm = [(p_2, ls) for p_2,ls in enumerate(row) if (ls/(float(max_links)) > threshold and ls > 5)]
     return pm
 

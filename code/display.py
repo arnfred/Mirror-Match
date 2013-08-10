@@ -289,8 +289,67 @@ def accuDetail(correct, total, legend, ylim = 100, treshold=1000) :
     accuHist(accu, legend, ylim=ylim)
 
 
+def comparePlot(correct, 
+                compareCorrect, 
+                total, 
+                compareTotal,
+                legends, 
+                compareLegends,
+                colors  = ["blue", "red", "green", "maroon", "cyan"], 
+                ylim=(0.0, 1.01), 
+                xlim = (0.01, 0.5),
+                size = (4,6), 
+                nb_correspondences = None, 
+                outside = False, 
+                output = None) :
+    """ Plot that show curves but compares with a different line in dots """
 
-def accuPlot(correct, total, legends, colors = ["blue", "red", "green", "orange", "cyan"], ylim=(0.0, 1.01), xlim = None, size = (4,6), nb_correspondences = None, compareCorrect = None, compareTotal = None, compareLegend = None, outside = False, output = None) :
+    fig = pylab.figure(figsize=size)
+    ax = pylab.subplot(111)
+    if nb_correspondences == None :
+        nb_correspondences = [1 for ts in total]
+
+    for i in range(0,len(total)) :
+        ts, ts_i = total[i], compareTotal[i]
+        cs, cs_i = correct[i], compareCorrect[i]
+        l, l_i = legends[i], compareLegends[i]
+        color = colors[i]
+        nb_corr = nb_correspondences[i]
+        xs = [sum(c)/float(nb_corr) for c in cs]
+        ys = [1 if sum(t) == 0 else sum(c)/float(sum(t)) for (c, t) in zip(cs, ts)]
+        xs_i = [sum(c)/float(nb_corr) for c in cs_i]
+        ys_i = [1 if sum(t) == 0 else sum(c)/float(sum(t)) for (c, t) in zip(cs_i, ts_i)]
+        pylab.plot(xs, ys, '-', label=l, color=color, alpha=0.95)
+        pylab.plot(xs_i, ys_i, '--', label="%s" % (l_i), color=color, alpha=1)
+
+    # Remove superflous lines and add axis labels
+    removeDecoration()
+    if nb_correspondences != None :
+        pylab.xlabel("Recall")
+    else :
+        pylab.xlabel("# of Matches")
+    pylab.ylabel("Precision")
+    pylab.ylim(ylim[0],ylim[1])
+
+    # Put legend outside of plot
+    pylab.legend(loc="best")
+    if outside == True :
+        # Shink current axis by 20%
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width * 0.75, box.height])
+
+        # Put a legend to the right of the current axis
+        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+    pylab.xlim(xlim[0],xlim[1])
+    #ax.set_xscale('log')
+
+    # Print to file
+    if output != None :
+        pylab.savefig(output, bbox_inches='tight', dpi=80)
+
+
+def accuPlot(correct, total, legends, colors = ["blue", "red", "green", "orange", "maroon"], ylim=(0.0, 1.01), xlim = None, size = (4,6), nb_correspondences = None, outside = False, output = None) :
     fig = pylab.figure(figsize=size)
     ax = pylab.subplot(111)
     for ts, cs, l, color in zip(total, correct, legends, colors) :
@@ -301,15 +360,6 @@ def accuPlot(correct, total, legends, colors = ["blue", "red", "green", "orange"
         ys = [1 if sum(t) == 0 else sum(c)/float(sum(t)) for (c, t) in zip(cs, ts)]
         pylab.plot(xs, ys, '-', label=l, color=color, alpha=0.95)
         pylab.legend(loc="best")
-    if compareCorrect != None and compareTotal != None and compareLegend != None :
-        for ts, cs, l, color in zip(compareTotal, compareCorrect, compareLegend, ["blue", "red", "green", "orange", "red"]) :
-            if nb_correspondences != None :
-                xs = [sum(c)/float(nb_correspondences) for c in cs]
-            else :
-                xs = [sum(t) for t in ts]
-            ys = [1 if sum(t) == 0 else sum(c)/float(sum(t)) for (c, t) in zip(cs, ts)]
-            pylab.plot(xs, ys, '--', label="%s" % (l), color=color, alpha=1)
-            pylab.legend(loc="best")
 
     # Remove superflous lines and add axis labels
     removeDecoration()
@@ -333,7 +383,7 @@ def accuPlot(correct, total, legends, colors = ["blue", "red", "green", "orange"
 
     # Print to file
     if output != None :
-        pylab.savefig(output, bbox_inches=0, dpi=80)
+        pylab.savefig(output, bbox_inches='tight', dpi=80)
 
 
 def distHist(dist, dist_treshold = 5, dist_distinct = None, accuracity = None, accu_y_lim = 100) :
@@ -500,7 +550,7 @@ def clusterPlot(resultMat, labels, pruner, ylim=0.5, xlim=8) :
 
 
 
-def showPartitions(points, partitioning, image = None) :
+def showPartitions(points, partitioning, image = None, output = "partitions.jpg") :
     max_x = numpy.max(points[:,0])
     max_y = numpy.max(points[:,1])
     cs = colors.get()
@@ -516,7 +566,8 @@ def showPartitions(points, partitioning, image = None) :
     for pos,p in zip(points, partitioning) :
         pylab.plot(pos[0], pos[1], color=cs[p], marker='o')
 
-    removeDecoration()
+    pylab.axis('off')
+    pylab.savefig(output, bbox_inches='tight')
 
 
 
@@ -666,6 +717,18 @@ def faceGraph(graph, partitions, paths, filename = "facegraph.png") :
                   vertex_size=50, 
                   edge_pen_width=graph.ep["weights"], 
                   output=filename)
+
+def showTwoPartitions(part_1, part_2, indices, images, positions, output = "isomatch_partitions") :
+    pylab.figure(frameon=False, figsize=(14,5))
+    pylab.subplot(1,2,1)
+    showPartitions(positions[indices==0], part_1, image = images[0], output =  "%s_1.jpg" % output)
+    pylab.subplot(1,2,2)
+    showPartitions(positions[indices==1], part_2, image = images[1], output = "%s_2.jpg" % output)
+    ax = pylab.gca()
+    #ax.xaxis.set_ticks_position('bottom')
+    #ax.yaxis.set_ticks_position('left')
+    pylab.show()
+    pylab.savefig(output)
 
 ####################################
 #                                  #

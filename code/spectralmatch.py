@@ -35,7 +35,7 @@ def match(paths, options ={}) :
     affinity_fun = options.get("affinity", affinity_simple)
     matching_fun = options.get("match_fun", ratiomatch.getMatchSet)
     sigma = options.get("affinity", 50)
-    keep_ratio = options.get("keep_ratio", 0.75)
+    keep_ratio = options.get("keep_ratio", 0.5)
     verbose = options.get("verbose", False)
 
     matches, ratios, scores = matching_fun(paths, options)
@@ -68,6 +68,7 @@ def match(paths, options ={}) :
 
     def match_fun(threshold) :
         """ Given a threshold we return a list of matches """
+
         match_data = [(pos, u, s) for (pos, u, s) 
                 in zip(best_m, best_ratios, best_scores) if u < threshold]
 
