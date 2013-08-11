@@ -1,17 +1,15 @@
-\chapter{Matching Methods}
-Basically c/p from paper, but better figures and maybe more explanations
- - Add path about graphs and how they are formed. Make sure to explain 
- the clustering in more detail and make it easier to understand
- - Add a good explanation for new figures and how the precision and 
- recall are calculated. This should appear somewhere before results.
- - Add part on spectral matching and modify accordingly. Make sure to 
- underline how the second plot shows how the geometric method is 
- independent of MMC and that they combined yield greater results.
+\chapter{Algorithms}
+\label{C:algorithms}
 
-\subsection{Proposed Matching Methods}
+In this chapter we will describe the algorithms used in the experiements
+in detail. We start with the proposed algorithms \emph{MM} and 
+\emph{MMC}, and continue with the algorithms used for comparison, 
+\emph{Ratio}, \emph{Spectral} and \emph{Isomatch}.
+
+\section{Proposed Matching Methods}
 \label{S:MatchingMethods}
 
-\subsubsection{Mirror Match (\emph{MM})}
+\subsection{Mirror Match (\emph{MM})}
 
 \begin{figure}[h]
 	\centering%
@@ -67,15 +65,13 @@ includes similar feature points from building windows and shirt patterns.}%
 	\label{fig:comparemirror}%
 \end{figure}%
 
-
-%
 The central idea behind \emph{MM} is to match features of $n$ images by 
 taking every feature from all $n$ images and matching it against every 
 other feature from the same set. We can then discard the correspondences 
-that match two points within the same image. Algorithm~\ref{alg-mm} details  
-the implementation of \emph{MM}.
-%
-\begin{algorithm}[h]
+that match two points within the same image. Algorithm~\ref{alg-mm} 
+details the implementation of \emph{MM}.
+
+\begin{algorithm}[htb]
 \caption{Mirror Match (\emph{MM})}
 \label{alg-mm}
 %{\fontsize{10}{10}\selectfont
@@ -106,7 +102,7 @@ getImg(f_j) \wedge \left(f_j, f_i\right) \not\in matches_{final}$}
 \end{algorithmic}
 %}
 \end{algorithm}
-%
+
 In the acquisition stage we gather all features in the set of images.  
 In the matching stage these features are matched using $k$-nearest 
 neighbors.  For any given feature $f_i$ the two most similar neighbors 
@@ -127,8 +123,8 @@ points in the fence in the same image (Figures~\ref{fig:within} and
 \ref{fig:without}).
 
 
-\subsubsection{Mirror Match with Clustering (\emph{MMC})}
-%
+\subsection{Mirror Match with Clustering (\emph{MMC})}
+
 In contrast to \emph{MM}, \emph{MMC} diverges from traditional 
 non-geometric feature matching by clustering feature points by 
 similarity. This process yields partitions of fairly similar feature 
@@ -138,37 +134,29 @@ Algorithm~\ref{alg-mmc} shows the pseudocode implementation of \emph{MMC}.
 Before we introduce the implementation details we will go over the 
 problem of graph clustering and how it relates to feature matching.
 
-Given a set of feature points from two images, $im_1$ and $im_2$: $F_k = 
-\{k_i, k_j$ for $k_i \in im_1, k_j \in im_2\}$ as well as a matching 
-function $M(k_i, k_j) \rightarrow \mathbb{R}$ that takes two feature 
-points in an image and returns their matching score, we can define a 
-matrix $A$ where each element $A_ij = M(k_i, k_j)$. A can be interpreted 
-as the \emph{adjecency matrix} of the fully connected graph where each 
-vertex corresponds to a keypoint and the edge between two vertices has a 
-weight equal to the distance between the two corresponding keypoints.
 
-This representation reduces the problem of partitioning the keypoints 
-into groups to that of graph clustering or community structure depending 
-on the context. In the literature there are various ways of clustering a 
-graph according to different measures of what constitutes an optimal 
-partitioning. Traditionally the most used clustering algorithms have 
-been K-means and spectral clustering, but in recent years a host of new 
-algorithms have been proposed based on both Newman's concept of graph 
+To cluster the feature points, we construct a graph with the feature 
+points as nodes and their similarity score as edge weights. Given a 
+matching function $M(k_i, k_j) \rightarrow \mathbb{R}$ that takes two 
+feature points in an image and returns their matching score, we can 
+define a matrix $A$ where each element $A_ij = M(k_i, k_j)$. $A$ can be 
+interpreted as the \emph{adjecency matrix} of the fully connected graph.  
+
+In the literature there are various ways of clustering a graph according 
+to different measures of what constitutes an optimal partitioning. 
+Traditionally the most used clustering algorithms have been K-means and 
+spectral clustering, but in recent years a host of new algorithms have 
+been proposed based on both Newman's concept of graph 
 modularity\footnote{Introduced in \cite{girvan2002}, discussed in 
 \cite{brandes2007} and used in \cite{blondel2008} as well as others} as 
 well as information theoretical measures\footnote{See for example 
 \cite{rosvall2008}} and the Potts spin model from physics\footnote{Used 
-in \cite{ronhovde2009}} just to mention a few approaches. Many of the 
-new algorithms differ from K-means clustering and Spectral clustering 
-in that they do not require the number of expected to clusters to be 
-specified beforehand\footnote{Among the aforementioned methods, this is 
-true for \cite{blondel2008} and \cite{rosvall2008}}.  Furthermore, on 
-tests done using randomly generated graphs with a known partitioning 
-\cite{blondel2008}, \cite{rosvall2008} and \cite{ronhovde2009} perform 
-markedly better than spectral clustering and 
-K-means\cite{lancichinetti2009}.
+in \cite{ronhovde2009}} just to mention a few. On tests done using 
+randomly generated graphs with a known partitioning \cite{blondel2008}, 
+\cite{rosvall2008} and \cite{ronhovde2009} perform markedly better than 
+spectral clustering and K-means\cite{lancichinetti2009}.
 
-\begin{algorithm}[h]
+\begin{algorithm}[htb]
 \caption{Mirror Match with Clustering (\emph{MMC})}
 \label{alg-mmc}
 %{\fontsize{10}{10}\selectfont
@@ -192,24 +180,6 @@ K-means\cite{lancichinetti2009}.
 %}
 \end{algorithm}
 
-The performance of clustering algorithms is a complicated issue, since 
-an optimal clustering given the same graph can vary depending on the 
-application. Spectral clustering for example will usually return a 
-partitioning where each partition is roughly equal in size\footnote{As 
-mentioned in \cite{von2007}} while the Louvain 
-clustering\cite{blondel2008} might return partitions of very uneven 
-size, even if the modularity measurement has been shown to penalize very 
-small clusters\cite{brandes2007}. Both behaviours can be beneficial 
-depending on the application, but when clustering feature points, 
-maintaining clusters of an even size usually means that some clusters 
-will be '\emph{catch-all}' clusters where the feature points that do 
-not fit anywhere else are grouped together. The necessity of specifying 
-the amount of partitions in for example Spectral clustering or Pott's 
-model clustering further exacerbates the issue since smaller partitions 
-are then combined into one to achieve the right amount of partitions.
-
-
-
 \begin{figure}[t]
     \centering
 	\includegraphics[width=\textwidth]{images/MMC_graph}
@@ -232,19 +202,17 @@ opposed to spectral clustering or k-means \cite{von2007}, for example.
 While the Louvain clustering algorithm does not require any parameters 
 in itself, it tends towards clustering all feature points together in 
 the same partition if the graph is very connected.  To ensure that the 
-graph is well clustered, the adjacency matrix is pruned so that only 
-edges above a certain threshold are kept. From empirical analysis, 
+graph is well clustered, the adjacency matrix is pruned by setting all 
+edges below a certain threshold to $0$.  From empirical analysis, 
 retaining the top 2.5\% of edges with the highest similarity seems to 
-work well in practice. Figure~\ref{fig:graph} shows the result of 
+work well in practice.  Figure~\ref{fig:graph} shows the result of 
 clustering the feature points as a graph.
-%
 
 The partitions group feature points by similarity, which means that 
 repetitive structures such as buildings often appear in larger 
 partitions, as exemplified in Figure~\ref{fig:pitts_partition}.
-%
 
-\begin{algorithm}[h]
+\begin{algorithm}[htb]
 \caption{Impl.\ of getMatches (\emph{from MMC algorithm})}
 \label{alg-getmatches}
     \fontsize{10}{10}\selectfont
@@ -268,14 +236,242 @@ partitions, as exemplified in Figure~\ref{fig:pitts_partition}.
 The matching algorithm for \emph{MMC} detailed in 
 Algorithm~\ref{alg-getmatches} finds matches within all partitions with 
 more than two elements using the \emph{MM} approach.  However, as can be 
-seen in the example in Figure~\ref{fig:MMC_graph}, many of the 
-partitions contain only two feature points from different images linked 
-by one edge. In this case, we compare the similarity of the these two 
-feature points with their second best match and remove matches where 
-this ratio lies above a certain threshold, like in the \emph{Ratio} 
-algorithm.  For example in the case of Figure~\ref{fig:pitts_partition}, 
-we have feature points from a building in one image grouped together 
-with points from a shirt pattern in another.  The nearest neighbor 
-method would have returned wrong matches, but since we match the 
-partition with \emph{MM}, points in the building end up matching other 
-points in the building, and no matches are returned.
+seen in the example in Figure~\ref{fig:graph}, many of the partitions 
+contain only two feature points from different images linked by one 
+edge. In this case, we compare the similarity of the these two feature 
+points with their second best match and remove matches where this ratio 
+lies above a certain threshold, like in the \emph{Ratio} algorithm.  For 
+example in the case of Figure~\ref{fig:pitts_partition}, we have feature 
+points from a building in one image grouped together with points from a 
+shirt pattern in another.  The nearest neighbor method would have 
+returned wrong matches, but since we match the partition with \emph{MM}, 
+points in the building end up matching other points in the building, and 
+no matches are returned.
+
+\section{The Competition}
+
+The algorithms used in the comparison consists of two algorithms that 
+use geometric data to enhance the matching, \emph{Isomatch} 
+\cite{das2008event} and \emph{Spectral} \cite{leordeanu2005spectral} and 
+one non geometric algorithm \emph{Ratio} \cite{lowe2004sift}.  
+\emph{Ratio} is selected because it is a de facto standard for matching 
+feature points, but also because it performs very well as shown by 
+Mikolajczyk and Schmid in \cite{mikolajczyk2005performance}.  
+\emph{Isomatch} and \emph{Spectral} on the other hand are selected 
+because they are examples of two different approaches to geometric 
+matching. \emph{Spectral} uses pairwise optimization to find a set of 
+matches that is consistent in terms of direction and length which makes 
+it less ideal in case of rotation and perspective change. 
+\emph{Isomatch} focuses on matching only between geometric regions found 
+by clustering the keypoints in the image.  This approach makes the 
+algorithm resilient to rotation and perspective change, but will cause 
+problems when the images matched are only partially overlapping and 
+several regions do not have any corresponding regions in the other 
+image.
+
+\subsection{Ratio}
+
+\begin{algorithm}[htb]
+\caption{Ratio Match (\emph{Ratio})}
+\label{alg-ratio}
+%{\fontsize{10}{10}\selectfont
+\begin{algorithmic}
+\Require $im_1$ : image, $im_2$ : image, $t \in \mathbb{R}$
+\State $matches\gets \varnothing$
+\State $features_1 \gets getFeatures(im_1)$
+\State $features_2 \gets getFeatures(im_2)$
+\ForAll{$f_i \in features_1$}
+    \State $f_m,f_n \gets get2NNs(f_i, features_2)$
+	\State $ratio \gets similarity(f_i, f_n) / similarity(f_i, f_m)$
+	\If{$ratio < t$}
+        \State $matches \gets \left(f_i, f_m\right)$
+	\EndIf
+\EndFor
+\Return $matches$
+\end{algorithmic}
+%}
+\end{algorithm}
+
+\emph{Ratio} (Algorithm~\ref{alg-ratio}) \cite{lowe2004sift} is the most 
+straightforward of the three reference algorithms. Feature points are 
+matched using K Nearest Neighbor and the similarity ratio between the 
+best and second best match is then compared to a threshold to decide if 
+the match is kept.
+
+\subsection{Isomatch}
+
+\begin{algorithm}[h]
+\caption{Isomatch (\emph{Isomatch})}
+\label{alg-isomatch}
+%{\fontsize{10}{10}\selectfont
+\begin{algorithmic}
+\Require $im_1$ : image, $im_2$ : image, $t \in \mathbb{R}$
+\State $matches_{init}\gets \varnothing$
+\State $matches_{final}\gets \varnothing$
+\State $features_1 \gets getFeatures(im_1)$
+\State $features_2 \gets getFeatures(im_2)$
+\ForAll{$f_i \in features_1$}
+    \State $f_m,f_n \gets get2NNs(f_i, features_2)$
+    \State $matches_{init} \gets \left(f_i, f_m\right)$
+\EndFor
+\State $partitions_1 \gets isodata(getPositions(features_1))$
+\State $partitions_2 \gets isodata(getPositions(features_2))$
+\State $P_{corr} \gets getMatchMat(partitions_1, partitions_2, 
+matches_{init})$
+\ForAll{$(i,j) \in indices(P)$}
+    \If{$\left(P_{i,j} > 5\right) \wedge \left(P_{i,j} / sum(P_{i}) > 
+    0.5\right)$}
+        \State $matches_{final} \gets getMatches(matches_{init}, 
+        partitions_1, partitions_2, i, j)$
+    \EndIf
+\EndFor
+\Return $matches_{final}$
+\end{algorithmic}
+%}
+\end{algorithm}
+
+\begin{figure}[htb]
+	\centering
+	\includegraphics[width=\columnwidth]{images/isomatch_partitions}
+	\caption{The result of partitioning feature points in two images.  
+	Each dot represents a feature point and feature points grouped with 
+the same color belong to the same partition.}
+	\label{fig:isomatch_partitions}
+\end{figure}
+
+The \emph{Isomatch} algorithm (Algorithm~\ref{alg-isomatch}) 
+\cite{das2008event} is based on the idea that local feature points 
+within a region in one image often matches to features within a 
+corresponding region in the other image. To find these regions the 
+algorithm uses the Isodata algorithm \cite{ball1965isodata} to perform 
+unsupervised clustering on the feature points given their positions in 
+the two images. The Isodata algorithm is similar to K-means with the 
+addition that clusters are merged and split during the clustering 
+process. In Figure~\ref{fig:isomatch_partitions} an example of a 
+partitioning can be seen. The initial set of matches are filtered based 
+on the resulting regions. A match is kept only if it at least half the 
+matches of the same region of origin also belong to the same region in 
+the other image.  $P_{corr}$ in Algorithm~\ref{alg-isomatch} is a matrix 
+where each row corresponds to a region in $im_1$, each column 
+corresponds to a region in $im_2$ and $P_{i,j}$ is the amount of matches 
+going from region $i$ to region $j$.
+
+To threshold the \emph{Isomatch} algorithm we filter the results using 
+the ratio between first and second best match as in \emph{Ratio}, since 
+\emph{Isomatch} itself doesn't readily admit any thresholding parameter.  
+
+\subsection{Spectral}
+
+\begin{algorithm}[h]
+\caption{Spectral Match (\emph{Spectral})}
+\label{alg-spectral}
+%{\fontsize{10}{10}\selectfont
+\begin{algorithmic}
+\Require $im_1$ : image, $im_2$ : image, $t \in \mathbb{R}$
+\State $matches_{init}\gets \varnothing$
+\State $matches_{final} \gets \varnothing$
+\State $features_1 \gets getFeatures(im_1)$
+\State $features_2 \gets getFeatures(im_2)$
+\ForAll{$f_i \in features_1$}
+	\State $f_m,f_n \gets get2NNs(f_i, features_2)$
+	\State $matches_{init} \gets \left(f_i, f_m\right)$
+\EndFor
+\State $M \gets matrix(\left\vert matches_{init} \right\vert, \left\vert 
+matches_{init} \right\vert)$
+\ForAll{$m_i \in matches_{init}$}
+	\ForAll{$m_j \in matches_{init}$}
+		\If{$i = j$}
+			\State $M \gets matchSimilarity(m_i)$
+		\Else
+			\State $M \gets affinity(m_i, m_j)$
+		\EndIf
+	\EndFor
+\EndFor
+\State $x^{*} \gets maximumEigenvector(M)$
+\ForAll{$\left(m_i, x_i\right) \in \left(matches_{init}, x^{*}\right)$}
+	\If{$x_i > t$}
+		\State $matches_{final} \gets matchtes_{final} \cup m_i$
+	\EndIf
+\EndFor
+
+\Return $matches_{final}$
+\end{algorithmic}
+%}
+\end{algorithm}
+
+The \emph{Spectral} algorithm (Algorithm~\ref{alg-spectral}) is a 
+slightly modified version of the spectral matching algorithm proposed by
+Leordeanu and Herbert \cite{leordeanu2005spectral}. It is based on the 
+idea that the set of actual correspondences of feature points between 
+two images should be pairwise consistent. That is, given two feature 
+points that are geometrically close in one image, for most cases we 
+would assume that the closest correspondences in another image would be 
+similarly close. We want to pick out a set of matches $T \subset S$ 
+where $S$ is the initial set of possible matches such that the matches 
+in $T$ are as pairwise consistent as possible. If we let $x$ be a binary 
+vector corresponding in length to the set of initial matches $S$, where 
+$x_i = 1$ if $m_i \subset T$, then we can formulate a subset-score as:
+\begin{equation*}
+	S = \sum_{m_i, m_j \in T} M(m_i, m_j) = x^TMx
+\end{equation*}
+The solution $x^{*}$ that maximizes this equation is then $x^{*} = 
+argmax(x^TMx)$. By relaxing the constraints on $x$ such that it can take
+values in the range of $\left[0, 1\right]$ we can interpret $x_i$ as the
+association of $m_i$ with the optimal subset of matches $T$. Because we 
+only worry about the relative values of $x$ we can fix the norm of $x$ 
+to $1$, in which case by Raleigh's ratio theorem, the $x^{*}$ that 
+optimizes $x^TMx$ is the principal eigenvector of $M$.
+
+Leordeanu and Herbert proposes a simple affinity function to map the 
+pairwise distance of two matches. In a scene where no rotation and 
+excessive affine transformation takes place, it can generally be assumed 
+that the length and direction of the vector between
+the two feature points constituting the first match corresponds to the 
+length and direction of the vector between the two feature points 
+constituting the second match. Given two matches $m_i = (f_{i,1}, 
+f_{i,2})$ and $m_j = (f_{j,1},f_{j,2})$ where $f_{k,n}$ is the feature 
+point of match $k$ in image $n$, we denote the euclidean distance 
+between feature points $f_{i,n}$ and $f_{j,n}$ in image $n$ as 
+$d_{i,j,n}$.  The affinity function assigning a score based on the 
+pairwise distance is then defined as follows:
+\begin{equation*}
+	M(a,b) \begin{cases} 4.5 - \frac{\left(d_{i,j,1} - 
+		d_{i,j,2}\right)^2}{2\sigma^2}, & \mbox{if } \left\vert 
+				d_{i,j,1} - d_{i,j,2} \right\vert < 3\sigma \\ 0, & 
+				\mbox{otherwise}
+	\end{cases}
+\end{equation*}
+In the equation above $\sigma$ is a stabilizing parameter that controls 
+the sensitivity of the score to deformations in the data. A larger 
+$\sigma$ will allow for larger deformations. In the experiments it is 
+fixed to 50. There are a number of occasions where the assumption that 
+pairwise matches should have the same distance doesn't hold true.  A 
+simple example would be matches between two images of the same scene 
+where one image is rotated $180^{\circ}$.  However for a lot of 
+applications like panorama stitching where we only see minor rotation 
+and change of perspective the assumption is accurate.
+
+In the implementation proposed by Leordeanu and Herbert 
+\cite{leordeanu2005spectral} the last step of the algorithm greedily 
+selects matches to ensure that matches are consistent, i.e.\ that two 
+feature points in one image don't match with the same feature point in 
+the other image. This is done by going through all the matches in the 
+order of their associated $x^{*}$ score and for each match eliminating 
+all matches in conflict with this match. This method ensure that as many
+matches are kept as possible since only the conflicting matches are 
+removed. However for cases where most feature points in one image will 
+not have a correspondence in the other other image (e.g.\ cases of 
+partial image overlap or object recognition) the greedy matching 
+algorithm will keep finding matches even after the actual 
+correspondences have already been found as long as they are consistent.
+
+Since the testing is done on images with partial overlap, the final set 
+of matches returned in Algorithm~\ref{alg-spectral} is the set of 
+matches where the association of the match with the optimal subset of 
+matches $T$ as measured by $x^{*}$ is above a certain threshold. For 
+experiments the set of initial matches were given by the best match per 
+feature point and the threshold was adjusted to allow for the best 50\% 
+to be included in the set of final matches. A rate less than 50\% 
+usually did not improve results, so to threshold the \emph{Spectral}
+algorithm we filter the output using the ratio between first and second
+best match as done in \emph{Ratio}.
