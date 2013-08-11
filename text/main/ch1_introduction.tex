@@ -1,7 +1,54 @@
 \addcontentsline{toc}{chapter}{Introduction}
 \chapter*{Introduction}
-What is the subject of this thesis and in what part lies my 
-contribution?
-How is the report organized?
+Matching feature points is one of the problems in computer vision that 
+if solved well will provide a useful tool for improving methods on a 
+host of interesting problems. If we can match feature points reliably we 
+can recognize objects, make panoramas, recognize duplicate photos, guide 
+robots and airplanes and a host of other interesting applications 
+\footnote{For a few examples of some of these applications, check out: 
+\cite{se2002global} (robot guidance), \cite{brown2007automatic} 
+(panorama construction), \cite{lowe2004sift} (has parts on object 
+recognition), \cite{chu2010consumer} (duplicate detection)}.  For all 
+these problems better feature point matching will most likely yield 
+better solutions.
 
-\lipsum[1]
+My goal when I started working on this thesis was not to improve feature 
+point matching, but via a series of detours I ended up circling the 
+problem which attracted me, not just because it its importance, but also 
+because of its inherent simplicity. Out of two sets, finding pairs of 
+similar elements seems like a problem that should have been solved long 
+ago, yet because of the nature of feature points and the data they are 
+used on, there seems to be plenty of progress to be made.
+
+As the outcome of my work  I propose two algorithms, \emph{Mirror Match 
+(MM)} and \emph{Mirror Match with Clustering (MMC)}, both designed to 
+improve feature point matching. The goal of this thesis will be to 
+introduce these algorithms and convincingly demonstrate that they are 
+useful. While doing this I hope to provide sufficient background for a 
+technically minded reader without any necessary background in computer 
+vision to follow the motivation behind \emph{MM} and \emph{MMC} as well 
+as the place of both algorithms in a bigger scientific perspective.
+ 
+The thesis is organized as follows: Chapter~\ref{C:background} provides 
+background and motivation for the development of \emph{MM} and 
+\emph{MMC}. The chapter serves two purposes.  For those that might be 
+reading this introduction wondering what a feature point really is and 
+how it is matched, it provides a gentle introduction to the why's and 
+how's of feature point matching. At the same time the chapter is meant 
+as an introduction to related work which is hopefully useful for those 
+who might use this thesis as a starting point for finding other research 
+on the same subject. Chapter~\ref{C:algorithms} will introduce in detail 
+the algorithms proposed in this thesis. The reference algorithms used to 
+benchmark \emph{MM} and \emph{MMC} are also introduced in detail.  
+Chapter~\ref{C:experiments} details the experiments done to evaluate the 
+proposed algorithms both in terms of how they were conducted as well as 
+their results. Chapter~\ref{C:applications} provides two examples of how 
+the matching algorithms can improve on panorama stitching and near 
+duplicate matching.
+
+For the remainder of the thesis I will make use of the academic 
+'\emph{we}' to underline the fact that I cannot take credit for this 
+work alone.  This thesis had not been possible had it not been for the 
+guidance of Stefan Winkler and Sabine S\"usstrunk as well as the support 
+of Advanced Digital Science Center in Singapore that hosted me as an 
+intern for the duration of my thesis work. 

@@ -1,4 +1,6 @@
 \chapter{Matching Local Image Features}
+\label{C:background}
+
 
 In this chapter we will introduce local feature points in images and 
 explain how they are used. We will start out by discussing why we need 
@@ -29,7 +31,7 @@ difficult at all, yet consistently recognizing an object under different
 lighting conditions and from different angles can still cause problems 
 for even the best object recognition algorithms.
 
-\subsection{A Thought Experiment}
+\subsection{An Ever Changing Constant World}
 
 The main factor that makes computer vision difficult is how the world we 
 see around us constantly varies. This is not something that is 
@@ -256,23 +258,20 @@ camera rotation occurs between the two images, but fails when this
 assumption isn't met. Various scenarios have been proposed to improve on 
 this simple assumption such as epipolar constraints 
 (\cite{torr2000mlesac}, \cite{chum2005matching}) and pairwise 
-constraints (\cite{choi2009robust}, \cite{leordeanu2005spectral}). The 
-Epipolar constraint carries the assumption that the two images matched 
-are related by an affine transformation. That is, that there is no 
-relative movement of objects in between images and either the viewpoint 
-is fixed or the image resides entirely on a plane. In practice this 
-assumption largely holds true when all objects we are interested in 
-matching are roughly the same distance from the camera given that 
-objects don't move across images.  Pairwise constraints provide a more 
-robust approach to the same problem by looking at a set of proposed 
-correspondences and defining a pairwise error between any two matches 
-for example based on the assumption that two neighboring correspondences 
-will usually have similar angles and distances. We can then convert the 
-problem to an optimization problem and return a set of correspondences 
-that minimizes this error such as proposed in \cite{choi2009robust} and 
-\cite{leordeanu2005spectral}.  This approach provides more robustness in 
-cases where assumptions that are violated globally still hold on a local 
-scale.
+constraints (\cite{choi2009robust}, \cite{leordeanu2005spectral} --- 
+later referred to as \emph{Spectral}).  The Epipolar constraint carries 
+the assumption that the two images matched are related by an affine 
+transformation.  That is, that there is no relative movement of objects 
+in between images and either the viewpoint is fixed or the image resides 
+entirely on a plane.  In practice this assumption largely holds true 
+when all objects we are interested in matching are roughly the same 
+distance from the camera given that objects don't move across images.  
+Pairwise constraints provide a more robust approach to the same problem 
+by looking at a set of proposed correspondences and defining a pairwise 
+error between any two matches for example based on the assumption that 
+two neighboring correspondences will usually have similar angles and 
+distances. This approach provides more robustness in cases where 
+assumptions that are violated globally still hold on a local scale.
 
 An alternative is to pick out different areas in each image and pair 
 areas when correspondence pairs are mainly found going from one area to 
@@ -288,12 +287,15 @@ designate areas.
 In practice there are many situations where relying on the geometry of 
 the image to filter correspondences is not possible, for example images 
 without overlap, or adjacent objects in one image are that are separated 
-in another. Furthermore, methods using geometric constraints all require 
-an initial set of correspondences. If this set of correspondences can be 
-narrowed down to the most probable correct matches, the geometric 
-matching algorithm will benefit in terms of speed and accuracy.  Finally 
-some use cases might require a speed that simply cannot be achieved by 
-complex geometric methods.
+in another. In these cases the assumptions behind the geometric 
+algorithms will often cause them to return incorrect matches.  
+
+In addition methods using geometric constraints all require an initial 
+set of correspondences. If this set of correspondences can be narrowed 
+down to the most probable correct matches, the geometric matching 
+algorithm will benefit in terms of speed and accuracy.  Finally some use 
+cases might require a speed that simply cannot be achieved by complex 
+geometric methods.
 
 In the absence of geometric constraints, only few methods are available.  
 As pointed out in \cite{szeliski2010} and mentioned above, the simplest 
@@ -313,7 +315,23 @@ Of these three methods (fixed threshold, nearest neighbors, and
 \emph{RATIO}), \emph{RATIO} was found to perform best by a slight margin 
 \cite{mikolajczyk2005performance}.
 
-%Matching feature points
-% - What applications require matching?
-% - How is matching usually done
-% - Segue into related work from paper
+The two methods we propose in this paper are inspired by a simple but 
+novel idea. If a given feature point in one image is better matched with 
+other feature points from the \emph{same} image than points in the other 
+image, then any matches from this feature point to points in the other 
+image are considered unreliable and should be discarded.  This approach 
+carries no implicit assumptions about the geometric consistency of 
+matches and as such can easily be extended with other geometric 
+solutions when appropriate or necessary.
+
+Based on this idea,  we determine reliable matches as follows. 
+\emph{Mirror Match (MM)} matches every feature from both images with all 
+other features and filters matches based on the ratio of best to second 
+best match as in \emph{SIFT}. \emph{Mirror Match with Clustering (MMC)} 
+on the other hand takes the combined set of feature points from both 
+images and clusters these points according to their descriptors.  If a 
+resulting partition contains only feature points from one image, no 
+matches are returned.  If the partition contains points from both 
+images, \emph{Mirror Match} is used to find the best matches within this 
+partition.  The experimental results show that both approaches generally 
+outperform existing correspondence matching methods.
