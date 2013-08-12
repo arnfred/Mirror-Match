@@ -1,4 +1,5 @@
 \chapter{Applications}
+\label{C:Applications}
 
 In many areas of computer vision matching local feature points is a key 
 component, and matching algorithms have applications in problems such as
@@ -54,15 +55,15 @@ source image belong in the final panorama.
 		\caption{Panorama by MMC}
 		\label{fig:pano_MMC}
 	\end{subfigure}%
-    \label{fig:pano_example}
-	\caption{An example of a difficult case for panorama recognition and 
-		alignment.  In a) the source images used to generate the 
-		panorama are displayed.\ b) shows the result of the Autostitch 
-		program from \cite{brown2007automatic} which fails to combine 
-		all images, while c) demonstrates the result of the simple 
-		panorama stitcher
+    \caption{An example of a difficult case for panorama recognition and 
+        alignment.  In a) the source images used to generate the 
+        panorama are displayed.\ b) shows the result of the Autostitch 
+        program from \cite{brown2007automatic} which fails to combine 
+        all images, while c) demonstrates the result of the simple 
+        panorama stitcher
 	using the proposed MMC algorithm. Here the two left images are 
 correctly linked}
+    \label{fig:pano_example}
 \end{figure}
 
 In \cite{brown2007automatic}, Brown and Lowe demonstrate how a panoramic 
@@ -174,7 +175,7 @@ that, the experiments were performed exactly as documented in
 \end{tabular}
 \end{table}
 
-The results of the comparison can be seen in Table~\ref{table:nnd}. It 
+The results of the comparison can be seen in Table~\ref{table:ndd}. It 
 shows that \emph{MMC} improves performance by 8.05\% over the original 
 framework using \emph{Ratio} to match images. For comparison, the 
 performance improvement of \emph{PhotoCluster} compared to XMatch 

@@ -1,5 +1,5 @@
 \chapter{Algorithms}
-\label{C:algorithms}
+\label{C:Algorithms}
 
 In this chapter we will describe the algorithms used in the experiements
 in detail. We start by introducing the proposed algorithms \emph{MM} and 
@@ -106,7 +106,7 @@ getImg(f_j) \wedge \left(f_j, f_i\right) \not\in matches_{final}$}
 In the \emph{acquisition stage} we extract local feature points and 
 obtain their descriptors from the set of images. The algorithm is not 
 designed to make use of any feature extractor in particular, but for the
-experiments (Chapter~\ref{S:Experiments}) the SIFT feature extractor and
+experiments (Chapter~\ref{C:Experiments}) the SIFT feature extractor and
 descriptor has been used. In the \emph{matching} stage these features 
 are matched using $k$-nearest neighbors.  The distance function $d(f_i, 
 f_j)$ between features is calculated according to the feature 
@@ -115,13 +115,13 @@ descriptor vectors, while other descriptors might use other
 measures\footnote{BRIEF for example uses the hamming measure to speed up 
 the computation}.  For any given feature $f_i$ the two closest neighbors 
 are returned, and we calculate the ratio between them as proposed in 
-\cite{lowe2004sift} (In Part~\ref{ss:ratio} this calculation and other 
-details of \emph{Ratio} will be discussed).  Any correspondence with a 
-ratio above the threshold supplied will be discarded. Finally in the 
-filter stage we check that matches are from different images and discard 
-all matches that are not symmetric. That is; if a feature, $f_i$, is 
-best matched to another feature, $f_j$, we would want for $f_j$ to be 
-best matched to $f_i$ too.
+\cite{lowe2004sift}\footnote{In Part~\ref{ss:ratio} this calculation and 
+other details of \emph{Ratio} will be discussed}.  Any correspondence 
+with a ratio above the threshold supplied will be discarded. Finally in 
+the filter stage we check that matches are from different images and 
+discard all matches that are not symmetric. That is; if a feature, 
+$f_i$, is best matched to another feature, $f_j$, we would want for 
+$f_j$ to be best matched to $f_i$ too.
 This isn't always the case, for example if $f_i$ doesn't have a true 
 correspondance in the other image, its closest neighbor $f_j$ might 
 likely be better matched with a different feature point.
@@ -180,12 +180,12 @@ Given a set of $n$ features $F = {f_1, \ldots, f_n}$ and a similarity
 function $s$ we can define the matching function $M : (f_i, f_j) 
 \rightarrow \mathbb{R}$ as follows:
 \begin{equation*}
-    M(a,b) = \begin{cases} similarity(f_i, f_j) & \mbox{if } f_i \neq 
-    f_j \\ 0 & \mbox{otherwise}
+    M(a,b) = \begin{cases} s(f_i, f_j) & \mbox{if } f_i \neq f_j \\ 0 & 
+    \mbox{otherwise}
 	\end{cases}
 \end{equation*}
-The similarity function is based on the distance measure $d(f_i,f_j)$ 
-(cosine similarity in the case of SIFT): $similarity(f_i, f_j) = 1 - 
+The similarity function $s$ is based on the distance measure 
+$d(f_i,f_j)$ (cosine similarity in the case of SIFT): $s(f_i, f_j) = 1 - 
 d(f_i,f_j) / c$ where $c$ is a normalization constant normalizing the 
 distance values between $0$ and $1$.
 We obtain $A$, the normalized adjecency matrix of the fully connected 
@@ -213,15 +213,14 @@ spectral clustering and K-means\cite{lancichinetti2009}.
 \begin{figure}[t]
     \centering
 	\includegraphics[width=\textwidth]{images/MMC_graph}
-    \label{fig:graph}
-	\caption{The partitioned feature graph. Each vertex represents a 
-		feature point; lines indicate high similarity between points. A 
-		partition is a connected group with the same color. The border 
-		color of each node indicates which image it belongs to.  Zooming 
-	into a subsection of the graph (right part), the various cluster 
+    \caption{The partitioned feature graph. Each vertex represents a 
+        feature point; lines indicate high similarity between points. A 
+        partition is a connected group with the same color. The border 
+        color of each node indicates which image it belongs to.  Zooming 
+    into a subsection of the graph (right part), the various cluster 
 sizes can be seen, ranging from hundreds of feature points to only two 
 or three.}
-	\label{fig:graph}
+    \label{fig:graph-view}
 \end{figure}
 
 We use the Louvain Method \cite{blondel2008} for clustering feature 
@@ -274,8 +273,9 @@ edges below a certain threshold to $0$. In Algorithm~\ref{alg-mmc} this
 threshold is provided as the variable $\alpha$.  From empirical 
 analysis, retaining the top 2.5\% of edges with the highest similarity 
 seems to work well in practice. This requires estimating $\alpha$ 
-parameter after obtaining the adjecency matrix.  Figure~\ref{fig:graph} 
-shows the result of clustering the feature points as a graph.
+parameter after obtaining the adjecency matrix.  
+Figure~\ref{fig:graph-view} shows the result of clustering the feature 
+points as a graph.
 
 The partitions group feature points by similarity, which means that 
 repetitive structures such as buildings often appear in larger 
@@ -305,12 +305,12 @@ partitions, as exemplified in Figure~\ref{fig:pitts_partition}.
 The matching algorithm for \emph{MMC} detailed in 
 Algorithm~\ref{alg-getmatches} finds matches within all partitions with 
 more than two elements using the \emph{MM} approach (\emph{MMGet}).  
-However, as can be seen in the example in Figure~\ref{fig:graph}, many 
-of the partitions contain only two feature points from different images 
-linked by one edge. In this case, we compare the similarity of the these 
-two feature points with their second best match and remove matches where 
-this ratio lies above a certain threshold, like in the \emph{Ratio} 
-algorithm (\emph{RatioGet}).  For example in the case of 
+However, as can be seen in the example in Figure~\ref{fig:graph-view}, 
+many of the partitions contain only two feature points from different 
+images linked by one edge. In this case, we compare the similarity of 
+the these two feature points with their second best match and remove 
+matches where this ratio lies above a certain threshold, like in the 
+\emph{Ratio} algorithm (\emph{RatioGet}).  For example in the case of 
 Figure~\ref{fig:pitts_partition}, we have feature points from a building 
 in one image grouped together with points from a shirt pattern in 
 another.  The nearest neighbor method would have returned wrong matches, 
