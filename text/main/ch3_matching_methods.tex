@@ -2,9 +2,9 @@
 \label{C:algorithms}
 
 In this chapter we will describe the algorithms used in the experiements
-in detail. We start with the proposed algorithms \emph{MM} and 
-\emph{MMC}, and continue with the algorithms used for comparison, 
-\emph{Ratio}, \emph{Spectral} and \emph{Isomatch}.
+in detail. We start by introducing the proposed algorithms \emph{MM} and 
+\emph{MMC}, and continue with the reference algorithms used for 
+comparison, \emph{Ratio}, \emph{Spectral} and \emph{Isomatch}.
 
 \section{Proposed Matching Methods}
 \label{S:MatchingMethods}
@@ -103,14 +103,25 @@ getImg(f_j) \wedge \left(f_j, f_i\right) \not\in matches_{final}$}
 %}
 \end{algorithm}
 
-In the acquisition stage we gather all features in the set of images.  
-In the matching stage these features are matched using $k$-nearest 
-neighbors.  For any given feature $f_i$ the two most similar neighbors 
-are returned, and we calculate the ratio between them as proposed in 
-\cite{lowe2004sift}.  Any correspondence with a ratio above the 
-threshold supplied will be discarded. Finally in the filter stage we 
-check that matches are from different images and discard all matches 
-that are not symmetric.
+In the \emph{acquisition stage} we extract local feature points and 
+obtain their descriptors from the set of images. The algorithm is not 
+designed to make use of any feature extractor in particular, but for the
+experiments (Chapter~\ref{S:Experiments}) the SIFT feature extractor and
+descriptor has been used. In the \emph{matching} stage these features 
+are matched using $k$-nearest neighbors.  The similarity between 
+features is calculated according to the feature descriptor. For SIFT we 
+use the cosine similarity between the two descriptor vectors.  For any 
+given feature $f_i$ the two most similar neighbors are returned, and we 
+calculate the ratio between them as proposed in \cite{lowe2004sift} (In 
+Part~\ref{ss:ratio} this calculation and other details of \emph{Ratio} 
+will be discussed).  Any correspondence with a ratio above the threshold 
+supplied will be discarded. Finally in the filter stage we check that 
+matches are from different images and discard all matches that are not 
+symmetric. That is; if a feature, $f_i$, is best matched to another 
+feature, $f_j$, we would want for $f_j$ to be best matched to $f_i$ too.
+This isn't always the case, for example if $f_i$ doesn't have a true 
+correspondance in the other image, its closest neighbor $f_j$ might 
+likely be better matched with a different feature point.
 
 Figure~\ref{fig:comparemirror} illustrates the benefits of \emph{MM} 
 using an example image pair from the Gallagher dataset 
@@ -127,34 +138,9 @@ points in the fence in the same image (Figures~\ref{fig:within} and
 
 In contrast to \emph{MM}, \emph{MMC} diverges from traditional 
 non-geometric feature matching by clustering feature points by 
-similarity. This process yields partitions of fairly similar feature 
-points that we can match using the same approach as \emph{MM}.  
-Algorithm~\ref{alg-mmc} shows the pseudocode implementation of \emph{MMC}.
-
-Before we introduce the implementation details we will go over the 
-problem of graph clustering and how it relates to feature matching.
-
-
-To cluster the feature points, we construct a graph with the feature 
-points as nodes and their similarity score as edge weights. Given a 
-matching function $M(k_i, k_j) \rightarrow \mathbb{R}$ that takes two 
-feature points in an image and returns their matching score, we can 
-define a matrix $A$ where each element $A_ij = M(k_i, k_j)$. $A$ can be 
-interpreted as the \emph{adjecency matrix} of the fully connected graph.  
-
-In the literature there are various ways of clustering a graph according 
-to different measures of what constitutes an optimal partitioning. 
-Traditionally the most used clustering algorithms have been K-means and 
-spectral clustering, but in recent years a host of new algorithms have 
-been proposed based on both Newman's concept of graph 
-modularity\footnote{Introduced in \cite{girvan2002}, discussed in 
-\cite{brandes2007} and used in \cite{blondel2008} as well as others} as 
-well as information theoretical measures\footnote{See for example 
-\cite{rosvall2008}} and the Potts spin model from physics\footnote{Used 
-in \cite{ronhovde2009}} just to mention a few. On tests done using 
-randomly generated graphs with a known partitioning \cite{blondel2008}, 
-\cite{rosvall2008} and \cite{ronhovde2009} perform markedly better than 
-spectral clustering and K-means\cite{lancichinetti2009}.
+similarity. This process yields partitions of similar feature points 
+that we can match using the same approach as \emph{MM}.  
+Algorithm~\ref{alg-mmc} shows the implementation of \emph{MMC}.
 
 \begin{algorithm}[htb]
 \caption{Mirror Match with Clustering (\emph{MMC})}
@@ -179,6 +165,35 @@ spectral clustering and K-means\cite{lancichinetti2009}.
 \end{algorithmic}
 %}
 \end{algorithm}
+
+To cluster the feature points, we construct a graph with the feature 
+points as nodes and their similarity score as normalized edge weights.  
+Given a set of $n$ features $F = {f_1, \ldots, f_n}$ and a matching 
+function $M : (f_i, f_j) \rightarrow \mathbb{R}$ that takes two feature 
+points as input and returns their matching score, we can define a matrix 
+$A$ as follows:
+\begin{equation*}
+	A_ij = \frac{M(k_i, k_j)}{\frac{\sum_{f_i,f_j \in F\\f_i \neq f_j} 
+	M(f_i, f_j)}{\left\vert F \right\vert ^ {2} - \left\vert F 
+\right\vert}}
+\end{equation*}
+$A$ can be interpreted as the normalized \emph{adjecency matrix} of the 
+fully connected graph.  
+
+In the literature there are various ways of clustering a graph according 
+to different measures of what constitutes an optimal partitioning. 
+Traditionally the most used clustering algorithms have been K-means and 
+spectral clustering, but in recent years a host of new algorithms have 
+been proposed based on both Newman's concept of graph 
+modularity\footnote{Introduced in \cite{girvan2002}, discussed in 
+\cite{brandes2007} and used in \cite{blondel2008} as well as others} as 
+well as information theoretical measures\footnote{See for example 
+\cite{rosvall2008}} and the Potts spin model from physics\footnote{Used 
+in \cite{ronhovde2009}} just to mention a few. On tests done using 
+randomly generated graphs with a known partitioning \cite{blondel2008}, 
+\cite{rosvall2008} and \cite{ronhovde2009} perform markedly better than 
+spectral clustering and K-means\cite{lancichinetti2009}.
+
 
 \begin{figure}[t]
     \centering
@@ -270,6 +285,7 @@ several regions do not have any corresponding regions in the other
 image.
 
 \subsection{Ratio}
+\label{ss:ratio}
 
 \begin{algorithm}[htb]
 \caption{Ratio Match (\emph{Ratio})}
