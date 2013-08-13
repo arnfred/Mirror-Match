@@ -14,20 +14,23 @@
 
 My goal when I started working on this thesis was not to improve feature 
 point matching, but via a series of detours I ended up circling the 
-problem which attracted me, not just because it its importance, but also 
-because of its inherent simplicity. Out of two sets, finding pairs of 
-similar elements seems like a problem that should have been solved long 
-ago, yet because of the nature of feature points and the data they are 
-used on, there seems to be plenty of progress to be made.
+problem which I found alluring, not just because it its importance, but 
+also because of its inherent simplicity. Out of two sets, finding pairs 
+of similar elements seems like a problem that should have been solved 
+long ago, yet because of the nature of feature points and the data they 
+are used on, there seems to be plenty of progress to be made still.
 
-As the outcome of my work  I propose two algorithms, \emph{Mirror Match 
-(MM)} and \emph{Mirror Match with Clustering (MMC)}, both designed to 
-improve feature point matching. The goal of this thesis will be to 
-introduce these algorithms and convincingly demonstrate that they are 
-useful. While doing this I hope to provide sufficient background for a 
-technically minded reader without any necessary background in computer 
-vision to follow the motivation behind \emph{MM} and \emph{MMC} as well 
-as the place of both algorithms in a bigger scientific perspective.
+As the outcome of my work I propose two algorithms, \emph{Mirror Match 
+(MM)} and \emph{Mirror Match with Clustering (MMC)}. Both algorithms are 
+designed to tackle the problem of reliably matching feature points under 
+circumstances where we cannot assume two images necessarily have any 
+correspondences.  The goal of this thesis will be to describe these 
+algorithms and convincingly demonstrate that they outperform traditional 
+approaches.  While doing this I hope to provide sufficient background 
+for a technically minded reader without any necessary experience in 
+computer vision to follow the motivation behind \emph{MM} and \emph{MMC} 
+and enable him or her to place both algorithms in a bigger scientific 
+perspective.
  
 The thesis is organized as follows: Chapter~\ref{C:Background} provides 
 background and motivation for the development of \emph{MM} and 
@@ -48,6 +51,7 @@ duplicate matching.
 
 For the remainder of the thesis I will make use of the academic 
 '\emph{we}' to underline the fact this thesis had not been possible had 
-it not been for the guidance of Stefan Winkler and Sabine S\"usstrunk as 
-well as the support of Advanced Digital Science Center in Singapore that 
-hosted me as an intern during my thesis work. 
+it not been for the guidance of \emph{Stefan Winkler} and \emph{Sabine 
+S\"usstrunk} as well as the support of \emph{Advanced Digital Science 
+Center} in Singapore that hosted me as an intern during the work on this 
+thesis. 

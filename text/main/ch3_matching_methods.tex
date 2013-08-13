@@ -2,12 +2,16 @@
 \label{C:Algorithms}
 
 In this chapter we will describe the algorithms used in the experiements
-in detail. We start by introducing the proposed algorithms \emph{MM} and 
-\emph{MMC}, and continue with the reference algorithms used for 
-comparison, \emph{Ratio}, \emph{Spectral} and \emph{Isomatch}.
+in detail. We start by introducing the proposed algorithms \emph{Mirror 
+Match (MM)} and \emph{Mirror Match with Clustering (MMC)}, and continue 
+with the reference algorithms used for comparison, \emph{Ratio}, 
+\emph{Spectral} and \emph{Isomatch}.
 
 \section{Proposed Matching Methods}
 \label{S:MatchingMethods}
+In this section we describe the two proposed algorithms for matching 
+feature points \emph{Mirror Match
+(MM)} and \emph{Mirror Match with Clustering (MMC)}. 
 
 \subsection{Mirror Match (\emph{MM})}
 
@@ -60,8 +64,8 @@ comparison, \emph{Ratio}, \emph{Spectral} and \emph{Isomatch}.
 	(c) Result of \emph{Ratio} matching. 
   (d) All matches found by \emph{MM}, including intra-image matches. 
 	(e) Final \emph{MM} result. 
-	(f) Example of a partition of feature points after clustering, which 
-includes similar feature points from building windows and shirt patterns.}%
+    (f) Example of a partition of feature points after clustering, which 
+includes similar feature points from different sides of a building.}%
 	\label{fig:comparemirror}%
 \end{figure}%
 
@@ -281,7 +285,7 @@ The partitions group feature points by similarity, which means that
 repetitive structures such as buildings often appear in larger 
 partitions, as exemplified in Figure~\ref{fig:pitts_partition}.
 
-\begin{algorithm}[htb]
+\begin{algorithm}[t]
 \caption{Impl.\ of getMatches (\emph{from MMC algorithm})}
 \label{alg-getmatches}
 %\fontsize{10}{10}\selectfont
@@ -311,12 +315,13 @@ images linked by one edge. In this case, we compare the similarity of
 the these two feature points with their second best match and remove 
 matches where this ratio lies above a certain threshold, like in the 
 \emph{Ratio} algorithm (\emph{RatioGet}).  For example in the case of 
-Figure~\ref{fig:pitts_partition}, we have feature points from a building 
-in one image grouped together with points from a shirt pattern in 
-another.  The nearest neighbor method would have returned wrong matches, 
-but since we match the partition with \emph{MM}, points in the building 
-end up matching other points in the building, and no matches are 
-returned.
+Figure~\ref{fig:pitts_partition}, we have several feature points from a 
+building in one image grouped together with points from the same 
+building in another image. If we try to match them globally, the 
+differences in similarities are two miniscule to confidently match, 
+because setting a threshold this high would lead to wrong matches 
+elsewhere, but if we only look at the group of feature points we can use 
+\emph{MM} with a much higher threshold and correctly match the points.
 
 \section{The Competition}
 
@@ -342,7 +347,31 @@ image.
 \subsection{Ratio}
 \label{ss:ratio}
 
-\begin{algorithm}[htb]
+\emph{Ratio} (Algorithm~\ref{alg-ratio}) \cite{lowe2004sift} diverges 
+from from matching feature points by distance in that the metric we use 
+to evaluate the feature points is the ratio of the distance to best 
+match compared to the distance of the second best match. In detail, say 
+$f_i$ is a feature point in an image $im_1$ and we are finding the 
+closest match in another image $im_2$. Given the two closest neighbors 
+to $f_i$ in in $im_l$, $f_m$ and $f_n$ ($d(f_i,f_m) < 
+similarity(f_i,f_n)$ and a threshold $\beta$, we decide to return a 
+match between $f_i$ and $f_j$ as follows:
+\begin{equation*}
+    match(f_i,(f_m,f_n)) = \begin{cases}
+        \left\{(f_i,f_m)\right\} &
+        \frac{d(f_i,f_m)}{d(f_i,f_n)} > \beta \\ \varnothing & 
+        \mbox{otherwise}
+    \end{cases}
+\end{equation*}
+
+
+We can call a distance measure \emph{Metric} given that it adheres to 
+the following four properties: it is non-negative: $d(f_i,f_j) \geq 0$.  
+It is only zero for identical inputs: $d(f_i,f_j) = 0 \Leftrightarrow 
+f_i = f_j$. It is symmetric: $d(f_i,f_j) = d(f_j,f_i)$. It obeys the 
+triangle inequality: $d(f_i,f_k) \leq d(f_i,f_j) + d(f_j,f_k)$.
+
+\begin{algorithm}[t]
 \caption{Ratio Match (\emph{Ratio})}
 \label{alg-ratio}
 %{\fontsize{10}{10}\selectfont
@@ -362,29 +391,6 @@ image.
 \end{algorithmic}
 %}
 \end{algorithm}
-
-\emph{Ratio} (Algorithm~\ref{alg-ratio}) \cite{lowe2004sift} diverges 
-from from matching feature points by distance in that the metric we use 
-to evaluate the feature points is the ratio of the distance to best 
-match compared to the distance of the second best match. In detail, say 
-$f_i$ is a feature point in an image $im_1$ and we are finding the 
-closest match in another image $im_2$. Given the two closest neighbors 
-to $f_i$ in in $im_l$, $f_m$ and $f_n$ ($d(f_i,f_m) < 
-similarity(f_i,f_n)$ and a threshold $\beta$, we decide to return a 
-match between $f_i$ and $f_j$ as follows:
-\begin{equation*}
-    match(f_i,(f_m,f_n)) = \begin{cases}
-        \left\{(f_i,f_m)\right\} &
-        \frac{d(f_i,f_m)}{d(f_i,f_n)} > \beta \\ \varnothing & 
-        \mbox{otherwise}
-    \end{cases}
-\end{equation*}
-
-We can call a distance measure \emph{Metric} given that it adheres to 
-the following four properties: it is non-negative: $d(f_i,f_j) \geq 0$.  
-It is only zero for identical inputs: $d(f_i,f_j) = 0 \Leftrightarrow 
-f_i = f_j$. It is symmetric: $d(f_i,f_j) = d(f_j,f_i)$. It obeys the 
-triangle inequality: $d(f_i,f_k) \leq d(f_i,f_j) + d(f_j,f_k)$.
 
 This holds true for both cosine similarity and the hamming distance for 
 which reason we can insert the feature points in a metric tree and 
@@ -516,9 +522,8 @@ matches_{init} \right\vert)$
 %}
 \end{algorithm}
 
-The \emph{Spectral} algorithm (Algorithm~\ref{alg-spectral}) used in the 
-comparison of matching algorithms is based on the spectral matching 
-algorithm proposed by Leordeanu and Herbert 
+\emph{Spectral} (Algorithm~\ref{alg-spectral}) is based on the spectral 
+matching algorithm proposed by Leordeanu and Herbert 
 \cite{leordeanu2005spectral}.  The central idea behind it is that the 
 set of actual correspondences of feature points between two images 
 should be pairwise consistent. That is, given two feature points that 
@@ -587,10 +592,10 @@ correspondences have already been found as long as they are consistent.
 Since the testing is done on images with partial overlap, the final set 
 of matches returned in Algorithm~\ref{alg-spectral} is the set of 
 matches where the association of the match with the optimal subset of 
-matches $T$ as measured by $x^{*}$ is above a certain threshold. For 
-experiments the set of initial matches were given by the best match per 
-feature point and the threshold was adjusted to allow for the best 50\% 
-to be included in the set of final matches. A rate less than 50\% 
-usually did not improve results, so to threshold the \emph{Spectral}
+matches, $T$, is above a certain threshold. For the experiments the set 
+of initial matches was given by the nearest neighbor of each feature 
+point and the threshold was adjusted to allow for the best 50\% to be 
+included in the set of final matches. A rate less than 50\% usually did 
+not improve results, so to threshold the \emph{Spectral}
 algorithm we filter the output using the ratio between first and second
 best match as done in \emph{Ratio}.

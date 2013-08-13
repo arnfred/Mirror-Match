@@ -1,7 +1,6 @@
 \chapter{Matching Local Image Features}
 \label{C:Background}
 
-
 In this chapter we will introduce local feature points in images and 
 explain how they are used. We will start out by discussing why we need 
 local features in the first place before looking at the inner workings 
@@ -19,17 +18,17 @@ adviser on Kubrick's movie \emph{Space Odyssey 2001}}. Whether or not
 the anecdote is true, the idea that the field of computer vision should 
 be solvable in a summer's worth of time but still to this days remains 
 an active field of research, illustrates an interesting notion: Making 
-computers solve tasks involving seeing turns out to be much harder than 
+computers solve tasks involving vision turns out to be much harder than 
 we would initially assume.
 
 Part of this notion stems from the fact that vision is a problem that we 
 as humans are very good at. We can easily recognize objects under 
-different light, or stitch together photographies to a panorama, or 
-navigate a corridor identifying obstacles along the way. In fact these 
-things are so easy to us, that it seems strange that they should be 
-difficult at all, yet consistently recognizing an object under different 
-lighting conditions and from different angles can still cause problems 
-for even the best object recognition algorithms.
+different light, stitch together photographies to a panorama or navigate 
+a corridor identifying obstacles along the way. In fact these things are 
+so easy to us, that it seems strange that they should be difficult at 
+all, yet consistently recognizing an object under different lighting 
+conditions and from different angles can still cause problems for even 
+the best object recognition algorithms.
 
 \subsection{An Ever Changing Constant World}
 
@@ -41,26 +40,27 @@ you enter a room and recognize the newspaper that is lying on the table,
 illuminated from the grey light coming in of the window on the opposing 
 wall. You move across the room and switch on the light make out if the 
 paper is from today, and then you sit down and put on your glasses to 
-read the headline. Try to imagine the newspaper as you see it on three 
-different stages. First as you enter the room, then as you turn after 
-turning on the light, now standing on the other side of the table, and 
-last when you are sitting with the paper in your hand after you put on 
-your glasses. For each of these stages, picture the situation as a 
-photography and look at how the newspaper changes as you move around. At 
-first you see it at an angle lying in a fairly dark and grey room, the 
-white pages reflecting the light from the window with a cold bluish hue 
-and the words too far away to make out. Then in the second stage with 
-light on, the object you are looking at has suddenly changed. When you 
-turned on the light in the room, you also changed the color of the 
-newspaper, which now has a warm and yellowy white color.  The angle you 
-are looking at the paper from has changed too, and the words and 
+read the headline. Try to imagine the newspaper as you see it at three 
+different stages. First as you enter the slightly obscure room, then as 
+you turn around after turning on the light, now standing on the other 
+side of the table, and finally when you are sitting with the paper in 
+your hands after you have put on your glasses. For each of these stages, 
+try to mentally picture the situation as a photography and look at how 
+the newspaper changes as you move around. At first you see it at an 
+angle lying in a fairly dark and grey room, the white pages reflecting 
+the light from the window with a cold bluish hue and the words too far 
+away to make out.  Then in the second stage with the lights turned on, 
+the object you are looking at has suddenly changed.  When you turned on 
+the light in the room, you also changed the color of the newspaper, 
+which now has a warm and yellowy white color to its pages.  The angle 
+you are looking at the paper from has changed too, and the words and 
 pictures are no longer upside down, although still slightly rotated and 
 with the increased light in the room the contrast of the words and 
 pictures of the page makes it possible for you to make recognize that 
-the newspaper is from today. Finally as you sit down and put your 
+the newspaper is from today.  Finally as you sit down and put your 
 glasses on the newspaper changes again. The color might be the same, but 
 if you imagine taking a photography as you are sitting with the paper in 
-your hand, the newspaper will look much bigger almost taking up the 
+your hand, the newspaper will look much bigger, almost taking up the 
 entire frame. Now that your glasses are on, the words stand out much 
 clearer and you can see what is in the pictures on the front page.
 
@@ -68,21 +68,21 @@ Intuitively you know that the paper you sat down to read is the same
 object as the paper you saw when you entered the room, but if we limit 
 ourselves to only looking at the object itself, almost everything about 
 it changed in the process, from the color of the pages to the sharpness 
-of the lines. On top of that the paper has changed in size and rotation 
+of the lines. On top of that, the paper has changed in size and rotation 
 from lying on the table to being in your hand. In our daily lives we are 
 aided in the process of recognizing the paper by our memory and idea of 
-how the world works. When we walked in to the dark room and saw 
-something on the table, it was probably safe to assume that it was a 
-newspaper. Maybe the newspaper always lies like that on the table, or 
-maybe we left it there ourselves. Afterwards as we move around in the 
-room, we can safely assume that the paper didn't move and even if it 
-might not look exactly the same after we turned on the light, it's safe 
-to guess that nobody took the old newspaper and replaced it with a new 
-and yellower version.
+how the world works. When we went in to the dark room and saw something 
+on the table, it was probably safe to assume that it was a newspaper.  
+Maybe the newspaper always lies like that on the table, or maybe we left 
+it there ourselves. Afterwards when we move around in the room, we can 
+safely assume that the paper didn't move while our back is turned and 
+even if it might not look exactly the same after we turned on the light, 
+it's safe to guess that nobody took the old newspaper and replaced it 
+with a new and yellower version.
 
 On the other hand a computer algorithm trying to recognize objects will 
 not be able to make the same assumptions about the world. We might just 
-give as input to the program to pictures of the newspaper. One from the 
+give as input to the program two pictures of the newspaper. One from the 
 first stage where the light was turned off, the paper was far away and 
 the lens wasn't focused correctly, and one from the third stage with the 
 light on, the image in focus and the paper taking up the entire photo.  
@@ -101,8 +101,8 @@ appear to be duplicates of other images we need to recognize if the same
 scene appears from slightly different angles under slightly different 
 light. In scene matching where we try to find out if two images are 
 taken of the same scene the two images could be taken on different days 
-under different conditions. The list continues and it should hopefully 
-be clear that in order to solve a lot of problems in computer vision, we 
+under different conditions. The list goes on and it should hopefully be 
+clear that in order to solve a lot of problems in computer vision, we 
 need a way to deal with these variations.
 
 One particularly successful approach over recent years has been to use 
@@ -145,20 +145,20 @@ a smooth part of the image would look identical to the surrounding
 points, and points along an edge will look the same as other points 
 along the same edge. While corners aren't necessarily a sufficient 
 condition for finding a good feature point, they provide a good starting 
-point. Intuitively the simplest way to find corners would be to detect 
-edges in the image (for example using a high pass filter), and follow 
-these edges until they turn. Some of these approaches are detailed in 
-\cite{university1978comparison}. 
+point.  
 
-A different (and it turns out, better) approach is to look at the 
-gradient across the image and find spots where there is a gradient in 
-two perpendicular directions.  That is, along a dark edge on a bright 
-background there will be a gradient perpendicular to the edge, but no 
-gradient along the edge.  However in a corner we would have a gradient 
-in two different directions. The idea was originally introduced by 
-Morevec \cite{hans1977towards} and later improved upon by Harris and 
-Stephens who introduced what is now commonly known as the Harris corner 
-detector \cite{harris1988combined}.
+Intuitively the simplest way to find corners would be to detect edges in 
+the image (for example using a high pass filter), and follow these edges 
+until they turn. Some of these approaches are detailed in 
+\cite{university1978comparison}. A different (and it turns out, better) 
+approach is to look at the gradient across the image and find spots 
+where there is a gradient in two perpendicular directions.  That is, 
+along a dark edge on a bright background there will be a gradient 
+perpendicular to the edge, but no gradient along the edge.  However in a 
+corner we would have a gradient in two different directions. The idea 
+was originally introduced by Morevec \cite{hans1977towards} and later 
+improved upon by Harris and Stephens who introduced what is now commonly 
+known as the Harris corner detector \cite{harris1988combined}.
 
 Alternatively a fast way of deciding if a point is a corner is to look 
 at all pixels surrounding the point of interest and compute the fraction 
@@ -172,7 +172,7 @@ circumference of a circle surrounding the point
 FAST detector by Rosten and Drummond \cite{rosten2006machine}.
 
 For a thorough review of the history of feature detectors, Tuytelaars 
-and Mikolajczyk presents an excellent historical retrospect in 
+and Mikolajczyk presents an excellent retrospect in 
 \cite{tuytelaars2008local}.
 
 \subsection{Describing Feature Points}
@@ -206,7 +206,7 @@ proposes is based on the gradient locations and orientations weighted by
 the gradient magnitude. To make sure that the histogram is rotation 
 invariant, the bins of the histogram are normalized and start with the 
 bin of the highest magnitude. The SIFT descriptor has been very widely 
-used since it's introduction and has become a de facto standard in 
+used since its introduction and has become a de facto standard in 
 computer vision. To enhance the computational time needed to compute 
 descriptors, Bay et al.\ introduced the Speeded Up Robust Features 
 (SURF) that rely on a histogram of wavelets instead of gradients as used 
@@ -221,21 +221,21 @@ a feature descriptor, Binary Robust Independent Elementary Features
 reduced processing and memory needed to create, store and match the 
 feature descriptors. Interestingly the positions used for pixel wise 
 comparisons were selected at random and tested against similar random 
-configurations using the configuration yielding the best result. The 
-simplicity of this method allows for real time matching of objects from 
-a video stream, something that would be too computationally tolling when 
-using a descriptor like SIFT\@. BRIEF however fails to be rotation 
-invariant making it less useful in cases where images are not 
-necessarily upright.
+configurations. They then went on to use the configuration yielding the 
+best result.  The simplicity of this method allows for real time 
+matching of objects from a video stream, something that would be too 
+computationally tolling when using a descriptor like SIFT\@. BRIEF 
+however fails to be rotation invariant making it less useful in cases 
+where images are not necessarily upright.
 
 \section{Finding the Perfect Match}
 
 Most applications of feature points use them to match features across 
-different images. The standard out of the box way most feature points 
-are matched involve comparing the feature descriptor using some kind of 
-distance measure. If we match all features of one image with all 
-features of another and discard all matches that are below a certain 
-threshold of similarity, we have in essence a set of matches between the
+different images. The standard way most feature points are matched 
+involve comparing the feature descriptor using some kind of distance 
+measure. If we match all features of one image with all features of 
+another and discard all matches that are below a certain threshold of 
+similarity, we have in essence a set of matches between the
 two images. For most feature points (for example SIFT and SURF), this 
 similarity is measured by the cosine similarity. Binary descriptors such
 as BRIEF can take advantage of the faster computation of the hamming 
@@ -286,9 +286,9 @@ designate areas.
 
 In practice there are many situations where relying on the geometry of 
 the image to filter correspondences is not possible, for example images 
-without overlap, or adjacent objects in one image are that are separated 
-in another. In these cases the assumptions behind the geometric 
-algorithms will often cause them to return incorrect matches.  
+without much overlap, or adjacent objects in one image are that are 
+separated in another. In these cases the assumptions behind the 
+geometric algorithms will often cause them to return incorrect matches.  
 
 In addition methods using geometric constraints all require an initial 
 set of correspondences. If this set of correspondences can be narrowed 

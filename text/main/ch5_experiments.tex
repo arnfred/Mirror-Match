@@ -3,85 +3,76 @@
 
 In order to demonstrate that the algorithms we propose are in fact 
 superior to similar algorithms in the field, we will have to compare 
-them. In this chapter we will first describe exactly how we intent to 
-test the algorithms and then discuss the results of these comparisons.  
+them with the state of the art. In this chapter we will first describe 
+exactly how we intent to compare the algorithms and then discuss the 
+results of these comparisons.  
 
 \section{Experiments}
-For our ideal matching algorithm we would like it to return not only 
-correct matches but all possible correct matches when images overlap and 
-no matches at all when they don't.  We would like it to work flawlessly 
-not just one a few images but on all possible images, and we would 
-expect it to run fast even on when faced with tens of thousands of 
+For our ideal matching algorithm we would like it to return not just 
+some correct matches but all possible correct matches when images 
+overlap and no matches at all when they don't.  We would like it to work 
+flawlessly not just one a few images but on all possible images, and we 
+would expect it to run fast even on when faced with tens of thousands of 
 feature points.
 
 These requirements fall in to three different categories. We want to 
-verify that the algorithm is \emph{accurate}, \emph{general} and 
+verify that the algorithm is \emph{general}, \emph{accurate} and 
 \emph{fast}.
-
-\subsection{Measuring Accuracy}
-
-To measure the accuracy of an algorithm we are interested in two values:
-Precision and Recall. These measures were introduced in \cite{ke2004pca}
-and later used in \cite{mikolajczyk2005performance}. Recall corresponds 
-to the number of correct matches over the total amount of possible 
-correct matches in between the two images:
-\begin{equation*}
-	recall = \frac{\# ~ Correct ~ Matches}{\# ~ Total ~ Possible ~ 
-	Matches}
-\end{equation*}
-This measure tells us how thorough we are in finding all possible 
-matches that could be made between the two images. To decide whether a 
-match is correct, we use the following method:
-Given a potential match between two pixels $p_1$ and $p_2$, $m = 
-\left(p_1, p_2\right)$, and a homography $H$ relating the two images 
-$I_1$ and $I_2$, we can calculate if $m$ is an inlier by checking if the 
-two points satisfy the following criteria:
-\begin{equation*}
-\left\vert H p_1 - p_2 \right\vert + \left\vert H^{-1}p_2 - p_1 \right\vert < d_{\max}
-\end{equation*}
-That is, the distance between $p_1$ translated to $I_2$ and $p_2$ 
-\emph{plus} the distance between $p_2$ translated to $I_1$ should be 
-less than a certain threshold (we use $d_{\max}=5$ pixels here). To 
-count the number of possible matches we go over all possible 
-combinations of feature points between the two images, measure their 
-distance and count how many lie within the threshold.
-Precision on the other hand is measured by the amount of correct matches
-over the total amount of matches returned:
-\begin{equation*}
-	precision = \frac{\# ~ Correct ~ Matches}{\# ~ Correct ~ Matches ~ + 
-	~ \# ~ False ~ Matches}
-\end{equation*}
-This measures how accurate the set of returned matches from the 
-algorithm is. An algorithm that returns only a few matches out of many, 
-but most of them are correct will have a high precision and a low 
-recall, where as an algorithm that returns almost all possible matches, 
-both true and false will have a low precision but a high recall. The 
-ideal matching algorithm will be both precise but also return as many 
-correct matches as possible. However for many applications we only need 
-enough correct matches to align to the images, in which case we care 
-more about precision than recall. 
 
 \subsection{Measuring Generality}
 
 To convincingly show that the algorithms work for general cases we need 
-to demonstrate good recall and precision across a wide range of images.  
-However if we are just given to images and a set of matches, there is no
+to demonstrate good results across a wide range of images.  However if 
+we are just given to images and a set of matches, there is no
 way to tell which matches are correct and which aren't without going 
-through them by hand and count them. For any but the simplest cases this
-becomes prohibitively time consuming.
+through the output by hand and for each match verify that it is correct.  
+For any but the simplest cases this becomes prohibitively time 
+consuming.
+
+\begin{figure}[tb]
+    \begin{subfigure}[t]{0.5\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/homography_possible}
+        \caption{Homography possible}
+        \label{fig:hom_possible}
+    \end{subfigure}%
+        \quad %add desired spacing between images, e. g. ~, \quad, (or a 
+    %blank line to force the subfigure onto a new line)
+    \begin{subfigure}[t]{0.5\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/homography_not_possible}
+        \caption{Homography not possible}
+        \label{fig:hom_impossible}
+    \end{subfigure}%
+    \caption{Example of images that can and cannot be tied with a 
+        homography: Figure~\ref{fig:hom_possible} shows an image pair 
+        that can be linked by a homography, since all common areas lie 
+        on a plane.  Figure~\ref{fig:hom_impossible} shows an image pair 
+        that can't reliably be linked by a homography. Even if we 
+        discount the change of people in the scence, the position of the 
+        bell compared to the building in the background changes as we 
+        change our viewpoint. Images in Figure~\ref{fig:hom_possible} 
+        are from the \emph{Murals} dataset while images in 
+        Figure~\ref{fig:hom_impossible} are from the Gallagher dataset 
+    \cite{gallagher2008}.}
+    \label{fig:homography_example}
+\end{figure}
 
 A way to circumvent this problem is to restrict the images we test on to 
 image pairs that are linked by a homography. Two images linked by a 
-homography are tied by a change in perspective such that we given a 
-point in one image and the homography we can calculate the corresponding 
-position of the point in the other image. Not all image pairs can be 
-linked with a homography, something that is intuitive if we image two 
-pictures of a playing child. We can't predict the positions of the hands
-of the child in the second image with pixel precision just by knowing 
-the position of the hands in the first image. However for images where 
-all points are situated on a plane or where all the points are far away,
-a homography is usually sufficent to describe the pixel transformations 
-from one image to the next.
+homography are are related in a way that means that any point in the 
+first image can be translated a point in the second by a linear 
+equation. This holds true for two images where the points they have in 
+common are situated on a plan, or in the case that the camera only 
+rotated in between images. Figure~\ref{fig:homography_example} shows an 
+example of an image pair that can be linked with a homography and 
+another that cannot. In the second image pair, the change in camera 
+position means that pixels can't be linearly translated from one image 
+to another. For example would a pixel on the bell be translated to one 
+location while an adjacent pixel on the building in the background would
+move differently. For this reason we are constrained in which images 
+it's possible to test the algorithms on since we cannot evaluate the 
+results if the images are not tied by a homography.
 
 Mikolajczyk and Schmid  \cite{mikolajczyk2005performance} introduced a 
 set of test images to compare the performance of feature detectors. The 
@@ -98,27 +89,23 @@ cropped to show the same motive and resized to $900\times 600$ pixels.
 This dataset will be referred to as the \emph{Murals} dataset.  
 Figure~\ref{fig:murals} shows one image from each pair.
 
-\begin{figure}[htb]
-    \makebox[1.0\textwidth][c]{%
-        \begin{subfigure}[t]{0.102\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/pair_example1}
-			\label{fig:fairey1}
-	\end{subfigure}%
+\begin{figure}[b]
+    \begin{subfigure}[t]{0.102\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/pair_example1}
+    \end{subfigure}%
 		\enspace %add desired spacing between images, e. g. ~, \quad, 
 		%(or a blank line to force the subfigure onto a new line)
-        \begin{subfigure}[t]{0.102\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{images/pair_example2}
-			\label{fig:fairey2}
-		\end{subfigure}%
-		\enspace %
-        \begin{subfigure}[t]{0.77\textwidth}
-   		\centering
-   		\includegraphics[width=\columnwidth]{images/crop_examples}
-		\end{subfigure}%
-	}%
-	\caption{Sample test patches produced from an image pair.}
+    \begin{subfigure}[t]{0.102\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/pair_example2}
+    \end{subfigure}%
+    \enspace %
+    \begin{subfigure}[t]{0.77\textwidth}
+    \centering
+    \includegraphics[width=\columnwidth]{images/crop_examples}
+    \end{subfigure}%
+    \caption{Sample test patches produced from an image pair.}
 	\label{fig:fairey}
 \end{figure}
 
@@ -129,7 +116,7 @@ Figure~\ref{fig:murals} shows one image from each pair.
 	\label{fig:murals}
 \end{figure*}
 
-\begin{figure}[htb]
+\begin{figure}[tb]
 	\centering
 	\includegraphics[width=\columnwidth]{images/graf12345.jpg}
 	\caption{Images 1-5 of the Graf set from \cite{mikolajczyk2005performance}.}
@@ -179,6 +166,49 @@ of the \emph{Graf} image set (Figure~\ref{fig:Graf}).}
 \end{tabular}
 \end{table}
 
+\subsection{Measuring Accuracy}
+
+To measure the accuracy of an algorithm we are interested in two values:
+Precision and Recall. These measures were introduced in \cite{ke2004pca}
+and later used in \cite{mikolajczyk2005performance}. Recall corresponds 
+to the number of correct matches over the total amount of possible 
+correct matches in between the two images:
+\begin{equation*}
+	recall = \frac{\# ~ Correct ~ Matches}{\# ~ Total ~ Possible ~ 
+	Matches}
+\end{equation*}
+This measure tells us how thorough we are in finding all possible 
+matches that could be made between the two images. To decide whether a 
+match is correct, we use the following method:
+Given a potential match between two pixels $p_1$ and $p_2$, $m = 
+\left(p_1, p_2\right)$, and a homography $H$ relating the two images 
+$I_1$ and $I_2$, we can calculate if $m$ is an inlier by checking if the 
+two points satisfy the following criteria:
+\begin{equation*}
+\left\vert H p_1 - p_2 \right\vert + \left\vert H^{-1}p_2 - p_1 \right\vert < d_{\max}
+\end{equation*}
+That is, the distance between $p_1$ translated to $I_2$ and $p_2$ 
+\emph{plus} the distance between $p_2$ translated to $I_1$ should be 
+less than a certain threshold (we use $d_{\max}=5$ pixels here). To 
+count the number of possible matches we go over all possible 
+combinations of feature points between the two images, measure their 
+distance and count how many lie within the threshold.
+Precision on the other hand is measured by the amount of correct matches
+over the total amount of matches returned:
+\begin{equation*}
+	precision = \frac{\# ~ Correct ~ Matches}{\# ~ Correct ~ Matches ~ + 
+	~ \# ~ False ~ Matches}
+\end{equation*}
+This measures how accurate the set of returned matches from the 
+algorithm is. An algorithm that returns only a few matches out of many, 
+but most of them are correct will have a high precision and a low 
+recall, where as an algorithm that returns almost all possible matches, 
+both true and false will have a low precision but a high recall. The 
+ideal matching algorithm will be both precise but also return as many 
+correct matches as possible. However for many applications we only need 
+enough correct matches to align to the images, in which case we care 
+more about precision than recall. 
+
 \subsection{Measuring Speed}
 
 To gain an intuition about the typical running time of an algorithm we 
@@ -199,6 +229,25 @@ seconds to run on $200$ feature points.
 
 For this reason we will have to look at both the measuring speed as well
 as the computational complexity of the algorithms.
+
+\begin{figure}[t]
+	\begin{subfigure}[c]{0.2\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{images/graf}
+	\end{subfigure}%
+	~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
+	%(or a blank line to force the subfigure onto a new line)
+	\begin{subfigure}[c]{0.8\textwidth}
+	\centering
+	\includegraphics[width=\columnwidth]{images/result_graf}
+	%\caption{Performance on Scharf}
+	\end{subfigure}%
+	\caption{Accuracy for image pair 1\&3 from the \emph{Graf} set. The 
+	plot shows the result of 100 patch pairs generated from the source 
+	images shown to the left. The x-axis shows the recall based on the 
+accumulated amount of potential matches for all 100 patch pairs. }
+	\label{fig:result_graf}
+\end{figure}
 
 \section{Results}
 \label{S:Results}
@@ -222,25 +271,6 @@ both are performing at optimal accuracy.  The geometric matching methods
 short of \emph{MM} and \emph{MMC}.
 
 
-\begin{figure}[htb]
-	\begin{subfigure}[c]{0.2\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{images/graf}
-	\end{subfigure}%
-	~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-	%(or a blank line to force the subfigure onto a new line)
-	\begin{subfigure}[c]{0.8\textwidth}
-	\centering
-	\includegraphics[width=\columnwidth]{images/result_graf}
-	%\caption{Performance on Scharf}
-	\end{subfigure}%
-	\caption{Accuracy for image pair 1\&3 from the \emph{Graf} set. The 
-	plot shows the result of 100 patch pairs generated from the source 
-	images shown to the left. The x-axis shows the recall based on the 
-accumulated amount of potential matches for all 100 patch pairs. }
-	\label{fig:result_graf}
-\end{figure}
-
 To validate whether these results generalize to other images, we tested 
 the four algorithms on the \emph{Murals} dataset as well as the 
 \emph{Graf} pair tested above.  In total 900 different patch pairs were 
@@ -257,17 +287,6 @@ potential matches for all patch pairs.}
 	\label{fig:result_accumulated}
 \end{figure}
 
-To further investigate the impact of viewpoint changes, we tested the 
-algorithms on the \emph{Graf} image set (Figure~\ref{fig:Graf}), which 
-contains 5 images of the same mural taken with gradually increasing 
-viewpoint changes.  The first images are almost identical, while the 
-last are taken from very different angles. The results from   \emph{MMC} 
-and \emph{Ratio} as shown in Figure~\ref{fig:result_viewpoint}, 
-confirming that \emph{MMC} is generally superior to \emph{Ratio} across 
-viewpoint changes.
-The performance of \emph{MM} (not shown in the plot) is similar to 
-\emph{MMC}.
-
 \begin{figure}[htb]
 	\centering
 	\includegraphics[width=1\textwidth]{images/result_viewpoint}
@@ -277,6 +296,19 @@ The performance of \emph{MM} (not shown in the plot) is similar to
 	\label{fig:result_viewpoint}
 \end{figure}
 
+To further investigate the impact of viewpoint changes, we tested the 
+algorithms on the \emph{Graf} image set (Figure~\ref{fig:Graf}), which 
+contains 5 images of the same mural taken with gradually increasing 
+viewpoint changes.  The first images are almost identical, while the 
+last are taken from increasingly different angles. The results from   
+\emph{MMC} and \emph{Ratio} as shown in 
+Figure~\ref{fig:result_viewpoint}, confirm that \emph{MMC} is generally 
+superior to \emph{Ratio} across viewpoint changes. For both methods 
+however we see a stark decrease in recall as the viewpoint change 
+increases. The performance of \emph{MM} (not shown in the plot) is 
+similar to \emph{MMC}.
+
+
 In order to investigate whether a geometric algorithm can be improved by
 pruning the initial matching set, we tested a hybrid algorithm 
 \emph{Spectral-MMC} where matches are selected by \emph{MMC} before 
@@ -284,7 +316,7 @@ being filtered by \emph{Spectral}. The results are shown in
 Figure~\ref{fig:result_spectral-mmc} and show that \emph{Spectral-MMC} 
 not only outperforms \emph{Spectral} but also improves on \emph{MMC} at 
 similar recall rates, illustrating how a geometric algorithm can be 
-complemented by a reliable non-geometric pruning of matches.
+complemented by a reliable non-geometric selection of matches.
 
 \begin{figure}[htb]
 	\centering
@@ -324,22 +356,6 @@ homographic mapping between the images.
 
 \subsection{Computational Complexity and Speed}
 
-In terms of computational complexity, \emph{Ratio}, \emph{MM}, and 
-\emph{Isomatch} can be implemented in $O(n\log n)$, where $n$ is the 
-total number of feature points. The performance of \emph{Spectral} is 
-upper bounded by $O(n^{3/2})$. Our current \emph{MMC} implementation has 
-a complexity of $O(n^2)$ due to the construction of a similarity matrix 
-of the feature points.  However, it is possible to approximate this in 
-$O(n\log n)$ using search trees.  
-
-As for speed, Table~\ref{table:running_times} shows the running time of 
-the four algorithms over 100 image pairs of $250\!\times\!250$ pixels.  
-These numbers should be taken with a grain of salt, given that much of 
-the code behind \emph{MMC} and \emph{Isomatch} is implemented in Python, 
-whereas \emph{MM} and \emph{Ratio} make use of OpenCV to execute 
-computationally intensive operations in C++, which makes them much 
-faster. 
-
 \begin{table}[htb]
 \caption{Running times as tested on a Intel\textregistered\ Core\texttrademark\ i5-3550 CPU @ 
 3.30~GHz with 8~GB memory.}
@@ -356,3 +372,19 @@ faster.
 	\hline
 \end{tabular}
 \end{table}
+In terms of computational complexity, \emph{Ratio}, \emph{MM}, and 
+\emph{Isomatch} can be implemented in $O(n\log n)$, where $n$ is the 
+total number of feature points. The performance of \emph{Spectral} is 
+upper bounded by $O(n^{3/2})$. Our current \emph{MMC} implementation has 
+a complexity of $O(n^2)$ due to the construction of a similarity matrix 
+of the feature points.  However, it is possible to approximate this in 
+$O(n\log n)$ using search trees.  
+
+As for speed, Table~\ref{table:running_times} shows the running time of 
+the four algorithms over 100 image pairs of $250\!\times\!250$ pixels.  
+These numbers should be taken with a grain of salt, given that much of 
+the code behind \emph{MMC} and \emph{Isomatch} is implemented in Python, 
+whereas \emph{MM} and \emph{Ratio} make use of OpenCV to execute 
+computationally intensive operations in C++, which makes them much 
+faster. 
+

@@ -9,8 +9,8 @@ matching algorithms, \emph{MM} and \emph{MMC}, we use show how they
 improve existing methods in near duplicate detection and panorama 
 recognition. These two problems were chosen because they both involve 
 matching images that might or might not overlap. These cases requires 
-matching algorithms that limit false positives since e.g. returning the 
-top $n$ matches for any given image pair would make it hard to 
+matching algorithms that limit false positives since the alternative 
+would be to select the top $n$ matches which would make it hard to 
 distinguish adjacent or duplicate images from non-adjacent or dissimilar
 image pairs. Near duplicate detection also constraints normal matching 
 algorithms from relying on geometric assumptions, since we have very few
@@ -20,7 +20,7 @@ will first see \emph{MMC} applied to panorama recognition and alignment,
 and next \emph{MM} and \emph{MMC} applied to near duplicate detection.
 
 
-\subsection{Panorama Recognition and Alignment}
+\section{Panorama Recognition and Alignment}
 One of the oldest practical problems approached in computer vision is 
 the automatic stitching of several source images into a bigger image, 
 such as panoramas and composite satellite photos\footnote{A brief 
@@ -113,7 +113,7 @@ created with images that have little overlap.
 % Maybe find example of images with identical features that would be 
 % hard to match?
 
-\subsection{Near Duplicate Detection}
+\section{Near Duplicate Detection}
 If we look at two images, we can often easily tell if one image 
 resembles the other enough to be redundant in a photo album. In computer 
 vision this task becomes a lot less trivial because our idea of a 
@@ -121,12 +121,12 @@ duplicate image might only require there being some object or scene in
 common between the image pair. In addition the object or scene might 
 have been taken from a different angle and under different camera 
 settings. Facing these challenges, a lot of work has been done trying to 
-reliably recognize duplicaes both with regards to corporate intellectual 
-property as well as consumer photo albums because both applications 
-provide useful tools.  A company might be interested in finding images 
-that are derived from their intellectual property, while consumers 
-taking vacation photos might be interested in grouping duplicate images 
-to allow for easier photo organization.
+reliably recognize duplicates both with regards to corporate 
+intellectual property as well as consumer photo albums because both 
+applications provide useful tools.  A company might be interested in 
+finding images that are derived from their intellectual property, while 
+consumers taking vacation photos might be interested in grouping 
+duplicate images to allow for easier photo organization.
 
 \begin{figure}[h]
 	\includegraphics[width=\textwidth]{images/near_duplicate_example}
@@ -149,7 +149,7 @@ The \emph{PhotoCluster} method introduced by Vonikakis et al.
 California-nd dataset \cite{jinda2012california} which contains a set of
 annotated vacation images similar to a typical photo album in a consumer
 product. \emph{PhotoCluster} works by grouping images in several steps 
-using first image metadata and global features to obtain a set of 
+using first image meta data and global features to obtain a set of 
 proposed clusters. Then local features are used to find the best 
 matching images in these proposed clusters yielding the final groups of 
 near duplicate images. To show the viability of \emph{MMC} in the 
@@ -181,4 +181,3 @@ framework using \emph{Ratio} to match images. For comparison, the
 performance improvement of \emph{PhotoCluster} compared to XMatch 
 \cite{zhao2009scale}, the second best performing algorithm on the 
 California-nd dataset according to \cite{vas2013cluster}, is 2.52\%.
-
