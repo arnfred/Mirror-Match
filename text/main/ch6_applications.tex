@@ -28,11 +28,13 @@ overview of the history of image stitching can be found in Szeliski's
 book: Computer Vision: Algorithms and Applications \cite{szeliski2010}}.  
 As part of the process of stitching together images, the individual 
 images must be aligned and often transformed in perspective. Earlier 
-methods relied on minimizing pixel dissimilarities in overlapping images 
-while more recent methods have used local feature points to estimate the 
-correct image alignment. Using local feature points carry the additional 
-advantage that it is feasible to automatically recognize where each 
-source image belong in the final panorama.
+methods relied on minimizing pixel dissimilarities in overlapping images
+(\cite{shum1997panoramic}, \cite{szeliski1995direct}) while more recent 
+methods have used local feature points to estimate the correct image 
+alignment (\cite{mclauchlan2002image}, \cite{capel1998automated}, 
+\cite{brown2007automatic}).  Using local feature points carry the 
+additional advantage that it is feasible to automatically recognize 
+where each source image belong in the final panorama.
 
 \begin{figure}[h]
 	\begin{subfigure}[t]{0.9\textwidth}
@@ -88,18 +90,23 @@ as input a set of $n$ source images $\left\{I_0, \ldots, I_n\right\}$
 and returns as output a panoramic image stitched together from the 
 source images. Based on the matches found by applying \emph{MMC} to $I$, 
 the images are combined in an order corresponding to how many matches 
-connect them, as done by Brown and Lowe \cite{brown2007automatic}.
+connect them, as done by Brown and Lowe \cite{brown2007automatic}. That 
+is, homographies are estimated between all images with sufficient 
+feature point matches in between them as returned by \emph{MMC}. Then 
+the images are stitched together starting with the image pair having the 
+highest amount of matches, and continuing in a decrease order of 
+matches.
 
 Brown and Lowe make use of bundle adjustment\footnote{Bundle adjustment 
 provides a way to globally optimize the accuracy of the image alignment} 
-and a lot of image enhancements such as exposure adjustment and edge 
+and various image enhancements such as exposure adjustment and edge 
 blurring to provide a seamless panorama. While these additions improve 
-the end product, they don't influence the performance of panorama 
-alignment and recognition and haven't been included in the simple 
-comparison algorithm.
+the end product, they don't influence the performance of the alignment 
+and recognition parts of panorama stitching and for this reason haven't 
+been included in the simple comparison algorithm.
 
 Figure~\ref{fig:pano_example} shows an example where the added accuracy 
-of MMC enables us to correctly recognitize and align source images that 
+of MMC enables us to correctly recognize and align source images that 
 fail to be combined by Autostitch, a program using the algorithm 
 proposed by Brown and Lowe \cite{brown2007automatic}. In this particular
 case the matching algorithm used in Autostitch fails to find sufficient 
@@ -116,17 +123,16 @@ created with images that have little overlap.
 \section{Near Duplicate Detection}
 If we look at two images, we can often easily tell if one image 
 resembles the other enough to be redundant in a photo album. In computer 
-vision this task becomes a lot less trivial because our idea of a 
-duplicate image might only require there being some object or scene in 
-common between the image pair. In addition the object or scene might 
-have been taken from a different angle and under different camera 
-settings. Facing these challenges, a lot of work has been done trying to 
-reliably recognize duplicates both with regards to corporate 
-intellectual property as well as consumer photo albums because both 
-applications provide useful tools.  A company might be interested in 
-finding images that are derived from their intellectual property, while 
-consumers taking vacation photos might be interested in grouping 
-duplicate images to allow for easier photo organization.
+vision this task is nontrivial because our idea of a duplicate image 
+might only require there being some object or scene in common between 
+the image pair. In addition the object or scene might have been taken 
+from a different angle and under different camera settings. Facing these 
+challenges, work has been done trying to reliably recognize duplicates 
+both with regards to corporate intellectual property as well as consumer 
+photo albums.  A company might be interested in finding images that are 
+derived from their intellectual property, while it allows consumers 
+taking vacation photos to automatically grouping duplicate images which 
+allows for easier photo organization.
 
 \begin{figure}[h]
 	\includegraphics[width=\textwidth]{images/near_duplicate_example}
@@ -152,32 +158,34 @@ product. \emph{PhotoCluster} works by grouping images in several steps
 using first image meta data and global features to obtain a set of 
 proposed clusters. Then local features are used to find the best 
 matching images in these proposed clusters yielding the final groups of 
-near duplicate images. To show the viability of \emph{MMC} in the 
-application of near duplicated detection, we modify the PhotoCluster 
-method to use \emph{MMC} for matching images instead of \emph{Ratio} 
-which was previously used. Due to the time consumption of \emph{MMC}, 
-all images where resized to to 10\% before being compared. Outside of 
-that, the experiments were performed exactly as documented in 
-\cite{vas2013cluster}.
+near duplicate images. To show the viability of \emph{MM} and \emph{MMC} 
+in the application of near duplicated detection, we modify the 
+PhotoCluster method to use the proposed algorithms for matching images 
+instead of \emph{Ratio} which was previously used. The experiments were 
+performed as documented in \cite{vas2013cluster}, however due to the 
+running time of \emph{MMC} it is intractable to calculate the test 
+scores on full scale images. To showcase the performance of \emph{MMC} 
+we add a test case using images resizes to 10\% of their original size.
 
 \begin{table}[htb]
-\caption{Results from Near Duplicate Detection at 10\% scale}
+\caption{Results from Near Duplicate Detection}
 \label{table:ndd}
 	\centering
 %	\small
-\begin{tabular}{r*{2}{r}}
+\begin{tabular}{r*{3}{r}}
 \hline
-    Method: & Ratio & MMC   \\
+F1 score & \emph{Ratio} & \emph{MM} & \emph{MMC}   \\
 	\noalign{\smallskip}
 	%
-    F1 score: & 0.4654 & 0.5459 \\
+    10\% Scale: & 0.5013 & 0.5990 & 0.5785 \\
+    100\% Scale: & 0.0 & 0.0 & --- \\
 	\hline
 \end{tabular}
 \end{table}
 
 The results of the comparison can be seen in Table~\ref{table:ndd}. It 
-shows that \emph{MMC} improves performance by 8.05\% over the original 
-framework using \emph{Ratio} to match images. For comparison, the 
-performance improvement of \emph{PhotoCluster} compared to XMatch 
+shows that \emph{MM} improves performance by 19.49\% over the original 
+framework using \emph{Ratio} to match images. For comparison 
+\emph{PhotoCluster} improves on the results of Xmatch 
 \cite{zhao2009scale}, the second best performing algorithm on the 
-California-nd dataset according to \cite{vas2013cluster}, is 2.52\%.
+California-nd dataset according to \cite{vas2013cluster}, with 2.52\%.
