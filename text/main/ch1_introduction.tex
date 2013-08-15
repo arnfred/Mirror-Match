@@ -12,46 +12,47 @@
 %these problems better feature point matching will most likely yield 
 %better solutions.
 
-My goal when I started working on this thesis was not to improve feature 
-point matching, but via a series of detours I ended up circling the 
-problem which I found alluring, not just because it its importance, but 
-also because of its inherent simplicity. Out of two sets, finding pairs 
-of similar elements seems like a problem that should have been solved 
-long ago, yet because of the nature of feature points and the data they 
-are used on, there seems to be plenty of progress to be made still.
+My original goal when I started working on this thesis was not to 
+improve feature point matching. I started out working on face 
+clustering, but via a series of detours I ended up circling the problem,
+which I found alluring not just because it its importance, but also 
+because of its inherent simplicity.  Out of two sets, finding pairs of 
+similar elements seems like a problem that should have been solved long 
+ago, yet because of the nature of feature points and the data they are 
+used on, there still seems to be plenty of progress to be made.
 
 As the outcome of my work I propose two algorithms, \emph{Mirror Match 
 (MM)} and \emph{Mirror Match with Clustering (MMC)}. Both algorithms are 
 designed to tackle the problem of reliably matching feature points under 
 circumstances where we cannot assume two images necessarily have any 
 correspondences.  The goal of this thesis will be to describe these 
-algorithms and convincingly demonstrate that they outperform traditional 
+algorithms and convincingly demonstrate that they outperform existing 
 approaches.  While doing this I hope to provide sufficient background 
-for a technically minded reader without any necessary experience in 
+for a technically-minded reader without any necessary experience in 
 computer vision to follow the motivation behind \emph{MM} and \emph{MMC} 
-and enable him or her to place both algorithms in a bigger scientific 
-perspective.
+and enable him or her to understand both algorithms within a bigger 
+scientific perspective.
  
 The thesis is organized as follows: Chapter~\ref{C:Background} provides 
 background and motivation for the development of \emph{MM} and 
-\emph{MMC}. The chapter serves two purposes.  For those that might be 
+\emph{MMC}. The chapter serves two purposes:  For those who might be 
 reading this introduction wondering what a feature point really is and 
-how it is matched, it provides a gentle introduction to the why's and 
-how's of feature point matching. At the same time the chapter is meant 
+how it is matched, it provides a gentle introduction to the hows and 
+whys of feature point matching. At the same time, the chapter is meant 
 as an introduction to related work which is hopefully useful for those 
 who might use this thesis as a starting point for finding other research 
-on the same subject. Chapter~\ref{C:Algorithms} will introduce in detail 
-the algorithms proposed in this thesis. The reference algorithms used to 
+on the same subject. Chapter~\ref{C:Algorithms} introduces in detail the 
+algorithms proposed in this thesis. The reference algorithms used to 
 benchmark \emph{MM} and \emph{MMC} are also introduced in detail.  
-Chapter~\ref{C:Experiments} details the experiments done to evaluate the 
-proposed algorithms both in terms of how they were conducted as well as 
-their results. Chapter~\ref{C:Applications} provides two examples of how 
-the matching algorithms can improve on panorama stitching and near 
-duplicate matching.
+Chapter~\ref{C:Experiments} details both the setup and results of the 
+experiments done to evaluate the proposed algorithms. 
+Chapter~\ref{C:Applications} provides two examples of how the matching 
+algorithms can improve on panorama stitching and near duplicate 
+matching.
 
 For the remainder of the thesis I will make use of the academic 
-'\emph{we}' to underline the fact this thesis had not been possible had 
-it not been for the guidance of \emph{Stefan Winkler} and \emph{Sabine 
-S\"usstrunk} as well as the support of \emph{Advanced Digital Science 
-Center} in Singapore that hosted me as an intern during the work on this 
-thesis. 
+'\emph{we}' to underline the fact this thesis would not have been 
+possible had it not been for the guidance of \emph{Stefan Winkler} and 
+\emph{Sabine S\"usstrunk} as well as the support of \emph{Advanced 
+Digital Science Center} in Singapore, which hosted me as an intern 
+during the term in which I worked on this thesis. 

@@ -5,13 +5,13 @@ In many areas of computer vision matching local feature points is a key
 component, and matching algorithms have applications in problems such as
 scene matching, object recognition, near duplicate detection and 
 panorama recognition. To show the practical applications of the proposed 
-matching algorithms, \emph{MM} and \emph{MMC}, we use show how they 
-improve existing methods in near duplicate detection and panorama 
-recognition. These two problems were chosen because they both involve 
-matching images that might or might not overlap. These cases requires 
-matching algorithms that limit false positives since the alternative 
-would be to select the top $n$ matches which would make it hard to 
-distinguish adjacent or duplicate images from non-adjacent or dissimilar
+matching algorithms, \emph{MM} and \emph{MMC}, we show how they improve 
+existing methods in near duplicate detection and panorama recognition. 
+These two problems were chosen because they both involve matching images 
+that might or might not overlap. These cases requires matching 
+algorithms that limit false positives since the alternative would be to 
+select the top $n$ matches which would make it hard to distinguish 
+adjacent or duplicate images from non-adjacent or dissimilar
 image pairs. Near duplicate detection also constraints normal matching 
 algorithms from relying on geometric assumptions, since we have very few
 guarantees between two potential near duplicates that they should be 
@@ -48,7 +48,7 @@ where each source image belong in the final panorama.
     \begin{subfigure}[b]{0.4\textwidth}
 		\includegraphics[width=\textwidth]{images/panorama-autostitch}
         \label{fig:pano_autostitch}
-		\caption{Panorama by Autostitch}
+		\caption{Panorama by \emph{Autostitch}}
     \end{subfigure}%
 	~%add desired spacing between images, e. g. ~, \quad, \qquad
 	%(or a blank line to force the subfigure onto a new line)
@@ -59,7 +59,7 @@ where each source image belong in the final panorama.
 	\end{subfigure}%
     \caption{An example of a difficult case for panorama recognition and 
         alignment.  In a) the source images used to generate the 
-        panorama are displayed.\ b) shows the result of the Autostitch 
+        panorama are displayed.\ b) shows the result of the \emph{Autostitch} 
         program from \cite{brown2007automatic} which fails to combine 
         all images, while c) demonstrates the result of the simple 
         panorama stitcher
@@ -107,9 +107,9 @@ been included in the simple comparison algorithm.
 
 Figure~\ref{fig:pano_example} shows an example where the added accuracy 
 of MMC enables us to correctly recognize and align source images that 
-fail to be combined by Autostitch, a program using the algorithm 
+fail to be combined by \emph{Autostitch}, a program using the algorithm 
 proposed by Brown and Lowe \cite{brown2007automatic}. In this particular
-case the matching algorithm used in Autostitch fails to find sufficient 
+case the matching algorithm used in \emph{Autostitch} fails to find sufficient 
 matches between two images pairs to correctly position them and 
 consequently doesn't produce a panorama containing all images as a 
 result.
@@ -124,7 +124,7 @@ created with images that have little overlap.
 If we look at two images, we can often easily tell if one image 
 resembles the other enough to be redundant in a photo album. In computer 
 vision this task is nontrivial because our idea of a duplicate image 
-might only require there being some object or scene in common between 
+might only require that there is some object or scene in common between 
 the image pair. In addition the object or scene might have been taken 
 from a different angle and under different camera settings. Facing these 
 challenges, work has been done trying to reliably recognize duplicates 
@@ -137,7 +137,7 @@ allows for easier photo organization.
 \begin{figure}[h]
 	\includegraphics[width=\textwidth]{images/near_duplicate_example}
 	\caption{Example of a near duplicate image pair from the 
-	California-nd dataset \cite{jinda2012california}}
+	\emph{California-nd} dataset \cite{jinda2012california}}
 	\label{fig:near_duplicate}
 \end{figure}
 
@@ -152,7 +152,7 @@ positives, which is a characteristic of both \emph{MM} and \emph{MMC}.
 
 The \emph{PhotoCluster} method introduced by Vonikakis et al.  
 \cite{vas2013cluster} shows the best clustering performance on the 
-California-nd dataset \cite{jinda2012california} which contains a set of
+\emph{California-nd} dataset \cite{jinda2012california} which contains a set of
 annotated vacation images similar to a typical photo album in a consumer
 product. \emph{PhotoCluster} works by grouping images in several steps 
 using first image meta data and global features to obtain a set of 
@@ -164,8 +164,7 @@ PhotoCluster method to use the proposed algorithms for matching images
 instead of \emph{Ratio} which was previously used. The experiments were 
 performed as documented in \cite{vas2013cluster}, however due to the 
 running time of \emph{MMC} it is intractable to calculate the test 
-scores on full scale images. To showcase the performance of \emph{MMC} 
-we add a test case using images resizes to 10\% of their original size.
+scores on full scale images. 
 
 \begin{table}[htb]
 \caption{Results from Near Duplicate Detection}
@@ -174,18 +173,15 @@ we add a test case using images resizes to 10\% of their original size.
 %	\small
 \begin{tabular}{r*{3}{r}}
 \hline
-F1 score & \emph{Ratio} & \emph{MM} & \emph{MMC}   \\
+Algorithm & \emph{Ratio} & \emph{MM} & \emph{MMC}   \\
 	\noalign{\smallskip}
 	%
-    10\% Scale: & 0.5013 & 0.5990 & 0.5785 \\
-    100\% Scale: & 0.0 & 0.0 & --- \\
-	\hline
+    F1 score: & 0.5013 & 0.5990 & 0.6053 \\
+    \hline
 \end{tabular}
 \end{table}
 
 The results of the comparison can be seen in Table~\ref{table:ndd}. It 
-shows that \emph{MM} improves performance by 19.49\% over the original 
-framework using \emph{Ratio} to match images. For comparison 
-\emph{PhotoCluster} improves on the results of Xmatch 
-\cite{zhao2009scale}, the second best performing algorithm on the 
-California-nd dataset according to \cite{vas2013cluster}, with 2.52\%.
+shows that \emph{MM} and \emph{MMC} improves performance by 19.49\% and 
+20.75\% respectively over the original framework using \emph{Ratio} to 
+match images.

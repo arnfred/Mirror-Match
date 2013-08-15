@@ -3,8 +3,8 @@
 
 In this chapter we will describe the algorithms used in the experiements
 in detail. We start by introducing the proposed algorithms \emph{Mirror 
-Match (MM)} and \emph{Mirror Match with Clustering (MMC)}, and continue 
-with the reference algorithms used for comparison, \emph{Ratio}, 
+Match (MM)} and \emph{Mirror Match with Clustering (MMC)} and continue 
+with the reference algorithms used later for comparison, \emph{Ratio}, 
 \emph{Spectral} and \emph{Isomatch}.
 
 \section{Proposed Matching Methods}
@@ -16,62 +16,65 @@ feature points \emph{Mirror Match
 \subsection{Mirror Match (\emph{MM})}
 
 \begin{figure}[h]
-	\centering%
-		\begin{subfigure}[t]{0.5\columnwidth}
-			\centering
-			\includegraphics[width=0.95\columnwidth]{images/MMC_pitts_source}
-			\caption{Source image pair}
-			\label{fig:pitts_source}
-		\end{subfigure}%
-		~ %
-		\begin{subfigure}[t]{0.5\columnwidth}
-			\centering
-			\includegraphics[width=0.95\columnwidth]{images/MMC_pitts_keypoints}
-			\caption{Feature points}
-			\label{fig:pitts_keypoints}
-		\end{subfigure}%
-		\\ %add desired spacing between images, e. g. ~, \quad, 
-		%\qquad (or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.5\columnwidth}
-			\centering
-			\includegraphics[width=0.95\columnwidth]{images/mirror_match_off}
-			\caption{\emph{Ratio}}
-			\label{fig:unique}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, 
-		\begin{subfigure}[t]{0.5\columnwidth}
-			\centering
-			\includegraphics[width=0.95\columnwidth]{images/mirror_match_with_pruned}
-			\caption{\emph{MM} intermediate result}
-			\label{fig:within}
-		\end{subfigure}%
-		\\ %add desired spacing between images, e. g. ~, \quad, 
-		%\qquad (or a blank line to force the subfigure onto a new line)
-		\begin{subfigure}[t]{0.5\columnwidth}
-			\centering
-			\includegraphics[width=0.95\columnwidth]{images/mirror_match}
-			\caption{\emph{MM} final result}
-			\label{fig:without}
-		\end{subfigure}%
-		~ %add desired spacing between images, e. g. ~, \quad, 
-		\begin{subfigure}[t]{0.5\columnwidth}
-			\centering
-			\includegraphics[width=0.95\columnwidth]{images/MMC_partition}
-			\caption{\emph{MMC} Partition Example}
-			\label{fig:pitts_partition}
-		\end{subfigure}%
-	\caption{Feature matching with \emph{MM} and \emph{MMC}. Dots represent feature points; green/red lines indicate correct/incorrect matches, respectively; black lines represent edges in the feature graph.  
-	(c) Result of \emph{Ratio} matching. 
-  (d) All matches found by \emph{MM}, including intra-image matches. 
-	(e) Final \emph{MM} result. 
-    (f) Example of a partition of feature points after clustering, which 
-includes similar feature points from different sides of a building.}%
-	\label{fig:comparemirror}%
+    \centering%
+        \begin{subfigure}[t]{0.5\columnwidth}
+            \centering
+            \includegraphics[width=0.95\columnwidth]{images/MMC_pitts_source}
+            \caption{Source image pair}
+            \label{fig:pitts_source}
+        \end{subfigure}%
+        ~ %
+        \begin{subfigure}[t]{0.5\columnwidth}
+            \centering
+            \includegraphics[width=0.95\columnwidth]{images/MMC_pitts_keypoints}
+            \caption{Feature points}
+            \label{fig:pitts_keypoints}
+        \end{subfigure}%
+        \\ %add desired spacing between images, e. g. ~, \quad, 
+        %\qquad (or a blank line to force the subfigure onto a new line)
+        \begin{subfigure}[t]{0.5\columnwidth}
+            \centering
+            \includegraphics[width=0.95\columnwidth]{images/mirror_match_off}
+            \caption{\emph{Ratio}}
+            \label{fig:unique}
+        \end{subfigure}%
+        ~ %add desired spacing between images, e. g. ~, \quad, 
+        \begin{subfigure}[t]{0.5\columnwidth}
+            \centering
+            \includegraphics[width=0.95\columnwidth]{images/mirror_match_with_pruned}
+            \caption{\emph{MM} intermediate result}
+            \label{fig:within}
+        \end{subfigure}%
+        \\ %add desired spacing between images, e. g. ~, \quad, 
+        %\qquad (or a blank line to force the subfigure onto a new line)
+        \begin{subfigure}[t]{0.5\columnwidth}
+            \centering
+            \includegraphics[width=0.95\columnwidth]{images/mirror_match}
+            \caption{\emph{MM} final result}
+            \label{fig:without}
+        \end{subfigure}%
+        ~ %add desired spacing between images, e. g. ~, \quad, 
+        \begin{subfigure}[t]{0.5\columnwidth}
+            \centering
+            \includegraphics[width=0.95\columnwidth]{images/MMC_partition}
+            \caption{\emph{MMC} Partition Example}
+            \label{fig:pitts_partition}
+        \end{subfigure}%
+    \caption{Feature matching with \emph{MM} and \emph{MMC}. Dots 
+        represent feature points; green/red lines indicate 
+        correct/incorrect matches, respectively; black lines represent 
+        edges in the feature graph.  (c) Result of \emph{Ratio} 
+        matching.  (d) All matches found by \emph{MM}, including 
+        intra-image matches.  (e) Final \emph{MM} result.  (f) Example 
+    of a graph partition of feature points after clustering in 
+\emph{MMC}, which includes similar feature points from different sides 
+of a building.}%
+    \label{fig:comparemirror}%
 \end{figure}%
 
 The central idea behind \emph{MM} is to match features of $n$ images by 
-taking every feature from all $n$ images and matching it against every 
-other feature from the same set. We can then discard the correspondences 
+taking every feature from all $n$ images and matching them against every 
+other feature from the same set. We then discard the correspondences 
 that match two points within the same image. Algorithm~\ref{alg-mm} 
 details the implementation of \emph{MM}.
 
@@ -110,28 +113,28 @@ getImg(f_j) \wedge \left(f_j, f_i\right) \not\in matches_{final}$}
 In the \emph{acquisition stage} we extract local feature points and 
 obtain their descriptors from the set of images. The algorithm is not 
 designed to make use of any feature extractor in particular, but for the
-experiments (Chapter~\ref{C:Experiments}) the SIFT feature extractor and
-descriptor has been used. In the \emph{matching} stage these features 
-are matched using $k$-nearest neighbors.  The distance function $d(f_i, 
-f_j)$ between features is calculated according to the feature 
-descriptor. For SIFT we use the cosine similarity between the two 
-descriptor vectors, while other descriptors might use other 
-measures\footnote{BRIEF for example uses the hamming measure to speed up 
-the computation}.  For any given feature $f_i$ the two closest neighbors 
-are returned, and we calculate the ratio between them as proposed in 
-\cite{lowe2004sift}\footnote{In Part~\ref{ss:ratio} this calculation and 
-other details of \emph{Ratio} will be discussed}.  Any correspondence 
-with a ratio above the threshold supplied will be discarded. Finally in 
-the filter stage we check that matches are from different images and 
-discard all matches that are not symmetric. That is; if a feature, 
-$f_i$, is best matched to another feature, $f_j$, we would want for 
-$f_j$ to be best matched to $f_i$ too.
-This isn't always the case, for example if $f_i$ doesn't have a true 
+experiments (Chapter~\ref{C:Experiments}) the \emph{SIFT} feature 
+extractor and descriptor has been used. In the \emph{matching} stage 
+these features are matched using $k$-nearest neighbors.  The distance 
+function $d(f_i, f_j)$ between features is calculated according to the 
+feature descriptor. For \emph{SIFT} we use the cosine similarity between 
+the two descriptor vectors, while other descriptors might use other 
+measures\footnote{\emph{BRIEF} for example uses the hamming measure to 
+speed up the computation.}.  For any given feature $f_i$ the two closest 
+neighbors are returned, and we calculate the ratio between them as 
+proposed in \cite{lowe2004sift}\footnote{In Part~\ref{ss:ratio} this 
+calculation and other details of \emph{Ratio} will be discussed.}.  Any 
+correspondence with a ratio above the threshold supplied will be 
+discarded. Finally in the filter stage we check that matches are from 
+different images and discard all matches that are not symmetric. That 
+is, if a feature $f_i$, is best matched to another feature $f_j$, we 
+would want for $f_j$ to be best matched to $f_i$ too.
+This isn't always the case, for example if $f_i$ does not have a true 
 correspondance in the other image, its closest neighbor $f_j$ might 
 likely be better matched with a different feature point.
 
 Figure~\ref{fig:comparemirror} illustrates the benefits of \emph{MM} 
-using an example image pair from the Gallagher dataset 
+using an example image pair from the \emph{Gallagher} dataset 
 \cite{gallagher2008}.
 With \emph{Ratio} (Figure~\ref{fig:unique}), many incorrect matches occur 
 in the fence towards the bottom of the image.
@@ -171,18 +174,19 @@ Algorithm~\ref{alg-mmc} shows the implementation of \emph{MMC}.
 \EndFor
 \State $P\gets cluster(A_{norm})$
 \ForAll{$p \in P$} \Comment p is a set of feature points
-	\State $M\gets M \cup getMatches(p, t, F)$
+    \State $M\gets M \cup getMatches(p, t, F)$ \Comment See 
+    Algorithm~\ref{alg-getmatches}
 \EndFor \\
 \Return matches
 \end{algorithmic}
 %}
 \end{algorithm}
 
-To cluster the feature points, we construct a graph with the feature 
-points as nodes and their similarity score as normalized edge weights.  
-Given a set of $n$ features $F = {f_1, \ldots, f_n}$ and a similarity 
-function $s$ we can define the matching function $M : (f_i, f_j) 
-\rightarrow \mathbb{R}$ as follows:
+To cluster the feature points, we construct a weighted graph with the 
+feature points as nodes and their similarity score as normalized edge 
+weights.  Given a set of $n$ features $F = {f_1, \ldots, f_n}$ and a 
+similarity function $s$ we can define the matching function $M : (f_i, 
+f_j) \rightarrow \mathbb{R}$ as follows:
 \begin{equation*}
     M(a,b) = \begin{cases} s(f_i, f_j) & \mbox{if } f_i \neq f_j \\ 0 & 
     \mbox{otherwise}
@@ -200,55 +204,54 @@ similarity graph of feature points as follows:
 \end{equation*}
 
 In the literature there are various ways of clustering a graph according 
-to different measures of what constitutes an optimal partitioning. 
-Traditionally the most used clustering algorithms have been K-means and 
-spectral clustering, but in recent years a host of new algorithms have 
-been proposed based on both Newman's concept of graph 
-modularity\footnote{Introduced in \cite{girvan2002}, discussed in 
+to different measures of what constitutes an optimal partitioning.  
+Traditionally the most used clustering algorithms have been 
+\emph{K-means} and spectral clustering, but in recent years a host of 
+new algorithms have been proposed based on both Newman's concept of 
+graph modularity\footnote{Introduced in \cite{girvan2002}, discussed in 
 \cite{brandes2007} and used in \cite{blondel2008} as well as others} as 
 well as information theoretical measures\footnote{See for example 
 \cite{rosvall2008}} and the Potts spin model from physics\footnote{Used 
-in \cite{ronhovde2009}} just to mention a few. On tests done using 
-randomly generated graphs with a known partitioning \cite{blondel2008}, 
+in \cite{ronhovde2009}} just to mention a few.  On tests done using 
+randomly generated graphs with a known partitioning, \cite{blondel2008}, 
 \cite{rosvall2008} and \cite{ronhovde2009} perform markedly better than 
-spectral clustering and K-means\cite{lancichinetti2009}.
+spectral clustering and \emph{K-means}\cite{lancichinetti2009}.
 
 
 \begin{figure}[t]
     \centering
 	\includegraphics[width=\textwidth]{images/MMC_graph}
     \caption{The partitioned feature graph. Each vertex represents a 
-        feature point; lines indicate high similarity between points. A 
-        partition is a connected group with the same color. The border 
-        color of each node indicates which image it belongs to.  Zooming 
-    into a subsection of the graph (right part), the various cluster 
-sizes can be seen, ranging from hundreds of feature points to only two 
-or three.}
+        feature point while lines indicate high similarity between 
+        points.  A partition is a connected group with the same color.  
+        The border color of each node indicates which image it belongs 
+        to.  Zooming into a subsection of the graph (right part), the 
+    various cluster sizes can be seen, ranging from hundreds of feature 
+points to only two or three.}
     \label{fig:graph-view}
 \end{figure}
 
-We use the Louvain Method \cite{blondel2008} for clustering feature 
-points, since it is relatively fast and performs well 
+We use the \emph{Louvain Method} \cite{blondel2008} for clustering 
+feature points, since it is relatively fast and performs well 
 \cite{lancichinetti2009}, does not require parameters 
 \cite{blondel2008}, and does not emphasize partitions of equal size, as 
 opposed to e.g.\ spectral clustering or k-means \cite{von2007}.
 
-The louvain method is based on optimizing the \emph{Modularity} proposed 
-by \cite{girvan2002} and defined as:
+The \emph{Louvain Method} is based on optimizing the \emph{Modularity} 
+proposed by \cite{girvan2002} and defined as:
 \begin{eqnarray*}
-	Q & = & (\mbox{fraction of edges within communities}) \\
+    Q & = & (\mbox{fraction of edges within clusters}) \\
 	  & & - (\mbox{expected fraction of such edges}) \\
 	& = & \frac{1}{2m} \sum_{i,j} \left[ A_{ij} - \frac{k_i k_j}{2m} \
 \right] \delta(c_i, c_j)
 \end{eqnarray*}
 Where $m=\frac{1}{2} \sum_{ij} A_{ij}$, $k_i = \sum_j A_{ij}$ and 
 $A_{ij}$ is the weight between the edge connecting $i$ and $j$.  
-$\delta(c_i, c_j)$ is the Kroneker Delta which is 1 only if the 
-community assignment $c_i$ is equal to the community assignment $c_j$.
+$\delta(c_i, c_j)$ is the \emph{Kroneker Delta} which is 1 only if the 
+cluster assignment $c_i$ is equal to the cluster assignment $c_j$.
 
-The Louvain Method is based on the maximizing the \emph{Modularity} of a 
-graph iteratively. This is done efficiently because the gain in 
-modularity from moving a vertex $v_i$ to a community $C$ can be 
+We can optimize the modularity efficiently iteratively because the gain 
+in modularity from moving a vertex $v_i$ to a cluster $C$ can be 
 calculated easily:
 \begin{equation*}
 	\Delta Q = \left[ \frac{\sum_{in} + 2 k_{i,in}}{2m} - \
@@ -262,16 +265,16 @@ the edges from $v_i$ to vertices in $C$.  $\sum_{in}$ is the sum of the
 weights of the edges of $C$ while $\sum_{tot}$ is the sum of all edges 
 with at least one vertex in $C$.  The algorithm works by assigning each 
 vertex to its proper cluster and then for each iteration reassign 
-vertices to neighboring communities if it increases the 
-\emph{Modularity}.  These iterations are carried out until there are no 
-reassignments in which case an initial clustering has been reached.  For 
-graphs consisting of a large number of vertices, the algorithm can now 
-be repeated, treating each of the resulting clusters as a vertex and 
+vertices to neighboring clusters if it increases the \emph{Modularity}.  
+These iterations are carried out until there are no reassignments in 
+which case an initial clustering has been reached.  For graphs 
+consisting of a large number of vertices, the algorithm can now be 
+repeated, treating each of the resulting clusters as a vertex and 
 repeating the same procedure.
 
-While the Louvain clustering algorithm does not require any parameters 
-in itself, it tends towards clustering all feature points together in 
-the same partition if the graph is very connected.  To ensure that the 
+While the \emph{Louvain Method} does not require any parameters in 
+itself, it tends towards clustering all feature points together in the 
+same partition when the graph is very connected.  To ensure that the 
 graph is well clustered, the adjacency matrix is pruned setting all 
 edges below a certain threshold to $0$. In Algorithm~\ref{alg-mmc} this 
 threshold is provided as the variable $\alpha$.  From empirical 
@@ -323,7 +326,7 @@ because setting a threshold this high would lead to wrong matches
 elsewhere, but if we only look at the group of feature points we can use 
 \emph{MM} with a much higher threshold and correctly match the points.
 
-\section{The Competition}
+\section{The Competitors}
 
 The algorithms used in the comparison consists of two algorithms that 
 use geometric data to enhance the matching, \emph{Isomatch} 
@@ -348,14 +351,14 @@ image.
 \label{ss:ratio}
 
 \emph{Ratio} (Algorithm~\ref{alg-ratio}) \cite{lowe2004sift} diverges 
-from from matching feature points by distance in that the metric we use 
-to evaluate the feature points is the ratio of the distance to best 
-match compared to the distance of the second best match. In detail, say 
-$f_i$ is a feature point in an image $im_1$ and we are finding the 
-closest match in another image $im_2$. Given the two closest neighbors 
-to $f_i$ in in $im_l$, $f_m$ and $f_n$ ($d(f_i,f_m) < 
-similarity(f_i,f_n)$ and a threshold $\beta$, we decide to return a 
-match between $f_i$ and $f_j$ as follows:
+from matching feature points by distance in that the metric we use to 
+evaluate the feature points is the ratio of the distance to best match 
+compared to the distance of the second best match. In detail, say $f_i$ 
+is a feature point in an image $im_1$ and we are finding the closest 
+match in another image $im_2$. Given the two closest neighbors to $f_i$ 
+in $im_l$, $f_m$ and $f_n$ ($d(f_i,f_m) < similarity(f_i,f_n)$ and a 
+threshold $\beta$, we decide to return a match between $f_i$ and $f_j$ 
+as follows:
 \begin{equation*}
     match(f_i,(f_m,f_n)) = \begin{cases}
         \left\{(f_i,f_m)\right\} &
@@ -381,7 +384,7 @@ triangle inequality: $d(f_i,f_k) \leq d(f_i,f_j) + d(f_j,f_k)$.
 \State $features_1 \gets getFeatures(im_1)$
 \State $features_2 \gets getFeatures(im_2)$
 \ForAll{$f_i \in features_1$}
-    \State $f_m,f_n \gets get2NNs(f_i, features_2)$
+    \State $f_m,f_n \gets get2NearestNeighbors(f_i, features_2)$
     \State $ratio \gets d(f_i, f_m) / d(f_i, f_n)$
 	\If{$ratio < t$}
         \State $matches \gets \left(f_i, f_m\right)$
@@ -442,18 +445,18 @@ the same color belong to the same partition.}
 
 \emph{Isomatch} (Algorithm~\ref{alg-isomatch}) \cite{das2008event} is 
 based on the idea that local feature points within a region in one image 
-often matches to features within a corresponding region in the other 
-image. To find these regions the algorithm uses the Isodata algorithm 
-\cite{ball1965isodata} to perform unsupervised clustering on the 
-positions of the feature points in the two images. This results in a 
-fragmentation of the feature points into different regions based on 
+often match to features within a corresponding region in the other 
+image. To find these regions the algorithm uses the \emph{Isodata} 
+algorithm \cite{ball1965isodata} to perform unsupervised clustering on 
+the positions of the feature points in the two images.  This results in 
+a fragmentation of the feature points into different regions based on 
 their position in the image as demonstrated in 
 Figure~\ref{fig:isomatch_partitions}. Based on this partitioning we 
 create a correspondence matrix $P$. If we have $n$ regions in one image 
-and $m$ regions in the other, $P$ is an $n \times m$ matrix. Given a set 
-of matches $M = \{(f_{i,1}, f_{j}), \ldots \}$ and $n$ regions returned 
-by Isodata, each region consisting of a set of feature points $R_i = 
-\{f_i, f_j, \ldots\}$ we can construct $P$ as follows:
+and $m$ regions in the other, $P$ is an $n \times m$ matrix.  Given a 
+set of matches $M = \{(f_{i,1}, f_{j}), \ldots \}$ and $n$ regions 
+returned by \emph{Isodata}, each region consisting of a set of feature 
+points $R_i = \{f_i, f_j, \ldots\}$ we can construct $P$ as follows:
 \begin{equation*}
     P_{i,j} = \sum_{(f_i,f_j) \in M} \delta_{f_i \in R_i}\delta_{f_j \in 
     R_j}
@@ -463,21 +466,21 @@ The initial set of matches are filtered based on $P$ by the $getMatches$
 function. A match is kept only if it at least half the matches of the 
 same region of origin also belong to the same region in the other image.  
 
-The Isodata algorithm is similar to K-means with the addition that 
-clusters are merged and split during the clustering process. In K-means 
-we randomly assign the data points to $k$ clusters to begin with and 
-calculate their mean. Then for each data point we reassign it to the 
-cluster closest in mean. We then calculate the mean of the updated 
-clusters and reiterate the process until we have spent a set amount of 
-iterations or no reassignments have taken place. Isodata runs the same 
-algorithm, but for each iteration it goes through the clusters and 
-checks if any can be merged or split. Clusters are split if their 
-variance along an axis is beyond a threshold, while two clusters are 
-merged if their distance is below another threshold. This approach is 
-beneficial when we don't know from the outside the amount of clusters we 
-expect to see. For example in the case of feature points it is not 
-obvious before clustering them regionally how many regions we obtain for 
-an image.
+The \emph{Isodata} algorithm is similar to \emph{K-means} with the 
+addition that clusters are merged and split during the clustering 
+process. In \emph{K-means} we randomly assign the data points to $k$ 
+clusters to begin with and calculate their mean. Then for each data 
+point we reassign it to the cluster closest in mean. We then calculate 
+the mean of the updated clusters and reiterate the process until we have 
+spent a set amount of iterations or no reassignments have taken place.  
+\emph{Isodata} runs the same algorithm, but for each iteration it goes 
+through the clusters and checks if any can be merged or split.  Clusters 
+are split if their variance along an axis is beyond a threshold, while 
+two clusters are merged if their distance is below another threshold.  
+This approach is beneficial when we don't know from the outside the 
+amount of clusters we expect to see. For example in the case of feature 
+points it is not obvious before clustering them regionally how many 
+regions we obtain for an image.
 
 To threshold the \emph{Isomatch} algorithm we filter the results using 
 the ratio between first and second best match as in \emph{Ratio}, since 
@@ -554,7 +557,7 @@ the two feature points constituting the first match corresponds to the
 length and direction of the vector between the two feature points 
 constituting the second match. Given two matches $m_i = (f_{i,1}, 
 f_{i,2})$ and $m_j = (f_{j,1},f_{j,2})$ where $f_{k,n}$ is the feature 
-point of match $k$ in image $n$, we denote the euclidean distance 
+point of match $k$ in image $n$, we denote the Euclidean distance 
 between feature points $f_{i,n}$ and $f_{j,n}$ in image $n$ as 
 $d_{i,j,n}$.  The affinity function assigning a score based on the 
 pairwise distance is then defined as follows:
@@ -587,7 +590,7 @@ removed. However for cases where most feature points in one image will
 not have a correspondence in the other other image (e.g.\ cases of 
 partial image overlap or object recognition) the greedy matching 
 algorithm will keep finding matches even after the actual 
-correspondences have already been found as long as they are consistent.
+correspondences have already been found, as long as they are consistent.
 
 Since the testing is done on images with partial overlap, the final set 
 of matches returned in Algorithm~\ref{alg-spectral} is the set of 

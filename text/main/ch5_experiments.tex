@@ -11,8 +11,8 @@ results of these comparisons.
 For our ideal matching algorithm we would like it to return not just 
 some correct matches but all possible correct matches when images 
 overlap and no matches at all when they don't.  We would like it to work 
-flawlessly not just one a few images but on all possible images, and we 
-would expect it to run fast even on when faced with tens of thousands of 
+flawlessly not just on a few images but on all possible images, and we 
+would expect it to run fast even when faced with tens of thousands of 
 feature points.
 
 These requirements fall in to three different categories. We want to 
@@ -23,7 +23,7 @@ verify that the algorithm is \emph{general}, \emph{accurate} and
 
 To convincingly show that the algorithms work for general cases we need 
 to demonstrate good results across a wide range of images.  However if 
-we are just given to images and a set of matches, there is no
+we are just given two images and a set of matches, there is no
 way to tell which matches are correct and which aren't without going 
 through the output by hand and for each match verify that it is correct.  
 For any but the simplest cases this becomes prohibitively time 
@@ -60,16 +60,16 @@ consuming.
 
 A way to circumvent this problem is to restrict the images we test on to 
 image pairs that are linked by a homography. Two images linked by a 
-homography are are related in a way that means that any point in the 
-first image can be translated a point in the second by a linear 
-equation. This holds true for two images where the points they have in 
-common are situated on a plan, or in the case that the camera only 
-rotated in between images. Figure~\ref{fig:homography_example} shows an 
-example of an image pair that can be linked with a homography and 
-another that cannot. In the second image pair, the change in camera 
-position means that pixels can't be linearly translated from one image 
-to another. For example would a pixel on the bell be translated to one 
-location while an adjacent pixel on the building in the background would
+homography are related in a way that means that any point in the first 
+image can be translated a point in the second by a affine equation. This 
+holds true for two images where the points they have in common are 
+situated on a plan, or in the case that the camera only rotated in 
+between images.  Figure~\ref{fig:homography_example} shows an example of 
+an image pair that can be linked with a homography and another that 
+cannot. In the second image pair, the change in camera position means 
+that pixels can't be linearly translated from one image to another. For 
+example a pixel on the bell would be translated to one location while an 
+adjacent pixel on the building in the background would
 move differently. For this reason we are constrained in which images 
 it's possible to test the algorithms on since we cannot evaluate the 
 results if the images are not tied by a homography.
@@ -78,16 +78,17 @@ Mikolajczyk and Schmid  \cite{mikolajczyk2005performance} introduced a
 set of test images to compare the performance of feature detectors. The 
 set covers different types of image variations, such as lighting change, 
 blur, rotation, and viewpoint change. Inspired by this dataset (in 
-particular the `Graf' image set) and motivated by the need for more 
-image pairs featuring viewpoint changes, we have compiled a set of 8 
-image pairs consisting of subjects taken from two different angles. The 
-images are collected from Flickr's database of images published under a 
-creative commons licence and feature murals, which makes it possible to 
-relate points in the image pairs with a homography since most of the 
-points in the images will be lying on a plane.  The images have been 
-cropped to show the same motive and resized to $900\times 600$ pixels.  
-This dataset will be referred to as the \emph{Murals} dataset.  
-Figure~\ref{fig:murals} shows one image from each pair.
+particular the `\emph{Graf}' image set) and motivated by the need for 
+more image pairs featuring viewpoint changes, we have compiled a set of 
+8 image pairs consisting of subjects taken from two different angles.  
+The images are collected from \emph{Flickr's} database of images 
+published under a \emph{Creative Commons Licence} and feature murals, 
+which makes it possible to relate points in the image pairs with a 
+homography since most of the points in the images will be lying on a 
+plane.  The images have been cropped to show the same motive and resized 
+to $900\times 600$ pixels.  This dataset will be referred to as the 
+\emph{Murals} dataset.  Figure~\ref{fig:murals} shows one image from 
+each pair.
 
 \begin{figure}[b]
     \begin{subfigure}[t]{0.102\textwidth}
@@ -169,12 +170,12 @@ of the \emph{Graf} image set (Figure~\ref{fig:Graf}).}
 \subsection{Measuring Accuracy}
 
 To measure the accuracy of an algorithm we are interested in two values:
-Precision and Recall. These measures were introduced in \cite{ke2004pca}
+Recall and Precision. These measures were introduced in \cite{ke2004pca}
 and later used in \cite{mikolajczyk2005performance}. Recall corresponds 
 to the number of correct matches over the total amount of possible 
 correct matches in between the two images:
 \begin{equation*}
-	recall = \frac{\# ~ Correct ~ Matches}{\# ~ Total ~ Possible ~ 
+	Recall = \frac{\# ~ Correct ~ Matches}{\# ~ Total ~ Possible ~ 
 	Matches}
 \end{equation*}
 This measure tells us how thorough we are in finding all possible 
@@ -196,18 +197,18 @@ distance and count how many lie within the threshold.
 Precision on the other hand is measured by the amount of correct matches
 over the total amount of matches returned:
 \begin{equation*}
-	precision = \frac{\# ~ Correct ~ Matches}{\# ~ Correct ~ Matches ~ + 
+	Precision = \frac{\# ~ Correct ~ Matches}{\# ~ Correct ~ Matches ~ + 
 	~ \# ~ False ~ Matches}
 \end{equation*}
 This measures how accurate the set of returned matches from the 
 algorithm is. An algorithm that returns only a few matches out of many, 
-but most of them are correct will have a high precision and a low 
-recall, where as an algorithm that returns almost all possible matches, 
-both true and false will have a low precision but a high recall. The 
+but most of them are correct will have a high Precision and a low 
+Recall, where as an algorithm that returns almost all possible matches, 
+both true and false will have a low Precision but a high Recall. The 
 ideal matching algorithm will be both precise but also return as many 
 correct matches as possible. However for many applications we only need 
 enough correct matches to align to the images, in which case we care 
-more about precision than recall. 
+more about Precision than Recall. 
 
 \subsection{Measuring Speed}
 
@@ -244,7 +245,7 @@ as the computational complexity of the algorithms.
 	\end{subfigure}%
 	\caption{Accuracy for image pair 1\&3 from the \emph{Graf} set. The 
 	plot shows the result of 100 patch pairs generated from the source 
-	images shown to the left. The x-axis shows the recall based on the 
+	images shown to the left. The x-axis shows the Recall based on the 
 accumulated amount of potential matches for all 100 patch pairs. }
 	\label{fig:result_graf}
 \end{figure}
@@ -264,7 +265,7 @@ generated from images 1 and 3 of the \emph{Graf} image set
 \emph{Ratio}, \emph{MM}, \emph{MMC}, \emph{Isomatch} and \emph{Spectral} 
 as a function of the number of matches produced (which is achieved by 
 varying thresholds over a certain range). The results show that 
-\emph{MM} and \emph{MMC} consistently outperform \emph{Ratio}; 
+\emph{MM} and \emph{MMC} consistently outperform \emph{Ratio}, 
 \emph{MMC} generally lies 2-3 percentage points above \emph{MM} when 
 both are performing at optimal accuracy.  The geometric matching methods 
 \emph{Isomatch} and \emph{Spectral} outperform \emph{Ratio} but fall 
@@ -282,7 +283,7 @@ generated from 9 source image pairs.  The results are shown in Figure
 	\includegraphics[width=\columnwidth]{images/result_accumulated}
 	\caption{Results for 900 patch pairs extracted from the 
 	\emph{Murals} dataset and the image pair 1\&3 from the \emph{Graf} 
-	set.  The x-axis shows the recall based on the accumulated amount of 
+	set.  The x-axis shows the Recall based on the accumulated amount of 
 potential matches for all patch pairs.}
 	\label{fig:result_accumulated}
 \end{figure}
@@ -290,9 +291,9 @@ potential matches for all patch pairs.}
 \begin{figure}[htb]
 	\centering
 	\includegraphics[width=1\textwidth]{images/result_viewpoint}
-	\caption{Results for viewpoint changes using the \emph{Graf} set 
-	from \cite{mikolajczyk2005performance}.  S: img1\&2; M: img1\&3; L: 
-	img1\&4; XL: img1\&5.}
+    \caption{Results for viewpoint changes using the \emph{Graf} set 
+    from \cite{mikolajczyk2005performance}.  S: img1 \& 2; M: img1 \& 3; 
+    L: img1 \& 4; XL: img1 \& 5.}
 	\label{fig:result_viewpoint}
 \end{figure}
 
@@ -304,7 +305,7 @@ last are taken from increasingly different angles. The results from
 \emph{MMC} and \emph{Ratio} as shown in 
 Figure~\ref{fig:result_viewpoint}, confirm that \emph{MMC} is generally 
 superior to \emph{Ratio} across viewpoint changes. For both methods 
-however we see a stark decrease in recall as the viewpoint change 
+however we see a stark decrease in Recall as the viewpoint change 
 increases. The performance of \emph{MM} (not shown in the plot) is 
 similar to \emph{MMC}.
 
@@ -315,7 +316,7 @@ pruning the initial matching set, we tested a hybrid algorithm
 being filtered by \emph{Spectral}. The results are shown in 
 Figure~\ref{fig:result_spectral-mmc} and show that \emph{Spectral-MMC} 
 not only outperforms \emph{Spectral} but also improves on \emph{MMC} at 
-similar recall rates, illustrating how a geometric algorithm can be 
+similar Recall rates, illustrating how a geometric algorithm can be 
 complemented by a reliable non-geometric selection of matches.
 
 \begin{figure}[htb]
@@ -324,7 +325,7 @@ complemented by a reliable non-geometric selection of matches.
 	\caption{Results for filtering matches with \emph{MMC} before 
 	applying the \emph{Spectral} algorithm. The algorithm is tested on 
 900 patch pairs extracted from the \emph{Murals} dataset and the image 
-pair 1\&3 from the \emph{Graf} set. The x-axis shows the recall based on 
+pair 1\&3 from the \emph{Graf} set. The x-axis shows the Recall based on 
 the accumulated amount of potential matches for all patch pairs.}
 	\label{fig:result_spectral-mmc}
 \end{figure}
@@ -333,9 +334,9 @@ Finally, as an example of a real life use case,
 Figure~\ref{fig:result_pitts} shows the results on 100 patch pairs 
 generated from a typical holiday photo shot 
 (Figure~\ref{fig:pitts_source}) featuring occlusion and a slight 
-viewpoint change from the Gallagher dataset \cite{gallagher2008}.  The 
-performance is comparable to the murals, despite the lack of a simple 
-homographic mapping between the images.
+viewpoint change from the \emph{Gallagher} dataset \cite{gallagher2008}.  
+The performance is comparable to the murals, despite the lack of a 
+simple homographic mapping between the images.
 
 
 \begin{figure}[htb]
@@ -383,8 +384,8 @@ $O(n\log n)$ using search trees.
 As for speed, Table~\ref{table:running_times} shows the running time of 
 the four algorithms over 100 image pairs of $250\!\times\!250$ pixels.  
 These numbers should be taken with a grain of salt, given that much of 
-the code behind \emph{MMC} and \emph{Isomatch} is implemented in Python, 
-whereas \emph{MM} and \emph{Ratio} make use of OpenCV to execute 
-computationally intensive operations in C++, which makes them much 
-faster. 
+the code behind \emph{MMC} and \emph{Isomatch} is implemented in 
+\emph{Python}, whereas \emph{MM} and \emph{Ratio} make use of 
+\emph{OpenCV} to execute computationally intensive operations in 
+\emph{C++}, which makes them much faster. 
 
