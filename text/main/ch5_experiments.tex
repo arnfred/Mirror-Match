@@ -1,23 +1,18 @@
 \chapter{Experiments and Results}
 \label{C:Experiments}
 
-In order to demonstrate that the algorithms we propose are in fact 
-superior to similar algorithms in the field, we will have to compare 
-them with the state of the art. In this chapter we will first describe 
-exactly how we intent to compare the algorithms and then discuss the 
-results of these comparisons.  
+In order to demonstrate that the algorithms we propose are superior to 
+similar algorithms in the field, we will have to compare them with the 
+state of the art. In this chapter we will first describe exactly how we 
+intent to compare the algorithms and then discuss the results of these 
+comparisons.  
 
 \section{Experiments}
-For our ideal matching algorithm we would like it to return not just 
-some correct matches but all possible correct matches when images 
-overlap and no matches at all when they don't.  We would like it to work 
-flawlessly not just on a few images but on all possible images, and we 
-would expect it to run fast even when faced with tens of thousands of 
-feature points.
-
-These requirements fall in to three different categories. We want to 
-verify that the algorithm is \emph{general}, \emph{accurate} and 
-\emph{fast}.
+These requirements we expect from a matching algorithm fall in to three 
+categories.  We want to the algorithm to be \emph{general}, 
+\emph{accurate} and \emph{fast}. In the experiments we hope to measure 
+how \emph{MM} and \emph{MMC} perform on those three accounts compared to
+\emph{Ratio}, \emph{Isomatch} and \emph{Spectral}.
 
 \subsection{Measuring Generality}
 
@@ -48,13 +43,13 @@ consuming.
         homography: Figure~\ref{fig:hom_possible} shows an image pair 
         that can be linked by a homography, since all common areas lie 
         on a plane.  Figure~\ref{fig:hom_impossible} shows an image pair 
-        that can't reliably be linked by a homography. Even if we 
+        that cannot reliably be linked by a homography. Even if we 
         discount the change of people in the scence, the position of the 
         bell compared to the building in the background changes as we 
         change our viewpoint. Images in Figure~\ref{fig:hom_possible} 
-        are from the \emph{Murals} dataset while images in 
-        Figure~\ref{fig:hom_impossible} are from the Gallagher dataset 
-    \cite{gallagher2008}.}
+    are from the \emph{Murals} dataset while images in 
+Figure~\ref{fig:hom_impossible} are from the Gallagher dataset 
+\cite{gallagher2008}.}
     \label{fig:homography_example}
 \end{figure}
 
@@ -67,7 +62,7 @@ situated on a plan, or in the case that the camera only rotated in
 between images.  Figure~\ref{fig:homography_example} shows an example of 
 an image pair that can be linked with a homography and another that 
 cannot. In the second image pair, the change in camera position means 
-that pixels can't be linearly translated from one image to another. For 
+that pixels cannot be linearly translated from one image to another. For 
 example a pixel on the bell would be translated to one location while an 
 adjacent pixel on the building in the background would
 move differently. For this reason we are constrained in which images 
@@ -209,9 +204,9 @@ ideal matching algorithm will be both precise but also return as many
 correct matches as possible. However for many applications we only need 
 enough correct matches to align to the images, in which case we care 
 more about Precision than Recall. 
-
+%
 \subsection{Measuring Speed}
-
+%
 To gain an intuition about the typical running time of an algorithm we 
 need to understand how the speed of the algorithm varies with different 
 input lengths (i.e.\ pictures of different sizes in our case) as well as 
@@ -221,25 +216,19 @@ complexity of the algorithm, while the second is a measure of speed.
 
 Once we know how long it will take the algorithm to run for inputs of a 
 certain size we can use the complexity to extrapolate how much longer it
-will take to run for inputs of e.g.\ double or half that size. For 
-example a matching algorithm with a complexity of $O(n^2)$ that takes 
-four seconds to find matches for $100$ feature points will take most 
-likely take $16$ seconds to find matches for $200$ feature points. If 
-the algorithm had a complexity of $O(n)$ it would more likely take $8$ 
-seconds to run on $200$ feature points.
-
-For this reason we will have to look at both the measuring speed as well
+will take to run for inputs of e.g.\ double or half that size. For this 
+reason we will have to look at both the measuring speed as well
 as the computational complexity of the algorithms.
-
+%
 \begin{figure}[t]
-	\begin{subfigure}[c]{0.2\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{images/graf}
+    \centering
+    \begin{subfigure}[c]{0.18\textwidth}
+        \includegraphics[width=\textwidth]{images/graf}
 	\end{subfigure}%
 	~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
 	%(or a blank line to force the subfigure onto a new line)
-	\begin{subfigure}[c]{0.8\textwidth}
-	\centering
+    \begin{subfigure}[c]{0.76\textwidth}
+%    \centering
 	\includegraphics[width=\columnwidth]{images/result_graf}
 	%\caption{Performance on Scharf}
 	\end{subfigure}%
@@ -249,16 +238,16 @@ as the computational complexity of the algorithms.
 accumulated amount of potential matches for all 100 patch pairs. }
 	\label{fig:result_graf}
 \end{figure}
-
+%
 \section{Results}
 \label{S:Results}
-
+%
 Using the \emph{Murals} dataset as well as test sets created from the 
 \emph{Graf} and \emph{Pitts} images we tested \emph{MM} and \emph{MMC} 
 against \emph{Ratio}, \emph{Spectral} and \emph{Isomatch}.
-
+%
 \subsection{Accuracy and Generality}
-
+%
 Figure~\ref{fig:result_graf} shows the results for 100 patch pairs 
 generated from images 1 and 3 of the \emph{Graf} image set 
 (cf.~Figure~\ref{fig:Graf}). The plot compares the accuracy of 
@@ -271,32 +260,42 @@ both are performing at optimal accuracy.  The geometric matching methods
 \emph{Isomatch} and \emph{Spectral} outperform \emph{Ratio} but fall 
 short of \emph{MM} and \emph{MMC}.
 
-
 To validate whether these results generalize to other images, we tested 
 the four algorithms on the \emph{Murals} dataset as well as the 
 \emph{Graf} pair tested above.  In total 900 different patch pairs were 
 generated from 9 source image pairs.  The results are shown in Figure 
 \ref{fig:result_accumulated}. 
-
+%
 \begin{figure}[htb]
 	\centering
-	\includegraphics[width=\columnwidth]{images/result_accumulated}
+    \includegraphics[width=0.9\columnwidth]{images/result_accumulated}
 	\caption{Results for 900 patch pairs extracted from the 
 	\emph{Murals} dataset and the image pair 1\&3 from the \emph{Graf} 
 	set.  The x-axis shows the Recall based on the accumulated amount of 
 potential matches for all patch pairs.}
 	\label{fig:result_accumulated}
 \end{figure}
-
+%
 \begin{figure}[htb]
 	\centering
-	\includegraphics[width=1\textwidth]{images/result_viewpoint}
+    \includegraphics[width=0.9\textwidth]{images/result_viewpoint}
     \caption{Results for viewpoint changes using the \emph{Graf} set 
     from \cite{mikolajczyk2005performance}.  S: img1 \& 2; M: img1 \& 3; 
     L: img1 \& 4; XL: img1 \& 5.}
 	\label{fig:result_viewpoint}
 \end{figure}
-
+%
+\begin{figure}[htb]
+	\centering
+    \includegraphics[width=0.9\textwidth]{images/result_spectral-mmc}
+	\caption{Results for filtering matches with \emph{MMC} before 
+	applying the \emph{Spectral} algorithm. The algorithm is tested on 
+900 patch pairs extracted from the \emph{Murals} dataset and the image 
+pair 1\&3 from the \emph{Graf} set. The x-axis shows the Recall based on 
+the accumulated amount of potential matches for all patch pairs.}
+	\label{fig:result_spectral-mmc}
+\end{figure}
+%
 To further investigate the impact of viewpoint changes, we tested the 
 algorithms on the \emph{Graf} image set (Figure~\ref{fig:Graf}), which 
 contains 5 images of the same mural taken with gradually increasing 
@@ -319,16 +318,6 @@ not only outperforms \emph{Spectral} but also improves on \emph{MMC} at
 similar Recall rates, illustrating how a geometric algorithm can be 
 complemented by a reliable non-geometric selection of matches.
 
-\begin{figure}[htb]
-	\centering
-	\includegraphics[width=1\textwidth]{images/result_spectral-mmc}
-	\caption{Results for filtering matches with \emph{MMC} before 
-	applying the \emph{Spectral} algorithm. The algorithm is tested on 
-900 patch pairs extracted from the \emph{Murals} dataset and the image 
-pair 1\&3 from the \emph{Graf} set. The x-axis shows the Recall based on 
-the accumulated amount of potential matches for all patch pairs.}
-	\label{fig:result_spectral-mmc}
-\end{figure}
 
 Finally, as an example of a real life use case, 
 Figure~\ref{fig:result_pitts} shows the results on 100 patch pairs 
@@ -337,26 +326,24 @@ generated from a typical holiday photo shot
 viewpoint change from the \emph{Gallagher} dataset \cite{gallagher2008}.  
 The performance is comparable to the murals, despite the lack of a 
 simple homographic mapping between the images.
-
-
+%
 \begin{figure}[htb]
-	\begin{subfigure}[c]{.2\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{images/pitts}
+    \centering
+    \begin{subfigure}[c]{.18\textwidth}
+        \includegraphics[width=\textwidth]{images/pitts}
 	\end{subfigure}%
 	~%add desired spacing between images, e. g. ~, \quad, \qquad
 	%(or a blank line to force the subfigure onto a new line)
-	\begin{subfigure}[c]{.8\textwidth}
-	\centering
-	\includegraphics[width=1\columnwidth]{images/result_pitts}
+    \begin{subfigure}[c]{.76\textwidth}
+    \includegraphics[width=1\columnwidth]{images/result_pitts}
 	\end{subfigure}%
 	\caption{Results for 100 patch pairs based on the image pair in 
 	Figure~\ref{fig:pitts_source}.}
 	\label{fig:result_pitts}
 \end{figure}
-
+%
 \subsection{Computational Complexity and Speed}
-
+%
 \begin{table}[htb]
 \caption{Running times as tested on a Intel\textregistered\ Core\texttrademark\ i5-3550 CPU @ 
 3.30~GHz with 8~GB memory.}

@@ -6,15 +6,15 @@ in detail. We start by introducing the proposed algorithms \emph{Mirror
 Match (MM)} and \emph{Mirror Match with Clustering (MMC)} and continue 
 with the reference algorithms used later for comparison, \emph{Ratio}, 
 \emph{Spectral} and \emph{Isomatch}.
-
+%
 \section{Proposed Matching Methods}
 \label{S:MatchingMethods}
 In this section we describe the two proposed algorithms for matching 
 feature points \emph{Mirror Match
 (MM)} and \emph{Mirror Match with Clustering (MMC)}. 
-
+%
 \subsection{Mirror Match (\emph{MM})}
-
+%
 \begin{figure}[h]
     \centering%
         \begin{subfigure}[t]{0.5\columnwidth}
@@ -71,22 +71,21 @@ feature points \emph{Mirror Match
 of a building.}%
     \label{fig:comparemirror}%
 \end{figure}%
-
+%
 The central idea behind \emph{MM} is to match features of $n$ images by 
 taking every feature from all $n$ images and matching them against every 
 other feature from the same set. We then discard the correspondences 
 that match two points within the same image. Algorithm~\ref{alg-mm} 
 details the implementation of \emph{MM}.
-
+%
 \begin{algorithm}[htb]
 \caption{Mirror Match (\emph{MM})}
 \label{alg-mm}
-%{\fontsize{10}{10}\selectfont
+{\fontsize{11}{11}\selectfont
 \begin{algorithmic}
 \Require $images$ : set of images, $t \in \mathbb{R}$
-\State $matches_{init}\gets \varnothing$
-\State $matches_{final}\gets \varnothing$
-\State $features\gets \varnothing$
+\State $matches_{init}\gets \varnothing$, $matches_{final}\gets 
+\varnothing$, $features\gets \varnothing$
 \ForAll{$I_i \in images$} \Comment Acquisition Stage
 	\State $features\gets features \cup getFeatures(I_i)$
 \EndFor
@@ -107,9 +106,9 @@ getImg(f_j) \wedge \left(f_j, f_i\right) \not\in matches_{final}$}
 \EndFor \\
 \Return $matches_{final}$
 \end{algorithmic}
-%}
+}
 \end{algorithm}
-
+%
 In the \emph{acquisition stage} we extract local feature points and 
 obtain their descriptors from the set of images. The algorithm is not 
 designed to make use of any feature extractor in particular, but for the
@@ -142,25 +141,23 @@ When we match all feature points together, many of these incorrect
 matches are eliminated, because points in the fence match with other 
 points in the fence in the same image (Figures~\ref{fig:within} and
 \ref{fig:without}).
-
-
+%
 \subsection{Mirror Match with Clustering (\emph{MMC})}
-
+%
 In contrast to \emph{MM}, \emph{MMC} diverges from traditional 
 non-geometric feature matching by clustering feature points by 
 similarity. This process yields partitions of similar feature points 
 that we can match using the same approach as \emph{MM}.  
 Algorithm~\ref{alg-mmc} shows the implementation of \emph{MMC}.
-
+%
 \begin{algorithm}[htb]
 \caption{Mirror Match with Clustering (\emph{MMC})}
 \label{alg-mmc}
-%{\fontsize{10}{10}\selectfont
+{\fontsize{11}{11}\selectfont
 \begin{algorithmic}
 \Require $images$ : set of images, $t \in \mathbb{R}$, $\alpha \in 
 \mathbb{R}$
-\State $M\gets \varnothing$
-\State $F\gets \varnothing$
+\State $M\gets \varnothing$, $F\gets \varnothing$
 \ForAll{$I_i \in images$} \Comment Gather features
 	\State $f_i\gets getFeatures(I_i)$
 	\State $F\gets F \cup f_i$
@@ -179,9 +176,9 @@ Algorithm~\ref{alg-mmc} shows the implementation of \emph{MMC}.
 \EndFor \\
 \Return matches
 \end{algorithmic}
-%}
+}
 \end{algorithm}
-
+%
 To cluster the feature points, we construct a weighted graph with the 
 feature points as nodes and their similarity score as normalized edge 
 weights.  Given a set of $n$ features $F = {f_1, \ldots, f_n}$ and a 
@@ -202,13 +199,11 @@ similarity graph of feature points as follows:
     A_{i,j} = \frac{M(f_i, f_j)}{\sum\limits_{f_i,f_j \in F} M(f_i, f_j) 
     / \left\vert F \right\vert ^ {2}}
 \end{equation*}
-
-In the literature there are various ways of clustering a graph according 
-to different measures of what constitutes an optimal partitioning.  
+%
 Traditionally the most used clustering algorithms have been 
 \emph{K-means} and spectral clustering, but in recent years a host of 
 new algorithms have been proposed based on both Newman's concept of 
-graph modularity\footnote{Introduced in \cite{girvan2002}, discussed in 
+\emph{Modularity}\footnote{Introduced in \cite{girvan2002}, discussed in 
 \cite{brandes2007} and used in \cite{blondel2008} as well as others} as 
 well as information theoretical measures\footnote{See for example 
 \cite{rosvall2008}} and the Potts spin model from physics\footnote{Used 
@@ -216,8 +211,7 @@ in \cite{ronhovde2009}} just to mention a few.  On tests done using
 randomly generated graphs with a known partitioning, \cite{blondel2008}, 
 \cite{rosvall2008} and \cite{ronhovde2009} perform markedly better than 
 spectral clustering and \emph{K-means}\cite{lancichinetti2009}.
-
-
+%
 \begin{figure}[t]
     \centering
 	\includegraphics[width=\textwidth]{images/MMC_graph}
@@ -230,7 +224,7 @@ spectral clustering and \emph{K-means}\cite{lancichinetti2009}.
 points to only two or three.}
     \label{fig:graph-view}
 \end{figure}
-
+%
 We use the \emph{Louvain Method} \cite{blondel2008} for clustering 
 feature points, since it is relatively fast and performs well 
 \cite{lancichinetti2009}, does not require parameters 
@@ -250,9 +244,9 @@ $A_{ij}$ is the weight between the edge connecting $i$ and $j$.
 $\delta(c_i, c_j)$ is the \emph{Kroneker Delta} which is 1 only if the 
 cluster assignment $c_i$ is equal to the cluster assignment $c_j$.
 
-We can optimize the modularity efficiently iteratively because the gain 
-in modularity from moving a vertex $v_i$ to a cluster $C$ can be 
-calculated easily:
+We can optimize the \emph{Modularity} efficiently iteratively because 
+the gain in \emph{Modularity} from moving a vertex $v_i$ to a cluster 
+$C$ can be calculated easily:
 \begin{equation*}
 	\Delta Q = \left[ \frac{\sum_{in} + 2 k_{i,in}}{2m} - \
     \left(\frac{\sum_{tot} + k_i}{2m} \right)^2 \right]
@@ -291,7 +285,7 @@ partitions, as exemplified in Figure~\ref{fig:pitts_partition}.
 \begin{algorithm}[t]
 \caption{Impl.\ of getMatches (\emph{from MMC algorithm})}
 \label{alg-getmatches}
-%\fontsize{10}{10}\selectfont
+{\fontsize{11}{11}\selectfont
     \begin{algorithmic}
     \Require $p$ : set of features, $t\in \mathbb{R}$, $features$ : Set of 
     all features
@@ -307,6 +301,7 @@ partitions, as exemplified in Figure~\ref{fig:pitts_partition}.
 
     \Return matches
     \end{algorithmic}
+}
 \end{algorithm}
 
 The matching algorithm for \emph{MMC} detailed in 
@@ -377,7 +372,7 @@ triangle inequality: $d(f_i,f_k) \leq d(f_i,f_j) + d(f_j,f_k)$.
 \begin{algorithm}[t]
 \caption{Ratio Match (\emph{Ratio})}
 \label{alg-ratio}
-%{\fontsize{10}{10}\selectfont
+{\fontsize{11}{11}\selectfont
 \begin{algorithmic}
 \Require $im_1$ : image, $im_2$ : image, $t \in \mathbb{R}$
 \State $matches\gets \varnothing$
@@ -392,7 +387,7 @@ triangle inequality: $d(f_i,f_k) \leq d(f_i,f_j) + d(f_j,f_k)$.
 \EndFor
 \Return $matches$
 \end{algorithmic}
-%}
+}
 \end{algorithm}
 
 This holds true for both cosine similarity and the hamming distance for 
@@ -408,11 +403,11 @@ $O(nlog(n))$ computational time.
 \begin{algorithm}[h]
 \caption{Isomatch (\emph{Isomatch})}
 \label{alg-isomatch}
-%{\fontsize{10}{10}\selectfont
+{\fontsize{11}{11}\selectfont
 \begin{algorithmic}
 \Require $im_1$ : image, $im_2$ : image, $t \in \mathbb{R}$
-\State $matches_{init}\gets \varnothing$
-\State $matches_{final}\gets \varnothing$
+\State $matches_{init}\gets \varnothing$, $matches_{final}\gets 
+\varnothing$
 \State $features_1 \gets getFeatures(im_1)$
 \State $features_2 \gets getFeatures(im_2)$
 \ForAll{$f_i \in features_1$}
@@ -431,7 +426,7 @@ $O(nlog(n))$ computational time.
 \EndFor
 \Return $matches_{final}$
 \end{algorithmic}
-%}
+}
 \end{algorithm}
 
 \begin{figure}[htb]
@@ -477,7 +472,7 @@ spent a set amount of iterations or no reassignments have taken place.
 through the clusters and checks if any can be merged or split.  Clusters 
 are split if their variance along an axis is beyond a threshold, while 
 two clusters are merged if their distance is below another threshold.  
-This approach is beneficial when we don't know from the outside the 
+This approach is beneficial when we do not know from the outside the 
 amount of clusters we expect to see. For example in the case of feature 
 points it is not obvious before clustering them regionally how many 
 regions we obtain for an image.
@@ -491,11 +486,11 @@ the ratio between first and second best match as in \emph{Ratio}, since
 \begin{algorithm}[h]
 \caption{Spectral Match (\emph{Spectral})}
 \label{alg-spectral}
-%{\fontsize{10}{10}\selectfont
+{\fontsize{11}{11}\selectfont
 \begin{algorithmic}
 \Require $im_1$ : image, $im_2$ : image, $t \in \mathbb{R}$
-\State $matches_{init}\gets \varnothing$
-\State $matches_{final} \gets \varnothing$
+\State $matches_{init}\gets \varnothing$, $matches_{final} \gets 
+\varnothing$
 \State $features_1 \gets getFeatures(im_1)$
 \State $features_2 \gets getFeatures(im_2)$
 \ForAll{$f_i \in features_1$}
@@ -522,20 +517,20 @@ matches_{init} \right\vert)$
 
 \Return $matches_{final}$
 \end{algorithmic}
-%}
+}
 \end{algorithm}
 
 \emph{Spectral} (Algorithm~\ref{alg-spectral}) is based on the spectral 
 matching algorithm proposed by Leordeanu and Herbert 
-\cite{leordeanu2005spectral}.  The central idea behind it is that the 
-set of actual correspondences of feature points between two images 
-should be pairwise consistent. That is, given two feature points that 
-are geometrically close in one image, for most cases we would assume 
-that the closest correspondences of these two points in another image 
-would be similarly close.  Based on this assumption we want to pick out 
-a set of matches $T \subset S$ where $S$ is the initial set of possible 
-matches such that the matches in $T$ are as pairwise consistent as 
-possible. If we let $x$ be a binary vector corresponding in length to 
+\cite{leordeanu2005spectral}.  The central idea behind spectral matching 
+is that the set of actual correspondences of feature points between two 
+images should be pairwise consistent. That is, given two feature points 
+that are geometrically close in one image, for most cases we would 
+assume that the closest correspondences of these two points in another 
+image would be similarly close.  Based on this assumption we want to 
+pick out a set of matches $T \subset S$ where $S$ is the initial set of 
+possible matches such that the matches in $T$ are as pairwise consistent 
+as possible. If we let $x$ be a binary vector corresponding in length to 
 the set of initial matches $S$, where $x_i = 1$ if $m_i \subset T$, then 
 we can formulate a subset-score as:
 \begin{equation*}
@@ -543,7 +538,7 @@ we can formulate a subset-score as:
 \end{equation*}
 The solution $x^{*}$ that maximizes this equation is then $x^{*} = 
 argmax(x^TMx)$. By relaxing the constraints on $x$ such that it can take
-values in the range of $\left[0, 1\right]$ we can interpret $x_i$ as the
+values in the range $\left[0, 1\right]$ we can interpret $x_i$ as the
 association of $m_i$ with the optimal subset of matches $T$. Because we 
 only worry about the relative values of $x$ we can fix the norm of $x$ 
 to $1$, in which case by Raleigh's ratio theorem, the $x^{*}$ that 
@@ -581,7 +576,7 @@ and change of perspective the assumption is accurate.
 In the implementation proposed by Leordeanu and Herbert 
 \cite{leordeanu2005spectral} the last step of the algorithm greedily 
 selects matches to ensure that matches are consistent, i.e.\ that two 
-feature points in one image don't match with the same feature point in 
+feature points in one image do not match with the same feature point in 
 the other image. This is done by going through all the matches in the 
 order of their associated $x^{*}$ score and for each match eliminating 
 all matches in conflict with this match. This method ensure that as many
