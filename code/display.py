@@ -289,6 +289,16 @@ def accuDetail(correct, total, legend, ylim = 100, treshold=1000) :
     accuHist(accu, legend, ylim=ylim)
 
 
+# Showing all keypoints from a given node in a ball tree
+def showNode(bt, ks, indices, node_index) :
+    node = getNode(bt, node_index)
+    idx = numpy.array(bt.idx_array[node['idx_start']:node['idx_end']])
+    keypoints = ks[idx]
+    im_idx = indices[idx]
+    positions = numpy.array(features.getPositions(keypoints))
+    display.compareKeypoints(images[0], images[1], positions[im_idx == 0], positions[im_idx == 1])
+
+
 def comparePlot(correct, 
                 compareCorrect, 
                 total, 

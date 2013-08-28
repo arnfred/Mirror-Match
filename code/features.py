@@ -18,6 +18,7 @@ Jonas Toft Arnfred, 2013-03-07
 
 import cv2
 import numpy
+from sklearn.neighbors.ball_tree import BallTree
 
 
 
@@ -161,6 +162,35 @@ def match(descriptor_type, D1, D2) :
     #T = dist_fun(D1,D2)
     #matchscores = [bestMatch(row) for row in T]
     #return matchscores
+
+
+
+def ballMatch(descriptor_type, D1, D2, match_same = False, leaf_size = 10) :
+    # Map for the type of distance measure to use
+    dist_map = {
+        "SIFT"   : 'minkowski',
+        "SURF"   : 'minkowski',
+        "ORB"    : 'hamming',
+        "BRISK"  : 'hamming',
+        "BRIEF"  : 'hamming',
+        "FREAK"  : 'hamming'
+    }
+
+    # Construct ball tree
+    tree = BallTree(D2, leaf_size=leaf_size, metric=dist_map[descriptor_type])
+
+    # For each descriptor in D2, query tree
+    def query() :
+        for descriptor in D1 :
+            if match_same :
+                (dist, index) = tree.query(descriptor, k=3)
+                yield index[0][1], dist[0][1], dist[0][1]/float(dist[0][2])
+            else :
+                (dist, index) = tree.query(descriptor, k=2)
+                yield index[0][0], dist[0][0], dist[0][0]/float(dist[0][1])
+
+    # Return matches
+    return zip(*list(query()))
 
 
 
