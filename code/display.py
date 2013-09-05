@@ -84,7 +84,7 @@ def compareKeypoints(im1, im2, pos1, pos2, filename = None, separation = 0) :
     pos2_o = [(x+offset + separation,y) for (x,y) in pos2]
 
     # Create figure
-    fig = pylab.figure(frameon=False, figsize=(10.0, 7.0))
+    fig = pylab.figure(frameon=False, figsize=(12.0, 8.0))
     #ax = pylab.Axes(fig, [0., 0., 1., 1.])
 
     # Show images
@@ -101,7 +101,7 @@ def compareKeypoints(im1, im2, pos1, pos2, filename = None, separation = 0) :
         fig.savefig(filename, bbox_inches='tight', dpi=72)
 
 
-def matchPoints(im1, im2, matches, dist = None, filename = None, max_dist = 100, matches_im1 = None, dist_im1 = None, matches_im2 = None, dist_im2 = None) :
+def matchPoints(im1, im2, matches, dist = None, filename = None, max_dist = 100, line_width = 0.8, matches_im1 = None, dist_im1 = None, matches_im2 = None, dist_im2 = None) :
     """ show a figure with lines joining the accepted matches in im1 and im2
         input: im1,im2 (images as arrays), locs1,locs2 (location of features), 
         matchscores (as output from 'match'). 
@@ -142,13 +142,13 @@ def matchPoints(im1, im2, matches, dist = None, filename = None, max_dist = 100,
     # Plot all lines
     offset_x = im1.shape[1]
     for i,((x1,y1),(x2,y2)) in enumerate(matches) :
-        ax.plot([x1, x2+offset_x + separation], [y1,y2], color=cs[i], lw=0.8)
+        ax.plot([x1, x2+offset_x + separation], [y1,y2], color=cs[i], lw=line_width)
     if matches_im1 != None :
         for i,((x1,y1),(x2,y2)) in enumerate(matches_im1) :
-            ax.plot([x1, x2], [y1,y2], color=cs_im1[i], lw=0.8)
+            ax.plot([x1, x2], [y1,y2], color=cs_im1[i], lw=line_width)
     if matches_im2 != None :
         for i,((x1,y1),(x2,y2)) in enumerate(matches_im2) :
-            ax.plot([x1+offset_x + separation, x2+offset_x + separation], [y1,y2], color=cs_im2[i], lw=0.8)
+            ax.plot([x1+offset_x + separation, x2+offset_x + separation], [y1,y2], color=cs_im2[i], lw=line_width)
 
     pylab.xlim(0,im3.shape[1])
     pylab.ylim(im3.shape[0],0)

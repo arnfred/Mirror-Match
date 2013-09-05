@@ -24,6 +24,7 @@ import isomatch
 import clustermatch
 import isomatch
 import mirrormatch
+import ballmatch
 import spectralmatch
 import ratiomatch
 import features
@@ -279,6 +280,20 @@ def mirrorMatch(distance_threshold, paths, homography, thresholds, keypoint, des
         "descriptor_type" : descriptor,
     }
     match_fun = mirrormatch.match(paths, options)
+    return evaluate(match_fun, thresholds, homography)
+
+
+def ballMatch(distance_threshold, paths, homography, thresholds, keypoint, descriptor) :
+    options = {
+      "leaf_size": 10,
+       "radius_size": 250,
+       "dist_threshold": 300,
+       "ratio_boost" : 1.2,
+       "shuffle_keypoints" : False,
+       "group_limit" : 4,
+       "match_type" : "radius",
+    }
+    match_fun = ballmatch.match(paths, options)
     return evaluate(match_fun, thresholds, homography)
 
 

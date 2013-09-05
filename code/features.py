@@ -39,7 +39,7 @@ supported_descriptor_types = ["SIFT","SURF","ORB","BRISK","BRIEF","FREAK"]
 ####################################
 
 
-def getFeatures(paths, keypoint_type = "SIFT", descriptor_type = "SIFT", size=32) :
+def getFeatures(paths, keypoint_type = "SIFT", descriptor_type = "SIFT", shuffle = False) :
     """ Given a list of paths to images, the function returns a list of 
         descriptors and keypoints
         Input: paths [list of strings] The paths to the images we are using
@@ -50,16 +50,18 @@ def getFeatures(paths, keypoint_type = "SIFT", descriptor_type = "SIFT", size=32
     images = map(loadImage, paths)
 
     # Get feature descriptors
-    keypoints = [numpy.array(getKeypoints(keypoint_type, im)) for im in images]
-    #for k in numpy.concatenate(keypoints) :
-    #	k.size = float(size)
-    #keypoints = [getORBKeypoints(im, size) for im in images]
+    if shuffle :
+        keypoints = [numpy.array(getKeypoints(keypoint_type, im)) for im in images]
+        map(numpy.random.shuffle, keypoints)
+    else :
+        keypoints = [numpy.array(getKeypoints(keypoint_type, im)) for im in images]
+
     data = [getDescriptors(descriptor_type, im, k) for (im, k) in zip(images, keypoints)]
     keypoints, descriptors = zip(*data)
 
     # Check that we could get descriptors for all images
     if sum(map(lambda d : d == None, descriptors)) > 0 : return (None, None, None)
-    indices = [l for i,n in zip(range(len(labels)), map(len, descriptors)) for l in [i]*n]
+    indices = [l for i, n in zip(range(len(labels)), map(len, descriptors)) for l in [i]*n]
     ind = numpy.array(indices)
     return (ind, numpy.concatenate(keypoints), numpy.concatenate(descriptors))
 
