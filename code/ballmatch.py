@@ -88,33 +88,36 @@ def match_radius(paths, options = {}) :
 
                 # If the group size is bigger than 4 items
                 if group_size >= group_limit :
-                    for (i,j), m, s, u in query_cluster(idxs, ds, ratio_boost, indices, ks) : 
+                    for (i, j), m, s, u in query_cluster(idxs, ds, ratio_boost, indices, ks) : 
                         if not (i,j) in seen :
-                            seen.add((i,j))
-                            seen.add((j,i))
-                            yield m, s, u
+                            seen.add((i, j))
+                            seen.add((j, i))
+                            yield m, s, u, group_size
 
                 # If the group size is less use mirror match
                 else :
                     for (i,j), m, s, u in query_unique(bt, i, descriptor, indices, ks) : 
                         if not (i,j) in seen :
-                            seen.add((i,j))
-                            seen.add((j,i))
-                            yield m, s, u
+                            seen.add((i, j))
+                            seen.add((j, i))
+                            yield m, s, u, group_size
 
 
     # Get matches
     match_data = list(query_all())
 
     def match_fun(ratio_threshold) :
-        matches = [(pos, s, u) for pos, s, u in match_data if u < ratio_threshold]
+        matches = [(pos, s, u, g) for pos, s, u, g in match_data if u < ratio_threshold]
         if len(matches) == 0 :
-            return [], [], []
+            return [], [], [], []
         else :
             return zip(*matches)
 
     return lambda t : match_fun(t)
 
+
+def query_cluster_best(idxs, i, ds, ratio_boost, indices, ks) :
+    pass
 
 def query_cluster(idxs, ds, ratio_boost, indices, ks) :
     ds_cluster = ds[idxs]

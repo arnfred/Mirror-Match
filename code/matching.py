@@ -285,8 +285,8 @@ def mirrorMatch(distance_threshold, paths, homography, thresholds, keypoint, des
 
 def ballMatch(distance_threshold, paths, homography, thresholds, keypoint, descriptor) :
     options = {
-      "leaf_size": 10,
-       "radius_size": 250,
+       "leaf_size": 10,
+       "radius_size": 300,
        "dist_threshold": 300,
        "ratio_boost" : 1.2,
        "shuffle_keypoints" : False,

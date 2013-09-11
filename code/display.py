@@ -98,7 +98,7 @@ def compareKeypoints(im1, im2, pos1, pos2, filename = None, separation = 0) :
     pylab.ylim(im3.shape[0],0)
 
     if filename != None :
-        fig.savefig(filename, bbox_inches='tight', dpi=72)
+        fig.savefig(filename, bbox_inches='tight', dpi=300)
 
 
 def matchPoints(im1, im2, matches, dist = None, filename = None, max_dist = 100, line_width = 0.8, matches_im1 = None, dist_im1 = None, matches_im2 = None, dist_im2 = None) :
