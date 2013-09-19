@@ -39,47 +39,72 @@ supported_descriptor_types = ["SIFT","SURF","ORB","BRISK","BRIEF","FREAK"]
 ####################################
 
 
-def getFeatures(paths, keypoint_type = "SIFT", descriptor_type = "SIFT", shuffle = False) :
+def getFeatures(paths, options = {}) :
     """ Given a list of paths to images, the function returns a list of 
         descriptors and keypoints
         Input: paths [list of strings] The paths to the images we are using
+               options [dictionary of options] shuffle, group, max_kp, keypoint_type, descriptor_type
         Out:   [pair of list of descriptors and list of keypoints]
     """
-    # Get all images and labels
-    labels = map(getLabel, paths)
+
+    # Get options
+    shuffle             = options.get("shuffle", False)
+    group               = options.get("group", False)
+
+    # Get all images
     images = map(loadImage, paths)
 
-    # Get feature descriptors
+    # Find feature points
     if shuffle :
-        keypoints = [numpy.array(getKeypoints(keypoint_type, im)) for im in images]
+        keypoints = [numpy.array(getKeypoints(im, options)) for im in images]
         map(numpy.random.shuffle, keypoints)
     else :
-        keypoints = [numpy.array(getKeypoints(keypoint_type, im)) for im in images]
+        keypoints = [numpy.array(getKeypoints(im, options)) for im in images]
 
-    data = [getDescriptors(descriptor_type, im, k) for (im, k) in zip(images, keypoints)]
+    # Describe featre points
+    data = [getDescriptors(im, k, options) for (im, k) in zip(images, keypoints)]
     keypoints, descriptors = zip(*data)
 
-    # Check that we could get descriptors for all images
+    # Check that we could get descriptors for all images (TODO: throw exception?)
     if sum(map(lambda d : d == None, descriptors)) > 0 : return (None, None, None)
-    indices = [l for i, n in zip(range(len(labels)), map(len, descriptors)) for l in [i]*n]
-    ind = numpy.array(indices)
-    return (ind, numpy.concatenate(keypoints), numpy.concatenate(descriptors))
+
+    # Create a list of indices
+    indices = numpy.concatenate([numpy.array([i]*n) for i,n in zip(range(len(paths)), map(len, descriptors))])
+
+    # Should we concatenate?
+    if group :
+        return indices, numpy.concatenate(keypoints), descriptors
+    else :
+        return indices, numpy.concatenate(keypoints), numpy.concatenate(descriptors)
 
 
 
-def getKeypoints(keypoint_type, image, params = {}) :
+def getKeypoints(image, options = {}) :
     """ Given the feature_type and an image, we return the keypoints for this image
         input: descriptor_type [string] (The feature we are using to extract keypoints)
                image [numpy.ndarray] (The image format used by scipy and opencv)
                params [dict] (Extra parameters for the method)
+               options [dictionary] keypoint_type, max_kp
         out:   [list of cv2.Keypoint]
     """
-    # Check if feature_type exists
-    if not keypoint_type in supported_keypoint_types : raise NonExistantFeature(keypoint_type)
 
-    # Get the feature
-    feature = cv2.FeatureDetector_create(keypoint_type)
-    
+    # Get amount of feature points
+    keypoint_type		= options.get("keypoint_type", "SIFT")
+    max_kp              = options.get("max_kp", 300) 
+
+    # Check if feature_type exists
+    if not keypoint_type.upper() in supported_keypoint_types : raise NonExistantFeature(keypoint_type)
+
+    # Get specific feature type
+    if keypoint_type.upper() == "SIFT" :
+        feature = cv2.SIFT(max_kp)
+    elif keypoint_type.upper() == "ORB" :
+        feature = cv2.ORB(max_kp)
+    elif keypoint_type.upper() == "SURF" :
+        feature = cv2.SURF(max_kp)
+    else :
+        feature = cv2.FeatureDetector_create(keypoint_type)
+
     # Return feature points
     return feature.detect(image)
 
@@ -93,7 +118,7 @@ def getORBKeypoints(image, size=[32]) :
     return kpts
 
 
-def getDescriptors(descriptor_type, image, keypoints) :
+def getDescriptors(image, keypoints, options) :
     """ Given a set of keypoints we convert them to descriptors using the method 
         specified by the feature_type
         input: descriptor_type [string] (The feature we are using to extract keypoints)
@@ -102,6 +127,10 @@ def getDescriptors(descriptor_type, image, keypoints) :
                params [dict] (Extra parameters for the method)
         out:   [numpy.ndarray] (matrix of size n x 64 where n is the number of keypoints)
     """
+
+    # Get options
+    descriptor_type		= options.get("descriptor_type", "SIFT")
+
     # Check if feature_type exists
     if not descriptor_type in supported_descriptor_types : raise NonExistantFeature(descriptor_type)
 
@@ -167,7 +196,12 @@ def match(descriptor_type, D1, D2) :
 
 
 
-def ballMatch(descriptor_type, D1, D2, match_same = False, leaf_size = 10) :
+def ballMatch(D1, D2, options = {}) :
+
+    # Get options
+    match_same          = options.get("match_same", False) 
+    descriptor_type		= options.get("descriptor_type", "SIFT")
+
     # Map for the type of distance measure to use
     dist_map = {
         "SIFT"   : 'minkowski',
@@ -196,7 +230,56 @@ def ballMatch(descriptor_type, D1, D2, match_same = False, leaf_size = 10) :
 
 
 
-def bfMatch(descriptor_type, D1, D2, match_same = False) :
+def mirrorMatch(D_list, options = {}) :
+
+    # Get options
+    leaf_size           = options.get("leaf_size", 10) 
+    descriptor_type		= options.get("descriptor_type", "SIFT")
+
+    # Map for the type of distance measure to use
+    dist_map = {
+        "SIFT"   : 'minkowski',
+        "SURF"   : 'minkowski',
+        "ORB"    : 'hamming',
+        "BRISK"  : 'hamming',
+        "BRIEF"  : 'hamming',
+        "FREAK"  : 'hamming'
+    }
+
+    # Construct main ball tree
+    tree = BallTree(numpy.concatenate(D_list), leaf_size=leaf_size, metric=dist_map[descriptor_type])
+
+    # Construct minor trees
+    forest = [BallTree(D, leaf_size=leaf_size, metric=dist_map[descriptor_type]) for D in D_list]
+
+    # Query trees for distances
+    def query(D, T) :
+        print("."),
+        return [T.query(d, k = 2) for d in D]
+
+    Q_all = [query(D, tree) for D in D_list]
+    Q_self = [query(D, T) for D, T in zip(D_list, forest)]
+
+    # Now produce matches
+    def matches() :
+        for m_all, m_self in zip(Q_all, Q_self) :
+            for (d_all, i_all), (d_self, i_self) in zip(m_all, m_self) :
+                index = i_all[0][1]
+                score = d_all[0][1]
+                ratio = score / float( d_self[0][1] )
+                yield index, score, ratio
+
+    # Return matches
+    return zip(*list(matches()))
+
+
+
+
+def bfMatch(D1, D2, options = {}) :
+
+    # Get options
+    match_same          = options.get("match_same", False) 
+    descriptor_type		= options.get("descriptor_type", "SIFT")
 
     # Map for the type of distance measure to use
     dist_map = {

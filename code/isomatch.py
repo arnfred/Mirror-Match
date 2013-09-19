@@ -47,7 +47,7 @@ def match(paths, options = {}) :
     images = map(features.loadImage, paths)
 
     # Get all feature points
-    indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint_type, descriptor_type = descriptor_type)
+    indices, ks, ds = features.getFeatures(paths, options)
 
     # Get positions
     positions = numpy.array(features.getPositions(ks))

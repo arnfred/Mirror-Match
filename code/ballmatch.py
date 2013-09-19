@@ -86,22 +86,13 @@ def match_radius(paths, options = {}) :
                 idxs = numpy.array(bt.query_radius(descriptor, r=radius_size)[0])
                 group_size = len(idxs)
 
-                # If the group size is bigger than 4 items
-                if group_size >= group_limit :
-                    for (i, j), m, s, u in query_cluster(idxs, ds, ratio_boost, indices, ks) : 
-                        if not (i,j) in seen :
-                            seen.add((i, j))
-                            seen.add((j, i))
-                            yield m, s, u, group_size
+                # Get unique match
+                for (i,j), m, s, u in query_unique(bt, i, descriptor, indices, ks) : 
 
-                # If the group size is less use mirror match
-                else :
-                    for (i,j), m, s, u in query_unique(bt, i, descriptor, indices, ks) : 
-                        if not (i,j) in seen :
-                            seen.add((i, j))
-                            seen.add((j, i))
-                            yield m, s, u, group_size
-
+                    if group_size >= group_limit :
+                        yield m, s, u*ratio_boost, group_size
+                    else :
+                        yield m, s, u, group_size
 
     # Get matches
     match_data = list(query_all())
@@ -114,20 +105,6 @@ def match_radius(paths, options = {}) :
             return zip(*matches)
 
     return lambda t : match_fun(t)
-
-
-def query_cluster_best(idxs, i, ds, ratio_boost, indices, ks) :
-    pass
-
-def query_cluster(idxs, ds, ratio_boost, indices, ks) :
-    ds_cluster = ds[idxs]
-    ks_cluster = ks[idxs]
-    indices_cluster = indices[idxs]
-    bt = BallTree(ds_cluster, leaf_size=10)
-    for i, d in enumerate(ds_cluster) :
-        matches = query_unique(bt, i, d, indices_cluster, ks_cluster, ratio_boost)
-        for (k,j), m, s, u in matches : yield (idxs[k], idxs[j]), m, s, u
-
 
 def query_unique(tree, i, descriptor, indices, ks, ratio_boost = 1) : 
     #print("."),

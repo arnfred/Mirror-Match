@@ -374,7 +374,7 @@ def accuPlot(correct, total, legends, colors = ["blue", "red", "green", "orange"
     # Remove superflous lines and add axis labels
     removeDecoration()
     if nb_correspondences != None :
-        pylab.xlabel("#Correct / %i" % nb_correspondences)
+        pylab.xlabel("Recall" % nb_correspondences)
     else :
         pylab.xlabel("# of Matches")
     pylab.ylabel("Precision")

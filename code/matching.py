@@ -283,6 +283,18 @@ def mirrorMatch(distance_threshold, paths, homography, thresholds, keypoint, des
     return evaluate(match_fun, thresholds, homography)
 
 
+def mirrorOnlyMatch(distance_threshold, paths, homography, thresholds, keypoint, descriptor) :
+    options = {
+        "thresholds" : thresholds,
+        "distance_threshold" : distance_threshold,
+        "keypoint_type" : keypoint,
+        "descriptor_type" : descriptor,
+        "only_mirror" : True,
+    }
+    match_fun = mirrormatch.match(paths, options)
+    return evaluate(match_fun, thresholds, homography)
+
+
 def ballMatch(distance_threshold, paths, homography, thresholds, keypoint, descriptor) :
     options = {
        "leaf_size": 10,

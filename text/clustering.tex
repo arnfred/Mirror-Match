@@ -5,7 +5,9 @@
 %\usepackage{sidecap}
 \usepackage{graphicx}
 \usepackage{cite}
-\usepackage{hyperref}
+\usepackage[draft]{hyperref}
+%\usepackage[options]{nohyperref}
+%\usepackage{url}
 %\usepackage[stable]{footmisc}
 %\usepackage{caption}
 %\usepackage{adjustbox}
@@ -16,17 +18,26 @@
 \usepackage{amssymb}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage{authblk}
+%\usepackage{authblk}
 \pdfminorversion=4
 
 \title{Mirror Match: Reliable Feature Point Matching Without Geometric 
 Constraints}
 
-\author[1,2]{Jonas Toft Arnfred\thanks{j.arnfred@adsc.sg.com}}
-\author[1]{Dr. Stefan Winkler\thanks{Stefan.Winkler@adsc.com.sg}}
-\author[2]{Prof. Sabine S\"usstrunk\thanks{sabine.susstrunk@epfl.ch}}
-\affil[1]{Advanced Digital Science Center, Singapore}
-\affil[2]{\'Ecole Polytechnique F\'ed\'erale de Lausanne}
+\author{
+\IEEEauthorblockN{
+Jonas Toft Arnfred,\IEEEauthorrefmark{1}\IEEEauthorrefmark{2} Stefan Winkler,\IEEEauthorrefmark{1} Sabine S\"usstrunk\IEEEauthorrefmark{2}}
+\vspace{1mm}
+\IEEEauthorblockA{
+\IEEEauthorrefmark{1}~Advanced Digital Sciences Center (ADSC), University of Illinois at Urbana-Champaign (UIUC), Singapore\\
+\IEEEauthorrefmark{2}~\'Ecole Polytechnique F\'ed\'erale de Lausanne (EPFL), Switzerland}
+}
+
+%\author[1,2]{Jonas Toft Arnfred\thanks{j.arnfred@adsc.com.sg}}
+%\author[1]{Stefan Winkler\thanks{stefan.winkler@adsc.com.sg}}
+%\author[2]{Sabine S\"usstrunk\thanks{sabine.susstrunk@epfl.ch}}
+%\affil[1]{~Advanced Digital Sciences Center (ADSC), University of Illinois at Urbana-Champaign (UIUC), Singapore}
+%\affil[2]{~\'Ecole Polytechnique F\'ed\'erale de Lausanne (EPFL), Switzerland}
 
 \begin{document}
 \maketitle
@@ -34,13 +45,12 @@ Constraints}
 \begin{abstract}
 Many algorithms have been proposed to solve the problem of matching 
 feature points in two or more images using geometric assumptions to 
-increase the robustness of the matching. However, very little work 
-addresses the case where these assumptions might not hold. In particular 
-few methods address the problem of reliable matching in cases where it 
-is unknown whether two images have any corresponding areas or objects in 
+increase the robustness of the matching. However, these assumptions do not always hold; 
+in particular, few methods address the problem of reliable matching in cases where it 
+is unknown whether the images have any corresponding areas or objects in 
 the first place. 
 
-We propose two algorithms for matching feature points without the use of 
+We propose two algorithms for matching feature points \emph{without} the use of 
 geometric constraints. The first relies on the fact that any match 
 between two images should be better than all possible matches within a 
 single image. The second algorithm extends this idea by using community 
@@ -54,64 +64,57 @@ finding correct correspondences.
 %
 \section{Introduction}
 %
-When finding correspondence pairs between two or more images we are 
-often faced with the problem that feature points in one image cannot be 
+When finding correspondence pairs between two or more images, feature points in one image cannot always be 
 uniquely matched with feature points in another image. This is partly 
-due to the fact that the discriminatory powers of modern feature 
-descriptors such as \emph{SIFT} \cite{lowe2004sift} and \emph{SURF} 
-\cite{bay2006surf} is reduced to approximate invariance to light and 
-perspective changes.  Additionally corners detected by feature detectors 
+due to the fact that the discriminatory power of modern feature 
+descriptors such as \emph{SIFT} \cite{lowe2004sift} or \emph{SURF} 
+\cite{bay2006surf} is traded off with invariance to light and 
+perspective changes.  Additionally, corners detected by feature detectors 
 such as \emph{SIFT} and \emph{Harris} \cite{harris1988combined} are only 
-approximations of the ideal unique feature point in an image which is 
-uniquely identifiable.  Both deficiencies often lead to a sub optimal 
-matching when we match feature points by finding the nearest neighbors 
-in terms of descriptor similarity. For this reason Lowe introduced a 
-matching method tailored to find unique matches when he introduced the 
-\emph{SIFT} feature point \cite{lowe2004sift}. The uniqueness of a given 
-match is assessed by looking at the two nearest neighbors of each 
+approximations of the ideal feature point in an image which is 
+uniquely identifiable.  These deficiencies often lead to suboptimal results
+when matching feature points by finding the nearest neighbors 
+in terms of descriptor similarity.  Therefore, Lowe introduced \emph{SIFT} together with a 
+matching method tailored to finding unique matches \cite{lowe2004sift}. 
+The method, \emph{NN-Ratio}, assesses the uniqueness of a given match by looking at the two nearest neighbors of each 
 feature point and calculating the matching score as the ratio of 
-similarities. The method, \emph{NN-Ratio} then matches feature points by 
-matching each feature point with its nearest neighbor and only returning 
-the matches which a ratio better than a given threshold. Compared to a 
-nearest neighbor approach using the similarity of the descriptors as 
-threshold, Lowe's \emph{NN-Ratio} performs better as shown by 
-Mikolajczyk \cite{mikolajczyk2005performance}.
+similarities; only matches with a ratio above a given threshold are retained. 
+Lowe's \emph{NN-Ratio} has been shown to outperform nearest neighbor approaches that use only the similarity of the descriptors as a
+threshold \cite{mikolajczyk2005performance}.
 
 More recent methods for matching feature points consider the geometric 
 configuration of feature points and match them based on assumptions 
 about the geometric relationship between images.  These assumptions are 
 then used to select a subset of matches according to different 
-constraints e.g.\ angular constraints \cite{kim2008efficient}, epipolar 
+constraints, e.g.\ angular constraints \cite{kim2008efficient}, epipolar 
 constraints \cite{torr2000mlesac,chum2005matching}, or pairwise 
 constraints \cite{choi2009robust,leordeanu2005spectral}.
 
 Alternatively we can pick out different regions in each image and pair 
-regions according to how many correspondences there are between them.  
+regions according to the number of correspondences between them.  
 This allows for the filtering of all correspondences that do not match 
-points within paired regions.  Examples include \cite{das2008event} and 
-\cite{wu2011robust}, the first (later referred to as \emph{Isodata}) 
-uses clustering to find regions while the latter uses maximally stable 
-extremal regions (MSER) to designate areas.
+points within paired regions.  Examples include \emph{Isodata} \cite{das2008event}, which 
+uses clustering to find regions, or \cite{wu2011robust}, which designate areas based on maximally stable 
+extremal regions (MSER).
 
-Solutions that make use of geometric assumptions about the images fall 
-short in many practical applications. For example images with partial or 
-no overlap often leads to feature points that match to arbitrary points 
-in the other image leading to noise that makes it hard to pick the right 
-subset of correct matches. Similarly adjacent objects in one image that 
+Solutions that rely on geometric assumptions about the images fall 
+short in many practical applications. For example, images with partial or 
+no overlap often result in feature points that match to arbitrary points 
+in the other image; this introduces noise that makes it hard to pick the right 
+subset of correct matches. Similarly, adjacent objects in one image that 
 are separated in another will void any global geometric assumptions of 
 the geometric relationship between two images.  Furthermore, methods 
 using geometric constraints all require an initial set of 
 correspondences. If this set of correspondences can be narrowed down to 
-the most probable correct matches, the geometric matching algorithm will 
+the most probable correct matches, any geometric matching algorithm will 
 benefit in terms of speed and accuracy in cases where geometric 
-assumptions indeed hold true. For these reasons many applications call 
-for reliable non geometric matching methods.
+assumptions do hold true. For these reasons reliable non-geometric matching methods are essential.
 
 The two methods we propose in this paper are designed to be free of 
-assumptions about the image geometry. They improve on Lowe's 
-\emph{NN-Ratio} by attempting at matching only feature points that have 
-a unique correspondence. The first algorithm, \emph{Mirror Match (MM)} 
-is inspired by a simple but novel idea.  If a given feature point in one 
+assumptions about image geometry. They improve on Lowe's 
+\emph{NN-Ratio} by attempting to match only feature points that have 
+a unique correspondence. The first algorithm, \emph{Mirror Match (MM)}, 
+is inspired by a simple but novel idea:  If a given feature point in one 
 image is better matched with other feature points from the \emph{same} 
 image than points in the other image, then any matches from this feature 
 point to points in the other image are considered unreliable and should 
@@ -119,15 +122,15 @@ be discarded.  This approach carries no implicit assumptions about the
 geometric consistency of matches and as such can easily be extended with 
 other geometric solutions when appropriate or necessary. \emph{Mirror 
 Match with Clustering (MMC)} builds upon this idea by trying to group 
-similar feature points and match them separately from the feature points 
-that have unique correspondences. The experimental results show that 
-both approaches generally outperform existing correspondence matching 
+similar feature points and matching them separately from the feature points 
+that have unique correspondences. Our experimental results show that 
+both approaches generally outperform existing 
 methods when tested on partially overlapping images.
 
 The paper is organized as follows.  Section~\ref{S:MatchingMethods} 
 describes the proposed \emph{Mirror Match (MM)} and \emph{Mirror Match 
 with Clustering (MMC)} algorithms.  Section~\ref{S:Experiments} presents 
-the dataset used for evaluation and the experimental setup.  
+the dataset and its use for the evaluation.  
 Section~\ref{S:Results} discusses the benchmarking results obtained.  
 Section~\ref{S:Summary} concludes the paper.  
 
@@ -280,7 +283,7 @@ Algorithm~\ref{alg-mmc} shows the pseudocode implementation of \emph{MMC}.
 \end{algorithmic}
 \end{algorithm}
 %
-\begin{figure}[h]
+\begin{figure}[ht]
 	\centering
     \includegraphics[width=0.7\columnwidth]{images/MMC_graph_vert}
     \caption{The partitioned feature graph. Each vertex represents a 
@@ -336,45 +339,13 @@ set covers different types of image variations, such as lighting change,
 blur, rotation, and viewpoint change. Inspired by this 
 dataset (in particular the `Graf' image set) and motivated by 
 the need for more image pairs featuring viewpoint changes, we have 
-compiled a set of 8 image pairs consisting of subjects taken from two 
-different angles. The images are collected from Flickr's database of 
-images published under a creative commons licence and feature murals, 
-which makes it possible to relate points in the image pairs with a 
-homography.  The images have been cropped to show the same motive and 
-resized to $900\times 600$ pixels.  This dataset will be referred to as 
-the \emph{Murals} dataset.  Figure~\ref{fig:murals} shows one image from 
-each pair.
-
-\begin{figure}[htb]
-%	\makebox[0.5\textwidth][c]{%
-%		\begin{subfigure}[t]{0.048\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/pair_example1}
-%			\label{fig:fairey1}
-%	\end{subfigure}%
-%		\enspace %add desired spacing between images, e. g. ~, \quad, 
-%		%(or a blank line to force the subfigure onto a new line)
-%		\begin{subfigure}[t]{0.048\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/pair_example2}
-%			\label{fig:fairey2}
-%		\end{subfigure}%
-%		\enspace %
-%		\begin{subfigure}[t]{0.36\textwidth}
-			\centering
-			\includegraphics[width=\columnwidth]{images/crop_examples}
-%		\end{subfigure}%
-%	}%
-	\caption{Sample test patches produced from an image pair.}
-	\label{fig:fairey}
-\end{figure}
-
-\begin{figure*}[t]
-	\centering
-	\includegraphics[width=\textwidth]{images/murals}
-	\caption{Images in the \emph{Murals} test set.}
-	\label{fig:murals}
-\end{figure*}
+compiled the \emph{Murals} dataset.\footnote{~The set of source images and homographies as well as 
+the script to generate the cropped test sets based on them can be found 
+at \url{http://vintage.winklerbros.net/murals.html}} It comprises 8 image pairs that feature murals taken from two 
+different angles, which makes it possible to relate points in the image pairs with a 
+homography.  The images were collected from Flickr's database of 
+photos published under a creative commons licence and have been cropped to show the same motive and 
+resized to $900\times 600$ pixels.  Figure~\ref{fig:murals} shows one image from each pair.
 
 \begin{figure}[htb]
 	\centering
@@ -383,59 +354,42 @@ each pair.
 	\label{fig:Graf}
 \end{figure}
 
+\begin{figure*}[t]
+	\centering
+	\includegraphics[width=\textwidth]{images/murals}
+	\caption{Images in the \emph{Murals} dataset.}
+	\label{fig:murals}
+\end{figure*}
 
-%However in practice the view point change has gone on to be used the 
-%most for later tests given that most of the other test pairs have since 
-%become easy to match\footnote{see \cite{wu2011robust} or 
-%\cite{delponte2006svd} for examples}.
-
-%Inspired by the graffiti image we have collected a set of image pairs 
-%featuring murals of a few different artists\footnote{Including Banksy, 
-%Blu and Shepard Fairey among others}. Each pair consist of images of 
-%the same motive taken from different angles, often including repetitive 
-%patterns and texture. Based on this image set the two algorithms are 
-%tested on a series of image patches from each pair. To verify that the 
-%algorithms proposed are reliable we need to test that we get good 
-%matches when images overlap and that we get no matches when they do 
-%not.  This means that it isn't enough just testing against pairs of 
-%images that we know match.  We also need to test against pairs that 
-%might look like they could match but in fact do not.
-
-
-%
-%
-%\subsection{Experimental setup}
 We compare the \emph{MM} and \emph{MMC} algorithms to \emph{NN-Ratio} 
 \cite{lowe2004sift} as well as \emph{Isodata} \cite{das2008event} and 
 \emph{Spectral} \cite{leordeanu2005spectral}.  \emph{Isodata} and 
 \emph{Spectral} use geometric constraints, whereas \emph{NN-Ratio} does 
-not.
-%, which uses geometric information to improve the matching.  The 
-%comparison  with \emph{NN-Ratio} serves to illustrate the relative 
-%performance of \emph{MM} and \emph{MMC} to a state of the art algorithm 
-%without geometric constraints. \emph{Isodata} is included to illustrate 
-%the performance of an algorithm relying on geometric constraints faced 
-%with image pairs that might not have any overlap.  
-The comparison was done using the \emph{Murals} dataset 
+not. The comparison was done using the \emph{Murals} dataset 
 (Figure~\ref{fig:murals}), the \emph{Graf} set (Figure~\ref{fig:Graf}) 
 from \cite{mikolajczyk2005performance}, and two images 
-%\footnote{100\_1942.jpg and 100\_1941.jpg} from the Gallagher dataset 
-%\cite{gallagher2008} (Figure~\ref{fig:comparemirror}).
 
-Test sets were generated from the image pairs by cropping square patches of
-$250\!\times\!250$ pixels with a random vertical and horizontal offset.  
-Given a source image pair, we produce 100 pairs of patches, which might or might not overlap.  
-This ensures that patch pairs with no overlap still retain a general similarity to each 
-other, while patches that do overlap often only share a small 
-part of their area. Figure~\ref{fig:fairey} shows an example of 
-possible pairs of test image patches produced from a source image pair.  
+Test sets were generated from the image pairs by cropping square patches 
+of $250\!\times\!250$ pixels with a random vertical and horizontal 
+offset.  Given a source image pair, we produce 100 pairs of patches, 
+which might or might not overlap.  This ensures that patch pairs with no 
+overlap still retain a general similarity to each other, while patches 
+that do overlap often only share a small part of their area.  
+Figure~\ref{fig:fairey} shows an example of possible pairs of test image 
+patches produced from a source image pair.  
+
+\begin{figure}[htb]
+    \centering
+    \includegraphics[width=\columnwidth]{images/crop_examples}
+    \caption{Sample test patches produced from an image pair.}
+	\label{fig:fairey}
+\end{figure}
+
+
 Producing $n$ such pairs allows us to test not just how well the 
 matching algorithm performs on a variety of overlaps but also how many 
 false positives we get on similar images that do not 
-overlap.\footnote{~The set of source images and homographies as well as 
-the script to generate the cropped test sets based on them can be found 
-at 
-\href{http://vintage.winklerbros.net/murals.html}{http://vintage.winklerbros.net/murals.html}}.  
+overlap.
 In practice the amount of overlap between pairs in a test set will 
 depend on the overlap and viewpoint change in the source image pair.  To 
 give a rough idea, Table~\ref{table:overlap} shows the overlap of patch 
@@ -474,58 +428,46 @@ less than a certain threshold (we use $d_{\max}=5$ pixels here).
 
 Figure~\ref{fig:result_graf} shows the results for 100 patch pairs 
 generated from images 1 and 3 of the \emph{Graf} image set 
-(cf.~Figure~\ref{fig:Graf}). We plot the precision and recall of 
+(cf.~Figure~\ref{fig:Graf}). We plot the precision and recall for 
 \emph{MMC}, \emph{MM}, \emph{Isodata}, \emph{Spectral} and 
-\emph{NN-Ratio}. The precision and recall is calculated as follows:
+\emph{NN-Ratio}, which are calculated as follows:
 
 \begin{equation*}
-    Precision = \frac{\# ~ Correct ~ Matches}{\# ~ Correct ~ Matches ~ + 
-    ~ \# ~ False ~ Matches} \\
+    \textrm{Precision} = \frac{\#\textrm{Correct Matches}}{\#\textrm{Correct Matches} + 
+     \#\textrm{False Matches}} \\
 \end{equation*}
 \begin{equation*}
-    Recall = \frac{\# ~ Correct ~ Matches}{\# ~ Total ~ Possible ~
-    Matches}
+    \textrm{Recall} = \frac{\#\textrm{Correct Matches}}{\#\textrm{Total Possible Matches}}
 \end{equation*}
 
 The plot data is obtained by varying ratio thresholds.  The results show 
 that \emph{MM} and \emph{MMC} consistently outperform \emph{NN-Ratio}; 
 \emph{MMC} generally lies 2-3 percentage points above \emph{MM} when 
 both are performing at optimal accuracy.  Although \emph{Isodata} and 
-\emph{Spectral} exhibits a good performance on strict thresholds (small 
+\emph{Spectral} exhibit good performance on strict thresholds (small 
 number of matches), that quickly diminishes when more matches are 
 desired.
 
 \begin{figure}[htb]
-%	\makebox[0.5\textwidth][c]{%
-%		\begin{subfigure}[t]{.13\textwidth}
-%			\centering
-%			\includegraphics[width=\textwidth]{images/graf}
-%		\end{subfigure}%
-%		~ %add desired spacing between images, e. g. ~, \quad, \qquad		  
-		%(or a blank line to force the subfigure onto a new line)
-%		\begin{subfigure}[t]{.27\textwidth}
-			\centering
-            \includegraphics[width=0.8\columnwidth]{images/result_graf}
-			%\caption{Performance on Scharf}
-%		\end{subfigure}%
-%	}%
-	\caption{Accuracy for image pair 1\&3 from the \emph{Graf} set. The plot 
-		shows the result of 100 patch pairs generated from the source 
-		images shown to the left. The number of matches is the total 
-		number of matches for all 100 patch pairs.}
+    \centering
+    \includegraphics[width=0.9\columnwidth]{images/result_graf}
+    \caption{Results for 100 patch pairs generated from image pair 1\&3 
+from the \emph{Graf} set.}
 	\label{fig:result_graf}
 \end{figure}
 
 To validate whether these results generalize to other images, we tested 
 the five algorithms on the \emph{Murals} dataset as well as the 
 \emph{Graf} pair tested above.  In total 900 different patch pairs were 
-generated from 9 source image pairs.  The results are shown in Figure 
-\ref{fig:result_accumulated}. 
+generated from 9 source image pairs.  The results are shown in 
+Figure~\ref{fig:result_accumulated}. 
 
 \begin{figure}[htb]
 	\centering
-    \includegraphics[width=0.8\columnwidth]{images/result_accumulated}
-	\caption{Results for 900 patch pairs extracted from the \emph{Murals} dataset and the image pair 1\&3 from the \emph{Graf} set.  The x-axis shows the accumulated returned matches for all pairs.}
+    \includegraphics[width=0.9\columnwidth]{images/result_accumulated}
+	\caption{Results for 900 patch pairs extracted from the 
+    \emph{Murals} dataset and the image pair 1\&3 from the \emph{Graf} 
+    set.}
 	\label{fig:result_accumulated}
 \end{figure}
 
@@ -535,14 +477,13 @@ contains 5 images of the same mural taken with gradually increasing
 viewpoint changes.  The first images are almost identical, while the 
 last are taken from very different angles. The results from   \emph{MMC} 
 and \emph{NN-Ratio} as shown in Figure~\ref{fig:result_viewpoint}, 
-confirming that \emph{MMC} is generally superior to \emph{NN-Ratio} 
-across viewpoint changes.
-The performance of \emph{MM} (not shown in the plot) is similar to 
-\emph{MMC}.
+confirm that \emph{MMC} is generally superior to \emph{NN-Ratio} across 
+viewpoint changes. The performance of \emph{MM} (not shown in the plot) 
+is similar to \emph{MMC}.
 
 \begin{figure}[htb]
 	\centering
-    \includegraphics[width=0.8\columnwidth]{images/result_viewpoint}
+    \includegraphics[width=0.9\columnwidth]{images/result_viewpoint}
 	\caption{Results for viewpoint changes using the \emph{Graf} set from 
 		\cite{mikolajczyk2005performance}.  S: img1\&2; M: img1\&3; L: img1\&4; XL: img1\&5.}
 	\label{fig:result_viewpoint}
@@ -558,7 +499,7 @@ homographic mapping between the images.
 
 \begin{figure}[htb]
 \centering
-\includegraphics[width=0.8\columnwidth]{images/result_pitts}
+\includegraphics[width=0.9\columnwidth]{images/result_pitts}
 \caption{Results for the image pair in Figure~\ref{fig:pitts_source}.}
 \label{fig:result_pitts}
 \end{figure}
@@ -566,7 +507,7 @@ homographic mapping between the images.
 In terms of computational complexity, \emph{NN-Ratio}, \emph{MM}, and 
 \emph{Isodata} can be implemented in $O(n\log n)$, where $n$ is the 
 total number of feature points.  \emph{Spectral} and our current 
-\emph{MMC} implementation has a complexity of $O(n^2)$ due to the 
+\emph{MMC} implementation have a complexity of $O(n^2)$ due to the 
 construction of a similarity matrix of the feature points. However, both
 can be approximated in $O(n\log n)$ using search trees to sparsely 
 populate the adjacency matrix.  
@@ -591,7 +532,7 @@ much faster.
 & \emph{Isomatch} & \emph{Spectral}	\\
 	\noalign{\smallskip} 
 	%
-	Running time (seconds): & 21 & 23 & 2722 & 1146 & 994\\
+	Running time: & 21s & 23s & 2722s & 1146s & 994s\\
 	\hline
 \end{tabular}
 \end{table}
@@ -610,16 +551,17 @@ using the structure of the similarity graph of the feature points.
 
 The algorithms show promising results when tested on the \emph{Murals} 
 data set. \emph{MM} and \emph{MMC} generally outperform existing 
-matching algorithms \emph{NN-Ratio} and \emph{Isodata}, and \emph{MMC} 
-outperforms \emph{MM}. We show that this result generalizes to 
-variations in viewpoint change as well as more realistic photos 
-featuring occlusions. 
+matching algorithms \emph{NN-Ratio}, \emph{Spectral} and \emph{Isodata}, 
+and \emph{MMC} outperforms \emph{MM}. We show that this result 
+generalizes to variations in viewpoint change as well as more realistic 
+photos featuring occlusions. 
 
 Given the versatility of the proposed algorithms, we are planning to 
 apply them to problems that require high reliability faced with images 
-that might not match, such as near duplicate detection or face 
-recognition.
+that might not match, such as near duplicate detection or image 
+retrieval.
 
+\vspace{2mm}
 \textit{This work is supported by the research grant for ADSC's Human 
 Sixth Sense Programme from Singapore's Agency for Science, Technology 
 and Research ($\text{A}^\star$STAR).}

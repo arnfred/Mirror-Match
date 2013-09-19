@@ -37,7 +37,7 @@ def match(paths, options = {}) :
     cluster_prune_limit = options.get("cluster_prune_limit", 1.5)
 
     # Get all feature points
-    indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint_type, descriptor_type = descriptor_type)
+    indices, ks, ds = features.getFeatures(paths, options)
 
     # Calculate weight matrix
     weights = weightMatrix.init(ds, descriptor_type)
