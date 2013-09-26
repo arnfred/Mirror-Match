@@ -18,6 +18,7 @@ Jonas Toft Arnfred, 2013-03-07
 
 import cv2
 import numpy
+import trees
 from sklearn.neighbors.ball_tree import BallTree
 
 
@@ -49,10 +50,11 @@ def getFeatures(paths, options = {}) :
 
     # Get options
     shuffle             = options.get("shuffle", False)
-    group               = options.get("group", False)
+    verbose             = options.get("verbose", False)
+    feature_type        = options.get("feature_type", "L")
 
     # Get all images
-    images = map(loadImage, paths)
+    images = map(lambda i : loadImage(i, feature_type), paths)
 
     # Find feature points
     if shuffle :
@@ -61,21 +63,21 @@ def getFeatures(paths, options = {}) :
     else :
         keypoints = [numpy.array(getKeypoints(im, options)) for im in images]
 
+    if verbose : print("\nKeypoints collected: %s" % str(map(len,keypoints)))
+
     # Describe featre points
     data = [getDescriptors(im, k, options) for (im, k) in zip(images, keypoints)]
     keypoints, descriptors = zip(*data)
+
+    if verbose : print("\nDescriptors calculated: %s" % str(map(len,descriptors)))
 
     # Check that we could get descriptors for all images (TODO: throw exception?)
     if sum(map(lambda d : d == None, descriptors)) > 0 : return (None, None, None)
 
     # Create a list of indices
-    indices = numpy.concatenate([numpy.array([i]*n) for i,n in zip(range(len(paths)), map(len, descriptors))])
+    indices = [numpy.array([i]*n) for i,n in zip(range(len(paths)), map(len, descriptors))]
 
-    # Should we concatenate?
-    if group :
-        return indices, numpy.concatenate(keypoints), descriptors
-    else :
-        return indices, numpy.concatenate(keypoints), numpy.concatenate(descriptors)
+    return numpy.concatenate(indices), numpy.concatenate(keypoints), numpy.concatenate(descriptors)
 
 
 
@@ -90,18 +92,24 @@ def getKeypoints(image, options = {}) :
 
     # Get amount of feature points
     keypoint_type		= options.get("keypoint_type", "SIFT")
-    max_kp              = options.get("max_kp", 300) 
+    max_kp              = options.get("max_kp", 9999) 
+    kp_threshold        = options.get("kp_threshold", (0.05, 0.3))
+    verbose             = options.get("verbose", False)
+
+    if verbose : print(":"),
 
     # Check if feature_type exists
     if not keypoint_type.upper() in supported_keypoint_types : raise NonExistantFeature(keypoint_type)
 
     # Get specific feature type
     if keypoint_type.upper() == "SIFT" :
-        feature = cv2.SIFT(max_kp)
-    elif keypoint_type.upper() == "ORB" :
-        feature = cv2.ORB(max_kp)
+        feature = cv2.SIFT(nfeatures = max_kp, contrastThreshold = kp_threshold[0], edgeThreshold = kp_threshold[1])
+    elif keypoint_type.upper() == "FAST" :
+        feature = cv2.FastFeatureDetector(kp_threshold[0])
     elif keypoint_type.upper() == "SURF" :
-        feature = cv2.SURF(max_kp)
+        feature = cv2.ORB(nfeatures = max_kp, hesssianThreshold = kp_threshold[0])
+    elif keypoint_type.upper() == "ORB" :
+        feature = cv2.SURF(nfeatures = max_kp)
     else :
         feature = cv2.FeatureDetector_create(keypoint_type)
 
@@ -130,6 +138,9 @@ def getDescriptors(image, keypoints, options) :
 
     # Get options
     descriptor_type		= options.get("descriptor_type", "SIFT")
+    verbose             = options.get("verbose", False)
+
+    if verbose : print(";"),
 
     # Check if feature_type exists
     if not descriptor_type in supported_descriptor_types : raise NonExistantFeature(descriptor_type)
@@ -201,6 +212,7 @@ def ballMatch(D1, D2, options = {}) :
     # Get options
     match_same          = options.get("match_same", False) 
     descriptor_type		= options.get("descriptor_type", "SIFT")
+    leaf_size   		= options.get("leaf_size", 10)
 
     # Map for the type of distance measure to use
     dist_map = {
@@ -217,24 +229,27 @@ def ballMatch(D1, D2, options = {}) :
 
     # For each descriptor in D2, query tree
     def query() :
-        for descriptor in D1 :
+        for i, descriptor in enumerate(D1) :
             if match_same :
                 (dist, index) = tree.query(descriptor, k=3)
-                yield index[0][1], dist[0][1], dist[0][1]/float(dist[0][2])
+                yield (i, index[0][1]), dist[0][1], dist[0][1]/float(dist[0][2])
             else :
                 (dist, index) = tree.query(descriptor, k=2)
-                yield index[0][0], dist[0][0], dist[0][0]/float(dist[0][1])
+                yield (i, index[0][0]), dist[0][0], dist[0][0]/float(dist[0][1])
 
     # Return matches
-    return zip(*list(query()))
+    return list(query())
 
 
 
-def mirrorMatch(D_list, options = {}) :
+def mirrorMatch(D_all, indices, options = {}) :
 
     # Get options
     leaf_size           = options.get("leaf_size", 10) 
     descriptor_type		= options.get("descriptor_type", "SIFT")
+    verbose             = options.get("verbose", False) 
+    neighbors           = options.get("neighbors", 2)
+    tree_type           = options.get("tree_type", "ball")
 
     # Map for the type of distance measure to use
     dist_map = {
@@ -246,31 +261,46 @@ def mirrorMatch(D_list, options = {}) :
         "FREAK"  : 'hamming'
     }
 
+    tree_options = {
+            "leaf_size" : leaf_size,
+            "dist_metric" : dist_map[descriptor_type],
+            "verbose" : True,
+    }
+
+    # Construct D_list
+    D_list = [D_all[indices == i] for i in range(len(set(indices)))]
+
     # Construct main ball tree
-    tree = BallTree(numpy.concatenate(D_list), leaf_size=leaf_size, metric=dist_map[descriptor_type])
+    tree = trees.init(D_all, tree_type, tree_options)
+    #tree = BallTree(D_all, leaf_size=leaf_size, metric=dist_map[descriptor_type])
 
     # Construct minor trees
-    forest = [BallTree(D, leaf_size=leaf_size, metric=dist_map[descriptor_type]) for D in D_list]
+    forest = [trees.init(D, tree_type, tree_options) for D in D_list]
+    #forest = [BallTree(D, leaf_size=leaf_size, metric=dist_map[descriptor_type]) for D in D_list]
 
     # Query trees for distances
     def query(D, T) :
-        print("."),
-        return [T.query(d, k = 2) for d in D]
+        if verbose : print("."),
+        return [T(d, k = neighbors) for d in D]
 
-    Q_all = [query(D, tree) for D in D_list]
-    Q_self = [query(D, T) for D, T in zip(D_list, forest)]
+    Q_all = [tree(D, neighbors) for D in D_list]
+    if verbose : print("\n")
+    Q_self = [T(D, neighbors) for D, T in zip(D_list, forest)]
 
     # Now produce matches
     def matches() :
-        for m_all, m_self in zip(Q_all, Q_self) :
-            for (d_all, i_all), (d_self, i_self) in zip(m_all, m_self) :
-                index = i_all[0][1]
-                score = d_all[0][1]
-                ratio = score / float( d_self[0][1] )
-                yield index, score, ratio
+        for im_all, im_self in zip(Q_all, Q_self) :
+            for (i_all, d_all), (i_self, d_self) in zip(im_all, im_self) :
+                best_self = d_self[1]
+                index_self = i_all[0]
+                for i in range(1, len(i_all)) :
+                    index_other = i_all[i]
+                    score = d_all[i]
+                    ratio = score / float( best_self )
+                    yield (index_self, index_other), score, ratio
 
     # Return matches
-    return zip(*list(matches()))
+    return list(matches())
 
 
 
@@ -324,7 +354,7 @@ def bfMatch(D1, D2, options = {}) :
 
     if len(data) == 0 : return (None, None, None)
 
-    return zip(*data)
+    return [((i,j),s,u) for i, (j,s,u) in enumerate(data)]
 
 
 
@@ -364,21 +394,28 @@ def hammingDist(D1, D2) :
 
 
 
-def loadImage(path) : 
+def loadImage(path, feature_type = 'L') : 
     """ Given a path, an image will be loaded and converted to grayscale
         input: path [string] (path to the image)
+               feature_type [string] (either 'L', 'u' or 'v' for luminance or colors)
         out:   [numpy.ndarray] cv2 representation of image in one channel
     """
+
+    feature_index = { 'L' : 0, 'u' : 1, 'v' : 2}[feature_type]
+
     # Try to read image, and if doesn't exist, throw exception
     img = cv2.imread(path)
     if (img == None) : raise NonExistantPath(path, "Image doesn't exist")
 
     # Convert to grayscale: First we convert the image to the L*u*v color space
     # and then return the luminance channel
-    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2LUV)[:,:,0]
+    img_LUV = cv2.cvtColor(img, cv2.COLOR_BGR2LUV)
+    img_gray = img_LUV[:,:,feature_index]
 
-    return img_gray
+    def norm(im) :
+        return numpy.array(255 * ((im - numpy.min(im)) / float(numpy.max(im) - numpy.min(im))) + 0.5, dtype=numpy.uint8)
 
+    return norm(img_gray)
 
 
 def getLabel(path) : return " ".join(path.split("/")[-1].split("_")[0:-1])
@@ -405,4 +442,5 @@ class NonExistantPath(Exception) :
 class NonExistantFeature(Exception) :
     def __init__(self, method, msg = "") :
         self.method = method
+        import trees
         self.msg = msg
