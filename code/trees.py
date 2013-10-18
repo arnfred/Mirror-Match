@@ -25,7 +25,7 @@ def ball_init(data, options) :
     def query(D, k) :
         if verbose : print("."),
         result = [tree.query(d, k = k) for d in D]
-        return [(i[0], d[0]) for d,i in result]
+        return [(i[0], d[0]) for d, i in result]
 
     return query
 
@@ -43,6 +43,6 @@ def flann_init(data, options) :
     def query(D, k) :
         if verbose : print("."),
         idx, dist = flann.nn_index(D, k, checks=params["checks"]);
-        return [(i, d) for i,d in zip(idx, dist)]
+        return [(i, d) for i, d in zip(idx, dist)]
 
     return query

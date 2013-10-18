@@ -17,6 +17,7 @@ Jonas Toft Arnfred, 2013-03-08
 import cv2
 import pylab
 import numpy
+import scipy
 import graph_tool.all as gt
 import math
 import louvain
@@ -357,6 +358,64 @@ def comparePlot(correct,
     # Print to file
     if output != None :
         pylab.savefig(output, bbox_inches='tight', dpi=80)
+
+
+
+def improvPlot(data, ref, labels, colors = ["green", "red", "orange" ,"blue", "maroon", "black"], nb_correspondences = None, size = (7,3), ylim = (0.0,1.01), xlim = (1.0), output = None, outside = False) :
+    fig = pylab.figure(figsize=size)
+    ax = pylab.subplot(111)
+    
+    # Make function for interpolating
+    def interpolate(total, correct, xlim = (0.0,1.0), samples = 1000) :
+        xs = numpy.linspace(xlim[0], xlim[1], samples)
+        if nb_correspondences != None :
+            recall = [sum(c)/float(nb_correspondences) for c in correct]
+        else :
+            recall = [sum(t) for t in ref[1]]
+        precision = [1 if sum(t) == 0 else sum(c)/float(sum(t)) for (t, c) in zip(total, correct)]
+        ys = scipy.interp(xs, recall, precision)
+        max_recall = numpy.max(recall)
+        max_index = int((max_recall - xlim[0]) / ((xlim[1] - xlim[0]) / samples))
+        return xs[:max_index], ys[:max_index]
+    
+    # get interpolated ref
+    xs_ref, ys_ref = interpolate(ref[0], ref[1])
+    
+    # Calculate the improvement in amount of false negatives
+    def false_neg_rate(y, y_ref) :
+        return 0 if (1 - y_ref) < 0.001 else (y - y_ref) / (1 - y_ref)
+            
+    for (total, correct), l, color in zip(data, labels, colors) :
+        xs, ys = interpolate(total, correct)
+        improv = [false_neg_rate(y, y_ref) for y, y_ref in zip(ys, ys_ref)]
+        #print(improv)
+        pylab.plot(xs, improv, '-', label=l, color=color, alpha=0.95)
+        pylab.legend(loc="best")
+
+    # Remove superflous lines and add axis labels
+    removeDecoration()
+    if nb_correspondences != None :
+        pylab.xlabel("Recall" % nb_correspondences)
+    else :
+        pylab.xlabel("# of Matches")
+    pylab.ylabel("False Positive Elimination Rate")
+    pylab.ylim(ylim[0],ylim[1])
+
+    # Put legend outside of plot
+    if outside == True :
+        # Shink current axis by 20%
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width * 0.75, box.height])
+
+        # Put a legend to the right of the current axis
+        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+    if xlim != None : pylab.xlim(0,xlim)
+
+    # Print to file
+    if output != None :
+        pylab.savefig(output, bbox_inches='tight', dpi=80)
+
 
 
 def accuPlot(correct, total, legends, colors = ["blue", "red", "green", "orange", "maroon"], ylim=(0.0, 1.01), xlim = None, size = (4,6), nb_correspondences = None, outside = False, output = None) :

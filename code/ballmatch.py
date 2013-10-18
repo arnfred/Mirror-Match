@@ -62,17 +62,13 @@ def match_speed(paths, options = {}) :
 
 
 def match_radius(paths, options = {}) :
-    keypoint_type		= options.get("keypoint_type", "SIFT")
-    descriptor_type		= options.get("descriptor_type", "SIFT")
     leaf_size		    = options.get("leaf_size", 10)
     radius_size         = options.get("radius_size", 300)
-    dist_threshold      = options.get("dist_threshold", 100)
-    shuffle_keypoints   = options.get("shuffle_keypoints", False)
     ratio_boost         = options.get("ratio_boost", 1.0)
     group_limit         = options.get("group_limit", 5)
 
     # Get all feature points
-    indices, ks, ds = features.getFeatures(paths, keypoint_type, descriptor_type, shuffle_keypoints)
+    indices, ks, ds = features.getFeatures(paths, options)
 
     # Construct ball tree
     bt = BallTree(ds, leaf_size=leaf_size)
@@ -80,7 +76,6 @@ def match_radius(paths, options = {}) :
     # Query function for ball tree
     def query_all() :
         max_index = indices.max()
-        seen = set([])
         for i, descriptor in enumerate(ds) :
             if indices[i] < max_index :
                 idxs = numpy.array(bt.query_radius(descriptor, r=radius_size)[0])
@@ -170,10 +165,11 @@ def NN(descriptor, tree) :
 
 # The criteria for keeping a match
 def keepMatch(data, m, n, s, indices, idx, dist_threshold) : #, ratio_threshold) :
-    keep = (s < dist_threshold                  # Should be fairly similar
+    keep = (
+        s < dist_threshold                      # Should be fairly similar
         #and u < ratio_threshold                # Should be unique
-        and indices[idx[m]] < indices[idx[n]]  # Should not be from the same image
-        and m == data[n][0])                        # Should be both ways
+        and indices[idx[m]] < indices[idx[n]]   # Should not be from the same image
+        and m == data[n][0])                    # Should be both ways
     return keep
 
 

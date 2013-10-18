@@ -114,7 +114,7 @@ def getCorrespondences(paths, homography, keypoint, descriptor, distance_thresho
     print("%s " % features.getLabel(paths[0])),
 
     # Get all feature points
-    indices, ks, ds = features.getFeatures(paths, keypoint_type = keypoint, descriptor_type = descriptor)
+    indices, ks, ds = features.getFeatures(paths, { "keypoint_type" : keypoint, "descriptor_type" : descriptor })
 
     # Get all positions
     (pos_im1, pos_im2) = (features.getPositions(ks[indices == 0]), features.getPositions(ks[indices == 1]))
@@ -272,33 +272,24 @@ def ratioMatch(distance_threshold, paths, homography, thresholds, keypoint, desc
     return evaluate(match_fun, thresholds, homography)
 
 
-def mirrorMatch(distance_threshold, paths, homography, thresholds, keypoint, descriptor) :
+def standardMatch(distance_threshold, paths, homography, thresholds, keypoint, descriptor, ratio) :
     options = {
         "thresholds" : thresholds,
         "distance_threshold" : distance_threshold,
         "keypoint_type" : keypoint,
         "descriptor_type" : descriptor,
+        "ratio" : ratio,
+        #"verbose" : True,
     }
     match_fun = mirrormatch.match(paths, options)
     return evaluate(match_fun, thresholds, homography)
 
-
-def mirrorOnlyMatch(distance_threshold, paths, homography, thresholds, keypoint, descriptor) :
-    options = {
-        "thresholds" : thresholds,
-        "distance_threshold" : distance_threshold,
-        "keypoint_type" : keypoint,
-        "descriptor_type" : descriptor,
-        "only_mirror" : True,
-    }
-    match_fun = mirrormatch.match(paths, options)
-    return evaluate(match_fun, thresholds, homography)
 
 
 def ballMatch(distance_threshold, paths, homography, thresholds, keypoint, descriptor) :
     options = {
        "leaf_size": 10,
-       "radius_size": 300,
+       "radius_size": 250,
        "dist_threshold": 300,
        "ratio_boost" : 1.2,
        "shuffle_keypoints" : False,

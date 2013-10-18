@@ -86,6 +86,7 @@ def getKeypoints(image, options = {}) :
         input: descriptor_type [string] (The feature we are using to extract keypoints)
                image [numpy.ndarray] (The image format used by scipy and opencv)
                params [dict] (Extra parameters for the method)
+               # Use custom made matcher
                options [dictionary] keypoint_type, max_kp
         out:   [list of cv2.Keypoint]
     """
@@ -93,7 +94,7 @@ def getKeypoints(image, options = {}) :
     # Get amount of feature points
     keypoint_type		= options.get("keypoint_type", "SIFT")
     max_kp              = options.get("max_kp", 9999) 
-    kp_threshold        = options.get("kp_threshold", (0.05, 0.3))
+    kp_threshold        = options.get("kp_threshold", (0.04, 10.0))
     verbose             = options.get("verbose", False)
 
     if verbose : print(":"),
@@ -153,69 +154,9 @@ def getDescriptors(image, keypoints, options) :
     return keypoints, descriptors
 
 
-
-def match(descriptor_type, D1, D2) :
-    """ for each descriptor in the first image, select its match in the second image
-        input: descriptor_type [string] (The feature we are using to extract keypoints)
-               D1 [numpy.ndarray] (matrix of length n x k with descriptors for first image) 
-               D2 [numpy.ndarray] (matrix of length m x k with descriptors for second image)
-               ratio [float] (The difference between the closest and second
-                              closest keypoint match.)
-        out:   [list of floats] (list of length n with index of corresponding keypoint in second 
-                                 image if any and None if not)
-    """
-    # def bestMatch(row) :
-    # 	s = numpy.argsort(row)
-    # 	return (s[0], row[s[0]]) if row[s[0]] < ratio*row[s[1]] else None
-
-
-    dist_fun_map = {
-        "SIFT"   : angleDist,
-        "SURF"   : angleDist,
-        "ORB"    : hammingDist,
-        "BRISK"  : hammingDist,
-        "BRIEF"  : hammingDist,
-        "FREAK"  : hammingDist
-    }
-
-    # Get distFun
-    dist_fun = dist_fun_map[descriptor_type]
-
-    def getData(row) :
-        ranking = numpy.argsort(row)
-        # The index of the best and second best match
-        i,j = ranking[0], ranking[1]
-        # The score of the best and second best match
-        s,t = row[i], row[j]
-        # Uniqueness: The ration between the best and second best match
-        u = s / float(t)
-        return (i,s,u)
-
-    T = dist_fun(D1,D2)
-    m1 = [getData(row) for row in T]
-    m2 = [getData(row) for row in T.T]
-
-    m2_indices = zip(*m2)[0]
-
-    data = [(i,s,u) if index == m2_indices[i] else (None,None,None) 
-              for ((i,s,u), index) in zip(m1, range(len(m1)))]
-
-    return zip(*data)
-    #T = dist_fun(D1,D2)
-    #matchscores = [bestMatch(row) for row in T]
-    #return matchscores
-
-
-
-def ballMatch(D1, D2, options = {}) :
-
-    # Get options
-    match_same          = options.get("match_same", False) 
-    descriptor_type		= options.get("descriptor_type", "SIFT")
-    leaf_size   		= options.get("leaf_size", 10)
-
-    # Map for the type of distance measure to use
-    dist_map = {
+# Map for the type of distance measure to use
+def dist_map(descriptor_type) :
+    dist_dict = {
         "SIFT"   : 'minkowski',
         "SURF"   : 'minkowski',
         "ORB"    : 'hamming',
@@ -223,85 +164,123 @@ def ballMatch(D1, D2, options = {}) :
         "BRIEF"  : 'hamming',
         "FREAK"  : 'hamming'
     }
-
-    # Construct ball tree
-    tree = BallTree(D2, leaf_size=leaf_size, metric=dist_map[descriptor_type])
-
-    # For each descriptor in D2, query tree
-    def query() :
-        for i, descriptor in enumerate(D1) :
-            if match_same :
-                (dist, index) = tree.query(descriptor, k=3)
-                yield (i, index[0][1]), dist[0][1], dist[0][1]/float(dist[0][2])
-            else :
-                (dist, index) = tree.query(descriptor, k=2)
-                yield (i, index[0][0]), dist[0][0], dist[0][0]/float(dist[0][1])
-
-    # Return matches
-    return list(query())
+    return dist_dict[descriptor_type]
 
 
-
-def mirrorMatch(D_all, indices, options = {}) :
+def match(D, indices, options = {}) :
 
     # Get options
     leaf_size           = options.get("leaf_size", 10) 
     descriptor_type		= options.get("descriptor_type", "SIFT")
     verbose             = options.get("verbose", False) 
-    neighbors           = options.get("neighbors", 2)
     tree_type           = options.get("tree_type", "ball")
+    r_top, r_bottom     = options.get("ratio", ("other", "all"))
 
-    # Map for the type of distance measure to use
-    dist_map = {
-        "SIFT"   : 'minkowski',
-        "SURF"   : 'minkowski',
-        "ORB"    : 'hamming',
-        "BRISK"  : 'hamming',
-        "BRIEF"  : 'hamming',
-        "FREAK"  : 'hamming'
-    }
+    # Add options
+    options['dist_metric'] = dist_map(descriptor_type)
+    I = numpy.array(range(len(indices)))
 
-    tree_options = {
-            "leaf_size" : leaf_size,
-            "dist_metric" : dist_map[descriptor_type],
-            "verbose" : True,
-    }
+    def split_D(split_fun) :
+        for i in set(indices) :
+            split = split_fun(i)
+            yield (I[split], D[split])
 
-    # Construct D_list
-    D_list = [D_all[indices == i] for i in range(len(set(indices)))]
+    # split feature points up by image
+    S_self = list(split_D(lambda i : indices == i))
 
-    # Construct main ball tree
-    tree = trees.init(D_all, tree_type, tree_options)
-    #tree = BallTree(D_all, leaf_size=leaf_size, metric=dist_map[descriptor_type])
+    # Find matches within images
+    if r_bottom == "self" :
+        if verbose : print("\nCalculating self matches")
+        T_self = [trees.init(D_im, tree_type, options) for (I_im, D_im) in S_self]
+        M_self = [T(D_im, 2) for (I_im, D_im), T in zip(S_self, T_self)]
 
-    # Construct minor trees
-    forest = [trees.init(D, tree_type, tree_options) for D in D_list]
-    #forest = [BallTree(D, leaf_size=leaf_size, metric=dist_map[descriptor_type]) for D in D_list]
+    # Find matches across images
+    if r_top == "other" or r_bottom == "other" : 
+        if verbose : print("\nCalculating other matches")
+        S_other = list(split_D(lambda i : indices != i))
+        T_other = [trees.init(D_im, tree_type, options) for (I_im, D_im) in S_other]
+        M_other = [T(D_im, 2) for (I_im, D_im), T in zip(S_self, T_other)]
 
-    # Query trees for distances
-    def query(D, T) :
-        if verbose : print("."),
-        return [T(d, k = neighbors) for d in D]
+    # Find matches all across and within images
+    if r_top == "all" or r_bottom == "all" :
+        if verbose : print("\nCalculating all matches")
+        S_all = [(I,D)]*len(S_self)
+        T_all = trees.init(D, tree_type, options)
+        M_all = [T_all(D_im, 3) for I_im, D_im in S_self]
 
-    Q_all = [tree(D, neighbors) for D in D_list]
-    if verbose : print("\n")
-    Q_self = [T(D, neighbors) for D, T in zip(D_list, forest)]
 
-    # Now produce matches
-    def matches() :
-        for im_all, im_self in zip(Q_all, Q_self) :
-            for (i_all, d_all), (i_self, d_self) in zip(im_all, im_self) :
-                best_self = d_self[1]
-                index_self = i_all[0]
-                for i in range(1, len(i_all)) :
-                    index_other = i_all[i]
-                    score = d_all[i]
-                    ratio = score / float( best_self )
-                    yield (index_self, index_other), score, ratio
+    # Produce matches across two different trees
+    def dual(M_top, M_bottom, S_top, overlap) :
 
-    # Return matches
-    return list(matches())
+        # The match indexes depending on overlap
+        fst_top, fst_bottom = (int(overlap[0]), int(overlap[1]))
 
+        # For each image ...
+        data_all = zip(M_top, M_bottom, S_self, S_top)
+        for matches_top, matches_bottom, (index_map_from, d_im), (index_map_to, d_im) in data_all :
+
+            # For each match in this image ...
+            data_im = zip(index_map_from, matches_top, matches_bottom)
+            for index_from, (idx_top, dist_top), (idx_bottom, dist_bottom) in data_im :
+
+                # Get the bottom score
+                score_bottom = dist_bottom[fst_bottom]
+
+                # For each match we make in the images
+                for i in range(fst_top, len(idx_top)) :
+                    index_to = index_map_to[idx_top[i]]
+                    score_top = dist_top[i]
+                    ratio = score_top / float( score_bottom )
+                    yield (index_from, index_to), score_top, ratio
+
+
+    # Produce matches within the same tree
+    def single(M, S, overlap) :
+
+        # The match indexes depending on overlap
+        if overlap :    fst, snd = (1, 2)
+        else :          fst, snd = (0, 1)
+
+        for matches_im, (index_map_from, d_im), (index_map_to, d_im) in zip(M, S_self, S) :
+            for index_from, (idx_array_to, dsc) in zip(index_map_from, matches_im) :
+                index_to = index_map_to[idx_array_to[fst]]
+                score = dsc[fst]
+                ratio = score / float( dsc[snd] )
+                yield (index_from, index_to), score, ratio
+
+    #print(map(len, D_other))
+    #print(map(len, I_other))
+    #print(map(len, M_other))
+
+    
+    # Mirror match
+    if r_top == "all" and r_bottom == "all" :
+        return list(single(M_all, S_all, overlap = True))
+
+    # Ratio match
+    elif r_top == "other" and r_bottom == "other" :
+        return list(single(M_other, S_other, overlap = False))
+
+    # Mirror Strict
+    elif r_top == "other" and r_bottom == "self" :
+        return list(dual(M_other, M_self, S_other, overlap = (False, True)))
+
+    # Mirror Both
+    elif r_top == "all" and r_bottom == "self" :
+        return list(dual(M_all, M_self, S_all, overlap = (True, True))) # Self always overlaps with itself
+
+    # Ratio Both
+    elif r_top == "all" and r_bottom == "other" :
+        return list(dual(M_all, M_other, S_all, overlap = (True, True)))
+
+    # Weird Match
+    elif r_top == "other" and r_bottom == "all" :
+        # Why 2? Well, #0 is the same point, and #1 is either the match we found or the best match
+        # in the other image
+        return list(dual(M_other, M_all, S_other, overlap = (False, 2)))
+
+    else :
+        raise Exception("Unknown ratio combination: Top = '%s', Bottom = '%s'" % (r_top, r_bottom))
 
 
 
@@ -355,42 +334,6 @@ def bfMatch(D1, D2, options = {}) :
     if len(data) == 0 : return (None, None, None)
 
     return [((i,j),s,u) for i, (j,s,u) in enumerate(data)]
-
-
-
-# Compute D1 * D2.T, and find approx dist with arccos
-def angleDist(D1, D2) : return numpy.arccos(D1.dot(D2.T))
-
-
-
-# Compute hamming distance
-# CHECK weightMatrix.py for much faster method
-def hammingDist(D1, D2) :
-    # Fast function for computing hamming distance
-    # n and m should both be integers
-    def hammingDistInt(n,m):
-        k = n ^ m
-        count = 0
-        while(k):
-            k &= k - 1
-            count += 1
-        return(count)
-
-    # Vectorizing the hammingDistInt function to take arrays
-    hm = numpy.vectorize(hammingDistInt)
-
-    # Record size and initialize data
-    n = D1.shape[0]
-    m = D2.shape[0]
-    result = numpy.zeros((n,m), 'uint8')
-
-    # Fill each spot in the resulting matrix with the distance
-    for i in range(n) : 
-        for j in range(m) : 
-            result[i,j] = sum(hm(D1[i], D2[j]))
-    
-    return result
-
 
 
 

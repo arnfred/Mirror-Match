@@ -27,8 +27,6 @@ def match(paths, options = {}) :
         return (features.getPosition(ks[i]), features.getPosition(ks[j]))
 
     # Get options
-    with_pruned         = options.get("with_pruned", False)
-    only_mirror         = options.get("only_mirror", False)
     verbose             = options.get("verbose", False)
 
     # Add options
@@ -37,23 +35,40 @@ def match(paths, options = {}) :
     # Get all feature points
     indices, ks, ds = features.getFeatures(paths, options)
 
-    # Use cv2's matcher to get matching feature points
-    if only_mirror :
-        match_data = features.mirrorMatch(ds, indices, options)
-    else :
-        match_data = features.bfMatch(ds, ds, options)
+    # Match
+    match_data = features.match(ds, indices, options)
 
     if verbose : print("\n%i Matches found" % (len(match_data)))
 
     # Find all matches
     def get_matches() :
         seen = set([])
-        nb_images = len(paths)
+
+        # filter matches that aren't both ways or are within only one image
         for (i, j), s, u in match_data :
-            if (not (i, j) in seen) and (nb_images > 2 or match_data[j][0][1] == i) :
+            if (not (i, j) in seen) and indices[i] != indices[j] :
                 seen.add((i, j))
                 seen.add((j, i))
                 yield (i, j), s, u
+
+    # # Find all matches
+    # def get_matches() :
+    #     seen = set([])
+    #     ways = set([])
+    #     m = set([])
+    #     for (i, j), s, u in match_data :
+    #         if u < 1.0 :
+    #             ways.add((i, j))
+    #             m.add(((i, j), s, u))
+
+    #     # filter matches that aren't both ways or are within only one image
+    #     for (i, j), s, u in m :
+    #         #if (j, i) in ways and (not (i, j) in seen) and indices[i] != indices[j] :
+    #         if (not (i, j) in seen) and indices[i] != indices[j] :
+    #         #if indices[i] != indices[j] :
+    #             seen.add((i, j))
+    #             seen.add((j, i))
+    #             yield (i, j), s, u
 
 
     # Collect all matches
@@ -61,7 +76,7 @@ def match(paths, options = {}) :
 
     # Define a function that given a threshold returns a set of matches
     def match_fun(threshold) :
-        match_data = [(matchPos(i, j), s, u, (indices[i], indices[j])) for (i,j),s,u in matches if u < threshold]
+        match_data = [(matchPos(i, j), s, u, (indices[i], indices[j])) for (i, j),s,u in matches if u < threshold]
         if len(match_data) == 0 : return [], [], [], []
         return zip(*match_data)
 
