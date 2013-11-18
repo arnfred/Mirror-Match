@@ -76,8 +76,8 @@ def match(paths, options = {}) :
 
     # Define a function that given a threshold returns a set of matches
     def match_fun(threshold) :
-        match_data = [(matchPos(i, j), s, u, (indices[i], indices[j])) for (i, j),s,u in matches if u < threshold]
-        if len(match_data) == 0 : return [], [], [], []
+        match_data = [(matchPos(i, j), s, u, (indices[i], indices[j]), (i,j)) for (i, j),s,u in matches if u < threshold]
+        if len(match_data) == 0 : return [], [], [], [], []
         return zip(*match_data)
 
     return match_fun

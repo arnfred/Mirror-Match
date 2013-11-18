@@ -68,7 +68,9 @@ def keypoints(im, pos) :
     # Plot all keypoints
     pylab.gray()
     pylab.imshow(im)
-    pylab.plot([p[1] for p in pos], [p[0] for p in pos], '.b')
+    #for (x,y), c in zip(pos, colors.get()) :
+    for i, (x,y) in enumerate(pos) :
+        pylab.plot(x, y, marker='.', color = colors.getRedGreen(float(i+1) / len(pos)))
     pylab.axis('off')
     pylab.show()
 

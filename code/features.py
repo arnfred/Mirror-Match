@@ -104,13 +104,13 @@ def getKeypoints(image, options = {}) :
 
     # Get specific feature type
     if keypoint_type.upper() == "SIFT" :
-        feature = cv2.SIFT(nfeatures = max_kp, contrastThreshold = kp_threshold[0], edgeThreshold = kp_threshold[1])
+        feature = cv2.SIFT()#nfeatures = max_kp, contrastThreshold = kp_threshold[0], edgeThreshold = kp_threshold[1])
     elif keypoint_type.upper() == "FAST" :
         feature = cv2.FastFeatureDetector(kp_threshold[0])
     elif keypoint_type.upper() == "SURF" :
-        feature = cv2.ORB(nfeatures = max_kp, hesssianThreshold = kp_threshold[0])
+        feature = cv2.SURF(nfeatures = max_kp, hessianThreshold = kp_threshold[0])
     elif keypoint_type.upper() == "ORB" :
-        feature = cv2.SURF(nfeatures = max_kp)
+        feature = cv2.ORB(nfeatures = max_kp)
     else :
         feature = cv2.FeatureDetector_create(keypoint_type)
 
@@ -379,11 +379,15 @@ def getPositions(keypoints) :
 
 class NonExistantPath(Exception) :
     def __init__(self, path, msg = "") :
+        print(path)
         self.path = path
         self.msg = msg
+    def __str__(self):
+        return repr("The path %s does not exist: %s" % (self.path, self.msg))
 
 class NonExistantFeature(Exception) :
     def __init__(self, method, msg = "") :
         self.method = method
-        import trees
         self.msg = msg
+    def __str__(self):
+        return repr("The feature %s does not exist: %s" % (self.method, self.msg))
