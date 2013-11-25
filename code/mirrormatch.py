@@ -12,6 +12,7 @@ Jonas Toft Arnfred, 2013-05-23
 ####################################
 
 import features
+import numpy
 
 
 ####################################
@@ -20,6 +21,8 @@ import features
 #                                  #
 ####################################
 
+
+
 def match(paths, options = {}) :
 
     # Returns the position of a match
@@ -27,13 +30,11 @@ def match(paths, options = {}) :
         return (features.getPosition(ks[i]), features.getPosition(ks[j]))
 
     # Get options
-    verbose             = options.get("verbose", False)
-
-    # Add options
-    options['match_same'] = True
+    verbose             = options.get("match_verbose", False)
+    filter_features     = options.get("filter_features", [])
 
     # Get all feature points
-    indices, ks, ds = features.getFeatures(paths, options)
+    indices, ks, ds = getFeatures(paths, filter_features, options)
 
     # Match
     match_data = features.match(ds, indices, options)
@@ -44,14 +45,18 @@ def match(paths, options = {}) :
     def get_matches() :
         seen = set([])
 
-        # filter matches that aren't both ways or are within only one image
+        # filter matches that aren't across images
         for (i, j), s, u in match_data :
             if (not (i, j) in seen) and indices[i] != indices[j] :
                 seen.add((i, j))
                 seen.add((j, i))
-                yield (i, j), s, u
+                if indices[i] < indices[j] : 
+                    yield (i, j), s, u
+                else :
+                    yield (j, i), s, u
 
-    # # Find all matches
+
+    # # Find all matches (Bothways)
     # def get_matches() :
     #     seen = set([])
     #     ways = set([])
@@ -81,3 +86,18 @@ def match(paths, options = {}) :
         return zip(*match_data)
 
     return match_fun
+
+
+
+def getFeatures(paths, filter_features, options) :
+    """ Retrieves features and filters them """
+    feature_points = features.getFeatures(paths, options)
+    if filter_features == [] :
+        return feature_points
+    else :
+        ff = numpy.ones(len(feature_points[0]), dtype = numpy.bool)
+        ff[filter_features] = False
+        indices = feature_points[0][ff]
+        ks = feature_points[1][ff]
+        ds = feature_points[2][ff]
+        return indices, ks, ds

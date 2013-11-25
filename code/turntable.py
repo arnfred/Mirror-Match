@@ -17,7 +17,6 @@ import features
 import os
 import fnmatch
 import display
-import matching
 import mirrormatch
 import colors
 import random
@@ -30,48 +29,80 @@ import pylab
 ####################################
 
 
-def evaluate(match_fun, angles, object_type, thresholds, params = {}) :
+def evaluate(match_fun, angles, object_type, thresholds, ground_truth_data = None, options = {}) :
     """ Returns number of correct and total matches of match_fun on object:
         match_fun : Function (Function that takes a list of paths and returns matches)
         angles : Int (Rotation in degrees. Must be divisible by 5)
         object_type : String (the object pictured on the turntable)
         thresholds : List[Float] (list of ratio thresholds)
-        params : Dict (Set of parameters for matching etc)
+        match_count : List[Int] (List of the amount of possible matches for each feature point)
+        options : Dict (Set of parameters for matching etc)
     """
 
     # Get distance_threshold
-    distance_threshold = params.get("distance_threshold", 5)
-    verbose = params.get("verbose", False)
-    
+    distance_threshold      = options.get("distance_threshold", 5)
+    verbose                 = options.get("evaluate_verbose", False)
+
     # Get paths to the three images
-    path_A = get_turntable_path(object_type, angles[0], "Bottom")
-    path_B = get_turntable_path(object_type, angles[0], "Top")
-    path_C = get_turntable_path(object_type, angles[1], "Bottom")
-    
+    def get_path(i) : return {
+            "A" : get_turntable_path(object_type, angles[0] + i*360, "Bottom"),
+            "B" : get_turntable_path(object_type, angles[0] + i*360, "Top"),
+            "C" : get_turntable_path(object_type, angles[1] + i*360, "Bottom")
+    }
+
+    # Get paths
+    def get_matches(i) :
+        # Are we weeding out feature that can't be verified by ground truth?
+        options["filter_features"] = [] if ground_truth_data == None else ground_truth_data["filter_features"][i]
+
+        # Collect matches
+        paths = get_path(i)
+        return match_fun([paths["A"], paths["C"]], options = options)(1.0)
+
+
     # Get match results
-    matches = match_fun([path_A, path_C])(1.0)
-    
+    matches = [get_matches(i) for i in range(3)]
+    positions = [m[0] for m in matches]
+    ratios = numpy.concatenate([m[2] for m in matches])
+
     if verbose :
-        print("Found matches")
-    
+        nb_matches = sum([len(m[0]) for m in matches])
+        print("Found %i matches for angles (%i, %i) and object type '%s'" % (nb_matches, angles[0], angles[1], object_type))
+
     # Get ground trouth
-    distances = match_distances(matches[0], angles, object_type, distance_threshold)
-    
+    distances = numpy.concatenate([match_distances(m[0], angles, object_type, distance_threshold) for m in matches])
+
     if verbose :
-        print("Found distances")
-    
-    # Get number of matches given a threshold
-    def get_total(t) :
-        return int(sum([1 for d,u in zip(distances, matches[2]) if u <= t]))
-    
-    # Get number of correct matches given a threshold
-    def get_correct(t) : 
-        return int(sum([1 for d,u in zip(distances, matches[2]) if u <= t and d < distance_threshold]))
-    
+        print("Found %i distances" % (len(distances)))
+
     # Collect precision per ratio_threshold
-    correct = [[get_correct(t)] for t in thresholds]
-    total = [[get_total(t)] for t in thresholds]
-    return correct, total
+    def get_count(t, dt) : return len([1 for d,r in zip(distances, ratios) if r <= t and d < dt])
+    correct = [get_count(t, distance_threshold) for t in thresholds]
+    total = [get_count(t, 9999999) for t in thresholds]
+    return { "correct" : correct, "total" : total }
+
+
+
+def evaluate_objects(match_fun, angles, object_types, thresholds, ground_truth_data, options = {}) :
+    """ Returns number of correct and total matches of match_fun on objects:
+        match_fun : Function (Function that takes a list of paths and returns matches)
+        angles : (Int, Int) (two angles in degrees. Must be divisible by 5)
+        object_types : List[String] (the objects pictured on the turntable)
+        thresholds : List[Float] (list of ratio thresholds)
+        options : Dict (Set of parameters for matching etc)
+    """
+    # Get correct and total matches for different thresholds at current angle_increment
+    def get_results(object_type) :
+        gt = None if ground_truth_data == None else ground_truth_data[object_type]
+        return evaluate(match_fun, angles, object_type, thresholds, gt, options)
+
+
+    results = [get_results(o) for o in object_types]
+    correct =  { o : r["correct"] for r,o in zip(results, object_types) }
+    total =  { o : r["total"] for r,o in zip(results, object_types) }
+
+    return { "correct" : correct, "total" : total }
+
 
 
 def get_turntable_path(object_type, angle, camera_position, turntable_dir = "../../turntable") :
@@ -112,15 +143,19 @@ def load_calibration_image(object_type, angle, camera_position, pattern_position
 
 
 # Get calibration points
-def get_calibration_points(img, pattern_position) :
+def get_calibration_points(object_type, angle, camera_position, pattern_position) :
     """ Returns the calibration points from an image with the checkerboard pattern """
+
+    # Load img
+    img = load_calibration_image(object_type, angle, camera_position, pattern_position)
+    
     if pattern_position == "steep" :
         grid_size = (9, 13)
     else :
         grid_size = (13, 9)
     success, cv_points = cv2.findChessboardCorners(img, grid_size, flags = cv2.CALIB_CB_FILTER_QUADS)
     if not success :
-        raise Exception("Can't get lock on chess pattern for img")
+        raise Exception("Can't get lock on chess pattern: Angle: %i, object: %s, camera position: %s, pattern_position: %s" % (angle, object_type, camera_position, pattern_position))
     points = numpy.array([[p[0][0], p[0][1]] for p in cv_points])
     #print(points)
     return points# Get calibration points
@@ -140,20 +175,12 @@ def get_foundamental_matrix(object_type, angles, camera_position, scale = 2.0, r
 
 
     # Fetch all images for the angle pair
-    img1_flat = load_calibration_image(object_type, angles[0], camera_position[0], "flat")
-    img2_flat = load_calibration_image(object_type, angles[1], camera_position[1], "flat")
-    img1_angled = load_calibration_image(object_type, angles[0], camera_position[0], "angled")
-    img2_angled = load_calibration_image(object_type, angles[1], camera_position[1], "angled")
-    img1_steep = load_calibration_image(object_type, angles[0], camera_position[0], "steep")
-    img2_steep = load_calibration_image(object_type, angles[1], camera_position[1], "steep")
-    
-    # Fetch points for all images
-    points1_flat = get_calibration_points(img1_flat, "flat")
-    points2_flat = get_calibration_points(img2_flat, "flat")
-    points1_angled = get_calibration_points(img1_angled, "angled")
-    points2_angled = get_calibration_points(img2_angled, "angled")
-    points1_steep = get_calibration_points(img1_steep, "steep")
-    points2_steep = get_calibration_points(img2_steep, "steep")
+    points1_flat = get_calibration_points(object_type, angles[0], camera_position[0], "flat")
+    points2_flat = get_calibration_points(object_type, angles[1], camera_position[1], "flat")
+    points1_angled = get_calibration_points(object_type, angles[0], camera_position[0], "angled")
+    points2_angled = get_calibration_points(object_type, angles[1], camera_position[1], "angled")
+    points1_steep = get_calibration_points(object_type, angles[0], camera_position[0], "steep")
+    points2_steep = get_calibration_points(object_type, angles[1], camera_position[1], "steep")
     
     # Concatenate point sets
     points1 = numpy.concatenate((points1_flat, points1_angled, points1_steep)) / scale
@@ -213,9 +240,9 @@ def match_distances(matches, angles, object_type, check_threshold) :
     img_B = features.loadImage(path_B)
     
     # Find fundamental matrices
-    F_AC = get_foundamental_matrix(object_type, (angles[0], angles[1]), ("Bottom", "Bottom"), scale = 2.0)
-    F_AB = get_foundamental_matrix(object_type, (angles[0], angles[0]), ("Bottom", "Top"), scale = 2.0)
-    F_BC = get_foundamental_matrix(object_type, (angles[0], angles[1]), ("Top", "Bottom"), scale = 2.0)
+    F_AC = get_foundamental_matrix(object_type, (angles[0], angles[1]), ("Bottom", "Bottom"), scale = 2.0) # Reference view
+    F_AB = get_foundamental_matrix(object_type, (angles[0], angles[0]), ("Bottom", "Top"), scale = 2.0) # Test view
+    F_BC = get_foundamental_matrix(object_type, (angles[0], angles[1]), ("Top", "Bottom"), scale = 2.0) # Auxiliary view
     
     # return distances
     return list(calc_match_distances(matches, img_B, F_AB, F_AC, F_BC, check_threshold))
@@ -266,7 +293,7 @@ def calc_match_distances(matches, img_B, F_AB, F_AC, F_BC, check_threshold) :
 def get_image_set(object_type) :
     sets = {
         1 : ["Conch",  "FlowerLamp",        "Motorcycle",  "Rock", "Bannanas",  "Car",          "Desk",   "GrandfatherClock",  "Robot",       "TeddyBear", "Base",      "Car2",         "Dog",    "Horse", "Tricycle"],
-        2 : ["Calibration",  "Clock",  "EthernetHub",  "Hicama",  "Pepper"],
+        2 : ["Clock",  "EthernetHub",  "Hicama",  "Pepper"],
         3 : ["Dremel",  "JackStand",  "Sander",  "SlinkyMonster",  "SprayCan"],
         4 : ["FireExtinguisher",  "Frame",  "Hat", "StaplerRx"],
         5 : ["Carton",  "Clamp",  "EggPlant",  "Lamp",  "Mouse",  "Oil"],
@@ -278,7 +305,7 @@ def get_image_set(object_type) :
         11 : ["Gelsole",   "MouthGuard",  "Razor",       "Toothpaste", "Abroller",  "DVD",          "Keyboard",  "PS2"],
         12 : ["Bush",  "DuckBank",  "Eggs",  "Frog",  "LightSaber"],
         13 : ["Coffee",  "LavaBase",  "SwanBank",  "ToolBox",  "Vegetta"],
-        14 : ["BoxStuff",     "Standing", "BallSander",   "Rooster",     "StorageBin"],
+        14 : ["BoxStuff",     "Standing", "BallSander", "StorageBin"],
         15 : ["Globe",  "Pineapple"]
     }
     for key,value in sets.iteritems() :
@@ -286,3 +313,92 @@ def get_image_set(object_type) :
             return key
 
     raise Exception("No object matching object_type of '%s'" % object_type)
+
+
+
+def ground_truth(angles, object_type, options = {}) :
+    """ Find the amount of total possible correspondences for all lightning conditions. 
+        angles : (Int, Int) (two angles in degrees. Must be divisible by 5)
+        object_type : String (The type of 3d model we are looking at)
+        return_matches : Boolean (set to True to return the correspondences found too)
+        options : Dict (Set of parameters for matching etc)
+    """
+    verbose = options.get("evaluate_verbose", False)
+    nb_correspondences = 0
+    filter_features = []
+    for i in range(3) :
+        curr_matches = list(calc_ground_truth(angles, object_type, lightning_index = i, return_matches = False, options = options))
+        # Create list of features that should be kept
+        curr_ff = [i for i, m in enumerate(curr_matches) if len(m) == 0]
+        nb_correspondences += len(curr_matches) - len(curr_ff)
+        filter_features.append(curr_ff)
+
+    if verbose :
+        print("There are %i theoretically possible correspondences for object '%s' at angles (%i,%i)" % (nb_correspondences, object_type, angles[0], angles[1]))
+     
+    return { "nb_correspondences" : nb_correspondences, "filter_features" : filter_features }
+
+
+# Load keypoints
+def keypoints(object_type, angle, viewpoint) :
+    path = get_turntable_path(object_type, angle, viewpoint)
+    points = features.getPositions(features.getFeatures([path])[1])
+    return numpy.array(points, dtype=numpy.float32)
+
+# return epipolar line
+def get_lines(points, F) :
+    return [l[0] for l in cv2.computeCorrespondEpilines(points.reshape(-1, 1, 2), 1, F)]
+
+# Calculate distance between line and 2D-point
+def dist(line, point) :
+    return numpy.abs(line.dot([point[0], point[1], 1]))
+
+
+
+def calc_ground_truth(angles, object_type, lightning_index = 0, return_matches = False, options = {}) :
+    """ Find the amount of total possible correspondences. 
+        For each feature in A, check if there is a feature in C such that the 
+        epipolar constraints for a correct match are fulfilled for any point in B:
+        angles : (Int, Int) (two angles in degrees. Must be divisible by 5)
+        object_type : String (The type of 3d model we are looking at)
+        return_matches : Boolean (set to True to return the correspondences found too)
+        options : Dict (Set of parameters for matching etc)
+    """
+    
+# Get distance_threshold
+    distance_threshold  = options.get("distance_threshold", 5)
+    verbose             = options.get("verbose", False)
+
+    # Get paths to the three images
+    keypoints_A = keypoints(object_type, angles[0]+360*lightning_index, "Bottom")
+    keypoints_B = keypoints(object_type, angles[0]+360*lightning_index, "Top")
+    keypoints_C = keypoints(object_type, angles[1]+360*lightning_index, "Bottom")
+
+    # Find fundamental matrices
+    F_AC = get_foundamental_matrix(object_type, (angles[0], angles[1]), ("Bottom", "Bottom"), scale = 2.0)
+    F_AB = get_foundamental_matrix(object_type, (angles[0], angles[0]), ("Bottom", "Top"), scale = 2.0)
+    F_BC = get_foundamental_matrix(object_type, (angles[0], angles[1]), ("Top", "Bottom"), scale = 2.0)
+
+    # For every point in A find the corresponding lines in B and C
+    lines_AB = get_lines(keypoints_A, F_AB)
+    lines_AC = get_lines(keypoints_A, F_AC)
+
+    # For every epiline in B and C corresponding to a point in A
+    for i, (p_A, l_AB, l_AC) in enumerate(zip(keypoints_A, lines_AB, lines_AC)) :
+
+        # Find all points on the line in B and C
+        points_B = numpy.array([p_B for p_B in keypoints_B if dist(l_AB, p_B) < distance_threshold], dtype=numpy.float32)
+        points_C = numpy.array([p_C for p_C in keypoints_C if dist(l_AC, p_C) < distance_threshold], dtype=numpy.float32)
+
+        # For every point in B on l_AB, see if there is a point in C on l_AC that lies on the epipolar line of p_B in image C: l_BC
+        if len(points_B) > 0 and len(points_C) > 0 :
+
+            # Get distances from every point in C on line l_AC to every line in C corresponding to a point in B on line l_AB
+            get_distances = lambda line : [(dist(line, p_C), p_C) for p_C in points_C]
+            distances = features.flatten([get_distances(l_BC) for l_BC in get_lines(points_B, F_BC)])
+
+            # Count how many potential matches there are
+            yield [(p_A, p_C) for d, p_C in distances if d < distance_threshold]
+
+        else :
+            yield []

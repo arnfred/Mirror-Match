@@ -2,9 +2,6 @@
 Python module for use with openCV and features.py to display keypoints
 and their links between images
 
-Most of this code is adapted from Jan Erik Solem's python wrapper for sift
-(http://www.janeriksolem.net/2009/02/sift-python-implementation.html)
-
 Jonas Toft Arnfred, 2013-03-08
 """
 
@@ -18,7 +15,6 @@ import cv2
 import pylab
 import numpy
 import scipy
-import graph_tool.all as gt
 import math
 import louvain
 import colors
@@ -423,9 +419,11 @@ def improvPlot(data, ref, labels, colors = ["green", "red", "orange" ,"blue", "m
 def accuPlot(correct, total, legends, colors = ["blue", "red", "green", "orange", "maroon"], ylim=(0.0, 1.01), xlim = None, size = (4,6), nb_correspondences = None, outside = False, output = None) :
     fig = pylab.figure(figsize=size)
     ax = pylab.subplot(111)
-    for ts, cs, l, color in zip(total, correct, legends, colors) :
-        if nb_correspondences != None :
-            xs = [sum(c)/float(nb_correspondences) for c in cs]
+    if isinstance(nb_correspondences, ( int, long ) ) or nb_correspondences == None :
+        nb_correspondences = [nb_correspondences] * len(correct)
+    for ts, cs, l, color, corr in zip(total, correct, legends, colors, nb_correspondences) :
+        if corr != None :
+            xs = [sum(c)/float(corr) for c in cs]
         else :
             xs = [sum(t) for t in ts]
         ys = [1 if sum(t) == 0 else sum(c)/float(sum(t)) for (c, t) in zip(cs, ts)]
@@ -435,7 +433,7 @@ def accuPlot(correct, total, legends, colors = ["blue", "red", "green", "orange"
     # Remove superflous lines and add axis labels
     removeDecoration()
     if nb_correspondences != None :
-        pylab.xlabel("Recall" % nb_correspondences)
+        pylab.xlabel("Recall")# % nb_correspondences)
     else :
         pylab.xlabel("# of Matches")
     pylab.ylabel("Precision")
@@ -650,156 +648,156 @@ def showPartitions(points, partitioning, image = None, output = "partitions.jpg"
 
 
 
-def trait_graph(tg, images) :
-    graph_on_images(
-            tg, 
-            images, 
-            clusters=tg.vp["partitions"], 
-            path="trait_graph.png",
-            edge_color=tg.ep["edge_colors"], 
-            vertex_size=tg.vp["variance"])
+#def trait_graph(tg, images) :
+#    graph_on_images(
+#            tg, 
+#            images, 
+#            clusters=tg.vp["partitions"], 
+#            path="trait_graph.png",
+#            edge_color=tg.ep["edge_colors"], 
+#            vertex_size=tg.vp["variance"])
 
 
-def draw_graph(g, clusters="orange", filename="graph.png", size=(1000,1000)) :
-    """ Show a graph with its clustering marked
-    """
-    # Get indices
-    indices = g.vertex_properties["indices"]
-
-    # Get class colors
-    class_colors = g.vertex_properties["class_colors"]
-
-    # Get weights and positions
-    weights = g.edge_properties["weights"]
-    pos = gt.sfdp_layout(g, eweight=weights)
-
-    # Print graph to file
-    gt.graph_draw(g, pos=pos, output_size=size, vertex_halo=True, vertex_halo_color=class_colors, vertex_color=clusters,
-               vertex_fill_color=clusters, vertex_size=5, edge_pen_width=weights, output=filename)
-
-    g_img = imread(filename)
-    pylab.imshow(g_img)
-
-
-
-def graph_partitions(g, clusters, filename="graph_clusters.png") :
-    """ Create an image where the clusters are disconnected
-    """
-    # Prune inter cluster edges
-    intra_cluster = g.new_edge_property("bool")
-    intra_cluster.fa = [(clusters[e.source()] == clusters[e.target()]) for e in graph.edges()]
-
-    # Create graph with less edges
-    g_cluster = gt.GraphView(g, efilt=intra_cluster)
-
-    graph(g_cluster, clusters, filename=filename)
+#def draw_graph(g, clusters="orange", filename="graph.png", size=(1000,1000)) :
+#    """ Show a graph with its clustering marked
+#    """
+#    # Get indices
+#    indices = g.vertex_properties["indices"]
+#
+#    # Get class colors
+#    class_colors = g.vertex_properties["class_colors"]
+#
+#    # Get weights and positions
+#    weights = g.edge_properties["weights"]
+#    pos = gt.sfdp_layout(g, eweight=weights)
+#
+#    # Print graph to file
+#    gt.graph_draw(g, pos=pos, output_size=size, vertex_halo=True, vertex_halo_color=class_colors, vertex_color=clusters,
+#               vertex_fill_color=clusters, vertex_size=5, edge_pen_width=weights, output=filename)
+#
+#    g_img = imread(filename)
+#    pylab.imshow(g_img)
 
 
 
-def graph_on_images(graph, images, clusters = "orange", path="graph_on_images.png", vertex_size=15, edge_color=[0.0, 0.0, 0.0, 0.8]) :
-    """ Displays the feature points of the graph as they are located on the images
-        Input: graph [Graph]
-               images [List of images]
-    """
-
-    def tails(it):
-        """ tails([1,2,3,4,5]) --> [[1,2,3,4,5], [2,3,4,5], [3,4,5], [4,5], [5], []] """
-        while True:
-            tail, it = tee(it)
-            yield tail
-            next(it)
-
-    # Interpolate images to double size
-    scale = 2.0
-    separation = 20
-
-    # Show in gray-scale
-    pylab.gray()
-
-    # Image paths
-    bg_path = "graph_background.png"
-    fg_path = "graph_foreground.png"
-    merge_path = path
-
-    # Put images together and resize
-    bg_small = appendimages(images[0], images[1], seperator = separation)
-    bg = imresize(bg_small, size=scale, interp='bicubic')
-    pylab.imsave(bg_path, bg)
-
-    # Calculate offsets
-    offsets = map(sum, [list(t) for t in tails(map(lambda i : (i.shape[1] + separation)*scale, images))])[::-1]
-    print(offsets)
-
-    # Get scaled positions
-    ind_prop = graph.vertex_properties["indices"]
-    x,y = (graph.vertex_properties["x"], graph.vertex_properties["y"])
-    pos = graph.new_vertex_property("vector<float>")
-    for v in graph.vertices() : 
-        x_scaled = x[v] * scale + offsets[ind_prop[v]]
-        y_scaled = y[v] * scale
-        pos[v] = [x_scaled, y_scaled]
-
-    # Get weights
-    weights = graph.edge_properties["weights"]
-
-    # Draw graph
-    class_colors = graph.vertex_properties["class_colors"]
-    gt.graph_draw(graph, 
-                  pos=pos, 
-                  fit_view=False, 
-                  output_size=[bg.shape[1], bg.shape[0]],
-                  vertex_halo=True,
-                  vertex_halo_color="black",
-                  vertex_size=vertex_size,
-                  vertex_fill_color=clusters,
-                  edge_color=edge_color,
-                  edge_pen_width=weights,
-                  output=fg_path
-                 )
-    
-    # Merge the graph and background images
-    background = Image.open(bg_path)
-    foreground = Image.open(fg_path)
-    background.paste(foreground, (0, 0), foreground)
-    background.save(merge_path)
-    
-    # Show resulting image
-    im = pylab.imread(merge_path)
-    pylab.imshow(im)
+#def graph_partitions(g, clusters, filename="graph_clusters.png") :
+#    """ Create an image where the clusters are disconnected
+#    """
+#    # Prune inter cluster edges
+#    intra_cluster = g.new_edge_property("bool")
+#    intra_cluster.fa = [(clusters[e.source()] == clusters[e.target()]) for e in graph.edges()]
+#
+#    # Create graph with less edges
+#    g_cluster = gt.GraphView(g, efilt=intra_cluster)
+#
+#    graph(g_cluster, clusters, filename=filename)
 
 
 
-def faceGraph(graph, partitions, paths, filename = "facegraph.png") :
-    partition_prop = graph.new_vertex_property("int")
-    partition_prop.fa = partitions
-    path_prop = graph.new_vertex_property("string")
-    for v, p in zip(graph.vertices(), paths) : path_prop[v] = p
-    pos = gt.sfdp_layout(graph, eweight=graph.ep["weights"])
-    gt.graph_draw(graph, 
-                  pos=pos, 
-                  output_size=(2000, 1400), 
-                  vertex_halo=True, 
-                  vertex_halo_color=partition_prop, 
-                  #vertex_fill_color=partitioning, 
-                  vertex_anchor=0,
-                  vertex_pen_width=10,
-                  vertex_color=partition_prop,
-                  vertex_surface=path_prop,
-                  vertex_size=50, 
-                  edge_pen_width=graph.ep["weights"], 
-                  output=filename)
+#def graph_on_images(graph, images, clusters = "orange", path="graph_on_images.png", vertex_size=15, edge_color=[0.0, 0.0, 0.0, 0.8]) :
+#    """ Displays the feature points of the graph as they are located on the images
+#        Input: graph [Graph]
+#               images [List of images]
+#    """
+#
+#    def tails(it):
+#        """ tails([1,2,3,4,5]) --> [[1,2,3,4,5], [2,3,4,5], [3,4,5], [4,5], [5], []] """
+#        while True:
+#            tail, it = tee(it)
+#            yield tail
+#            next(it)
+#
+#    # Interpolate images to double size
+#    scale = 2.0
+#    separation = 20
+#
+#    # Show in gray-scale
+#    pylab.gray()
+#
+#    # Image paths
+#    bg_path = "graph_background.png"
+#    fg_path = "graph_foreground.png"
+#    merge_path = path
+#
+#    # Put images together and resize
+#    bg_small = appendimages(images[0], images[1], seperator = separation)
+#    bg = imresize(bg_small, size=scale, interp='bicubic')
+#    pylab.imsave(bg_path, bg)
+#
+#    # Calculate offsets
+#    offsets = map(sum, [list(t) for t in tails(map(lambda i : (i.shape[1] + separation)*scale, images))])[::-1]
+#    print(offsets)
+#
+#    # Get scaled positions
+#    ind_prop = graph.vertex_properties["indices"]
+#    x,y = (graph.vertex_properties["x"], graph.vertex_properties["y"])
+#    pos = graph.new_vertex_property("vector<float>")
+#    for v in graph.vertices() : 
+#        x_scaled = x[v] * scale + offsets[ind_prop[v]]
+#        y_scaled = y[v] * scale
+#        pos[v] = [x_scaled, y_scaled]
+#
+#    # Get weights
+#    weights = graph.edge_properties["weights"]
+#
+#    # Draw graph
+#    class_colors = graph.vertex_properties["class_colors"]
+#    gt.graph_draw(graph, 
+#                  pos=pos, 
+#                  fit_view=False, 
+#                  output_size=[bg.shape[1], bg.shape[0]],
+#                  vertex_halo=True,
+#                  vertex_halo_color="black",
+#                  vertex_size=vertex_size,
+#                  vertex_fill_color=clusters,
+#                  edge_color=edge_color,
+#                  edge_pen_width=weights,
+#                  output=fg_path
+#                 )
+#    
+#    # Merge the graph and background images
+#    background = Image.open(bg_path)
+#    foreground = Image.open(fg_path)
+#    background.paste(foreground, (0, 0), foreground)
+#    background.save(merge_path)
+#    
+#    # Show resulting image
+#    im = pylab.imread(merge_path)
+#    pylab.imshow(im)
 
-def showTwoPartitions(part_1, part_2, indices, images, positions, output = "isomatch_partitions") :
-    pylab.figure(frameon=False, figsize=(14,5))
-    pylab.subplot(1,2,1)
-    showPartitions(positions[indices==0], part_1, image = images[0], output =  "%s_1.jpg" % output)
-    pylab.subplot(1,2,2)
-    showPartitions(positions[indices==1], part_2, image = images[1], output = "%s_2.jpg" % output)
-    ax = pylab.gca()
-    #ax.xaxis.set_ticks_position('bottom')
-    #ax.yaxis.set_ticks_position('left')
-    pylab.show()
-    pylab.savefig(output)
+
+
+#def faceGraph(graph, partitions, paths, filename = "facegraph.png") :
+#    partition_prop = graph.new_vertex_property("int")
+#    partition_prop.fa = partitions
+#    path_prop = graph.new_vertex_property("string")
+#    for v, p in zip(graph.vertices(), paths) : path_prop[v] = p
+#    pos = gt.sfdp_layout(graph, eweight=graph.ep["weights"])
+#    gt.graph_draw(graph, 
+#                  pos=pos, 
+#                  output_size=(2000, 1400), 
+#                  vertex_halo=True, 
+#                  vertex_halo_color=partition_prop, 
+#                  #vertex_fill_color=partitioning, 
+#                  vertex_anchor=0,
+#                  vertex_pen_width=10,
+#                  vertex_color=partition_prop,
+#                  vertex_surface=path_prop,
+#                  vertex_size=50, 
+#                  edge_pen_width=graph.ep["weights"], 
+#                  output=filename)
+
+#def showTwoPartitions(part_1, part_2, indices, images, positions, output = "isomatch_partitions") :
+#    pylab.figure(frameon=False, figsize=(14,5))
+#    pylab.subplot(1,2,1)
+#    showPartitions(positions[indices==0], part_1, image = images[0], output =  "%s_1.jpg" % output)
+#    pylab.subplot(1,2,2)
+#    showPartitions(positions[indices==1], part_2, image = images[1], output = "%s_2.jpg" % output)
+#    ax = pylab.gca()
+#    #ax.xaxis.set_ticks_position('bottom')
+#    #ax.yaxis.set_ticks_position('left')
+#    pylab.show()
+#    pylab.savefig(output)
 
 ####################################
 #                                  #
