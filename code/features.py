@@ -20,6 +20,7 @@ import cv2
 import numpy
 import trees
 import collections
+import pylab
 from sklearn.neighbors.ball_tree import BallTree
 
 
@@ -96,7 +97,7 @@ def getKeypoints(image, options = {}) :
     # Get amount of feature points
     keypoint_type		= options.get("keypoint_type", "SIFT")
     max_kp              = options.get("max_kp", 9999) 
-    #kp_threshold        = options.get("kp_threshold", (0.04, 10.0))
+    kp_threshold        = options.get("kp_threshold", (0.04, 10.0))
     verbose             = options.get("feature_verbose", False)
 
     if verbose : print(":"),
@@ -106,7 +107,7 @@ def getKeypoints(image, options = {}) :
 
     # Get specific feature type
     if keypoint_type.upper() == "SIFT" :
-        feature = cv2.SIFT()#nfeatures = max_kp, contrastThreshold = kp_threshold[0], edgeThreshold = kp_threshold[1])
+        feature = cv2.SIFT()#nfeatures = max_kp)#, contrastThreshold = kp_threshold[0], edgeThreshold = kp_threshold[1])
     elif keypoint_type.upper() == "FAST" :
         feature = cv2.FastFeatureDetector()
     elif keypoint_type.upper() == "SURF" :
@@ -229,12 +230,17 @@ def match(D, indices, options = {}) :
                 # Get the baseline score
                 score_baseline = dist_baseline[fst_baseline]
 
-                # For each match we make in the images
-                for i in range(fst_proposed, len(idx_proposed)) :
-                    index_to = index_map_to[idx_proposed[i]]
-                    score_proposed = dist_proposed[i]
-                    ratio = score_proposed / float( score_baseline )
-                    yield (index_from, index_to), score_proposed, ratio
+                index_to = index_map_to[idx_proposed[fst_proposed]]
+                score_proposed = dist_proposed[fst_proposed]
+                ratio = score_proposed / float( score_baseline )
+                yield (index_from, index_to), score_proposed, ratio
+
+                ## For each match we make in the images
+                #for i in range(fst_proposed, len(idx_proposed)) :
+                #    index_to = index_map_to[idx_proposed[i]]
+                #    score_proposed = dist_proposed[i]
+                #    ratio = score_proposed / float( score_baseline )
+                #    yield (index_from, index_to), score_proposed, ratio
 
 
     # Produce matches within the same tree

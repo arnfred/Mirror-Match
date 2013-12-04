@@ -17,6 +17,7 @@ import features
 import os
 import fnmatch
 import display
+import matching
 import mirrormatch
 import colors
 import random
@@ -42,6 +43,7 @@ def evaluate(match_fun, angles, object_type, thresholds, ground_truth_data = Non
     # Get distance_threshold
     distance_threshold      = options.get("distance_threshold", 5)
     verbose                 = options.get("evaluate_verbose", False)
+    metric                  = options.get("metric", "match_count")
 
     # Get paths to the three images
     def get_path(i) : return {
@@ -57,7 +59,7 @@ def evaluate(match_fun, angles, object_type, thresholds, ground_truth_data = Non
 
         # Collect matches
         paths = get_path(i)
-        return match_fun([paths["A"], paths["C"]], options = options)(1.0)
+        return match_fun([paths["A"], paths["C"]], options = options)(9999)
 
 
     # Get match results
@@ -76,14 +78,21 @@ def evaluate(match_fun, angles, object_type, thresholds, ground_truth_data = Non
         print("Found %i distances" % (len(distances)))
 
     # Collect precision per ratio_threshold
-    def get_count(t, dt) : return len([1 for d,r in zip(distances, ratios) if r <= t and d < dt])
-    correct = [get_count(t, distance_threshold) for t in thresholds]
-    total = [get_count(t, 9999999) for t in thresholds]
-    return { "correct" : correct, "total" : total }
+    if metric == "match_count" :
+        def get_count(t, dt) : return len([1 for d,r in zip(distances, ratios) if r <= t and d < dt])
+        correct = [get_count(t, distance_threshold) for t in thresholds]
+        total = [get_count(t, 9999999) for t in thresholds]
+        return { "correct" : correct, "total" : total }
+
+    if metric == "ratio" :
+        correct = [r for d,r in zip(distances, ratios) if d < distance_threshold]
+        return { "correct" : correct, "total" : ratios }
 
 
 
-def evaluate_objects(match_fun, angles, object_types, thresholds, ground_truth_data, options = {}) :
+
+
+def evaluate_objects(match_fun, angles, object_types, thresholds, ground_truth_data = None, options = {}) :
     """ Returns number of correct and total matches of match_fun on objects:
         match_fun : Function (Function that takes a list of paths and returns matches)
         angles : (Int, Int) (two angles in degrees. Must be divisible by 5)
@@ -98,8 +107,8 @@ def evaluate_objects(match_fun, angles, object_types, thresholds, ground_truth_d
 
 
     results = [get_results(o) for o in object_types]
-    correct =  { o : r["correct"] for r,o in zip(results, object_types) }
-    total =  { o : r["total"] for r,o in zip(results, object_types) }
+    correct =  { o : r["correct"] for r, o in zip(results, object_types) }
+    total =  { o : r["total"] for r, o in zip(results, object_types) }
 
     return { "correct" : correct, "total" : total }
 
@@ -262,7 +271,10 @@ def calc_match_distances(matches, img_B, F_AB, F_AC, F_BC, check_threshold) :
     
     # return epipolar line
     def get_lines(points, F) :
-        return [l[0] for l in cv2.computeCorrespondEpilines(points.reshape(-1, 1, 2), 1, F)]
+        if len(points) == 0 :
+            return []
+        else :
+            return [l[0] for l in cv2.computeCorrespondEpilines(points.reshape(-1, 1, 2), 1, F)]
     
     # Find points that are on l_AB
     points_A = numpy.array([m[0] for m in matches], dtype=numpy.float32)
@@ -340,9 +352,9 @@ def ground_truth(angles, object_type, options = {}) :
 
 
 # Load keypoints
-def keypoints(object_type, angle, viewpoint) :
+def keypoints(object_type, angle, viewpoint, options = {}) :
     path = get_turntable_path(object_type, angle, viewpoint)
-    points = features.getPositions(features.getFeatures([path])[1])
+    points = features.getPositions(features.getFeatures([path], options)[1])
     return numpy.array(points, dtype=numpy.float32)
 
 # return epipolar line
@@ -370,9 +382,9 @@ def calc_ground_truth(angles, object_type, lightning_index = 0, return_matches =
     verbose             = options.get("verbose", False)
 
     # Get paths to the three images
-    keypoints_A = keypoints(object_type, angles[0]+360*lightning_index, "Bottom")
-    keypoints_B = keypoints(object_type, angles[0]+360*lightning_index, "Top")
-    keypoints_C = keypoints(object_type, angles[1]+360*lightning_index, "Bottom")
+    keypoints_A = keypoints(object_type, angles[0]+360*lightning_index, "Bottom", options)
+    keypoints_B = keypoints(object_type, angles[0]+360*lightning_index, "Top", options)
+    keypoints_C = keypoints(object_type, angles[1]+360*lightning_index, "Bottom", options)
 
     # Find fundamental matrices
     F_AC = get_foundamental_matrix(object_type, (angles[0], angles[1]), ("Bottom", "Bottom"), scale = 2.0)
@@ -402,3 +414,48 @@ def calc_ground_truth(angles, object_type, lightning_index = 0, return_matches =
 
         else :
             yield []
+
+
+def get_weights(gt, exclude_keys = []) :
+    """ Calculate a set of weights per object and index item (usually angle) """
+    nb_corr_accu = { a : sum(map(lambda data : data["nb_correspondences"], gt_item.values())) for a, gt_item in gt.iteritems() if a not in exclude_keys }
+    weights = { a : { o : 1.0 / (t["nb_correspondences"] / float(nb_corr_accu[a])) for o, t in gt_item.iteritems() } for a, gt_item in gt.iteritems() if a not in exclude_keys }
+    weights_sum = { a : numpy.sum(ow.values()) for a, ow in weights.iteritems() }
+    weights_normalize = { a : { o : w / weights_sum[a] for o,w in ow.iteritems() } for a,ow in weights.iteritems() }
+    return weights_normalize
+
+
+def accumulate(results, gt, weights = None, exclude_keys = []) :
+    """ Take results from evaluate_objects and ground truth and compile a simple data structure
+        containing correct, total and nb_correlations """
+    
+    # Get default weights
+    if weights == None :
+        weights = { a : { o : 1 for o in t.keys() } for a, t in gt.iteritems() }
+
+    correct = {}
+    total = {}
+    nb_corr = {}
+    for k, r_value in results.iteritems() :
+
+        # Check that we are including this key
+        if k not in exclude_keys :
+            c_methods = {}
+            t_methods = {}
+            w_norm = weights[k]
+            
+            # Calculate sum of correct and total counts
+            for method, r_method in r_value.iteritems() :
+                r_weighted_correct = [numpy.array(r) * w_norm[o] for o, r in r_method["correct"].iteritems()]
+                r_weighted_total = [numpy.array(r) * w_norm[o] for o, r in r_method["total"].iteritems()]
+                c_methods[method] = numpy.sum(r_weighted_correct, axis = 0)
+                t_methods[method] = numpy.sum(r_weighted_total, axis = 0)
+            
+            # Calculate sum of possible correspondences
+            nb_corr[k] = int(sum(map(lambda (o,data) : data["nb_correspondences"]*w_norm[o], gt[k].iteritems())))
+            
+            # save accumulated counts
+            correct[k] = c_methods
+            total[k] = t_methods
+        
+    return correct, total, nb_corr

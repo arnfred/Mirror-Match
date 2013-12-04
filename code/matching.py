@@ -30,6 +30,7 @@ import ratiomatch
 import features
 import weightMatrix
 import display
+import trees
 
 
 
@@ -40,25 +41,48 @@ import display
 ####################################
 
 
-def evaluate(match_fun, thresholds, homography, return_matches = False) :
+def evaluate(match_fun, paths, thresholds, homography, options) :
 
-    match_set = [match_fun(t)[0] for t in thresholds]
+    # Get distance_threshold
+    distance_threshold      = options.get("distance_threshold", 5)
+    verbose                 = options.get("evaluate_verbose", False)
+    metric                  = options.get("metric", "match_count")
+
+    # Get matches
+    positions, distances, ratios, image_indices, indices = match_fun(paths, options = options)(9999)
+
+    if verbose :
+        path = lambda p : "/".join(p.split("/")[-2:])
+        print("Found %i matches for images (%s, %s)" % (len(ratios), path(paths[0]), path(paths[1])))
 
     # Get distances
-    getDist = lambda ms : [matchDistance(m1, m2, homography) for (m1, m2) in ms]
-    match_dist = [getDist(ms) for ms in match_set]
+    distances = [matchDistance(p1, p2, homography) for (p1, p2) in positions]
 
-    if return_matches : return match_set, match_dist
-    else : return match_dist
+    if verbose :
+        print("Found %i distances" % (len(distances)))
+
+    # Collect precision per ratio_threshold
+    if metric == "match_count" :
+        def get_count(t, dt) : return len([1 for d,r in zip(distances, ratios) if r <= t and d < dt])
+        correct = [get_count(t, distance_threshold) for t in thresholds]
+        total = [get_count(t, 9999999) for t in thresholds]
+        return { "correct" : correct, "total" : total }
+
+    if metric == "ratio" :
+        correct = [r for d,r in zip(distances, ratios) if d < distance_threshold]
+        return { "correct" : correct, "total" : ratios }
 
 
-def folderMatch(directory, dt, match_fun, thresholds, keypoint, descriptor) : 
+def folderMatch(directory, match_fun, options) : 
+
+    # Get distance_threshold
+    distance_threshold      = options.get("distance_threshold", 5)
 
     def flatten(l) :
         return list(itertools.chain.from_iterable(l))
 
     def nb_correct_matches(distances) :
-        return len([d for d in distances if d <= dt])
+        return len([d for d in distances if d <= distance_threshold])
 
     # Get image pairs of folder
     imagePairs = getImagePairs(directory)
@@ -68,7 +92,7 @@ def folderMatch(directory, dt, match_fun, thresholds, keypoint, descriptor) :
     # the matrix is a zipped list of matches and distances
     def do_match(p, h) :
         print("%s " % features.getLabel(p[0])),
-        return numpy.array(match_fun(dt, p, h, thresholds, keypoint, descriptor))
+        return numpy.array(match_fun(p, options)[0])
 
     # Get matches
     match_sets = numpy.array([do_match(p, h) for p, h in imagePairs]).T
@@ -84,13 +108,13 @@ def folderMatch(directory, dt, match_fun, thresholds, keypoint, descriptor) :
     return nb_correct_set, nb_total_set
 
 
-def folderCorrespondences(directory, dt, keypoint, descriptor) :
+def folderCorrespondences(directory, options) :
 
     # Get image pairs of folder
     imagePairs = getImagePairs(directory)
 
     # Calculate the number of correspondences
-    correspondences = [getCorrespondences(p, h, keypoint, descriptor, dt) for p, h in imagePairs]
+    correspondences = [getCorrespondences(p, h, options) for p, h in imagePairs]
 
     return correspondences
 
@@ -109,18 +133,39 @@ def getHomography(hom_path) :
     return h
 
 
-def getCorrespondences(paths, homography, keypoint, descriptor, distance_threshold) :
+def getCorrespondences(paths, homography, options = {}) :
 
-    print("%s " % features.getLabel(paths[0])),
+    # Get options
+    distance_threshold      = options.get("distance_threshold", 5)
+    verbose                 = options.get("evaluate_verbose", False)
 
     # Get all feature points
-    indices, ks, ds = features.getFeatures(paths, { "keypoint_type" : keypoint, "descriptor_type" : descriptor })
+    indices, ks, ds = features.getFeatures(paths, options)
 
     # Get all positions
     (pos_im1, pos_im2) = (features.getPositions(ks[indices == 0]), features.getPositions(ks[indices == 1]))
 
-    # For all possible combinations, check if the match is acceptable
-    correspondences = sum([1 for (p1, p2) in itertools.product(pos_im1, pos_im2) if matchDistance(p1, p2, homography) <= distance_threshold])
+    # Translate positions in image2
+    def im1_to_im2(p) :
+        m1to2 = homography.dot(numpy.array([p[0], p[1], 1]))
+        return m1to2[0:2]/m1to2[2]
+
+    def im2_to_im1(p) :
+        m2to1 = numpy.linalg.inv(homography).dot(numpy.array([p[0], p[1], 1]))
+        return m2to1[0:2]/m2to1[2]
+
+    # Make ball tree from im2 to im1
+    dist_tree = trees.init(pos_im2, "ball")
+    pos_im1_trans = [im1_to_im2(p) for p in pos_im1]
+
+    # Find neighbors
+    neighbors = dist_tree(pos_im1_trans, 1)
+    distances = [matchDistance(pos_im1[i], pos_im2[idx[0]], homography) for i, (idx, d) in enumerate(neighbors)]
+    correspondences = len([d for d in distances if d < distance_threshold])
+
+    if verbose :
+        path = lambda p : "/".join(p.split("/")[-2:])
+        print("Found %i correspondences for images (%s, %s)" % (correspondences, path(paths[0]), path(paths[1])))
 
     return correspondences
 
@@ -149,7 +194,8 @@ def getPaths(orig_id = None, compare_id = 2, img_type = "graf", folder = "inria"
     }
 
     # Get File ending
-    img_ending = file_endings.get(img_type,"pgm")
+    img_ending = file_endings.get(img_type,"ppm")
+    #img_ending = "png"
 
     # Get directory
     dir_path = "../../images/%s/%s/" % (folder, img_type)

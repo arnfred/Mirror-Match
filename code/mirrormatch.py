@@ -36,6 +36,14 @@ def match(paths, options = {}) :
     # Get all feature points
     indices, ks, ds = getFeatures(paths, filter_features, options)
 
+    if verbose : print("\n%i Keypoints found" % (len(ks)))
+
+    # Check that we have enough features to continue
+    if len(ks[indices == 0]) <= 3 :
+        def fun(t) :
+            return [], [], [], [], []
+        return fun
+
     # Match
     match_data = features.match(ds, indices, options)
 
