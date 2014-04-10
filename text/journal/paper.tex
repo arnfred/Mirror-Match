@@ -739,12 +739,6 @@ database released by Moreels and Pietro \cite{moreels2007evaluation} in
 Section~\ref{S:3dobjects}. The database contains a set of 86 3D objects 
 photographed from all sides at 5 degree intervals from two different 
 viewpoints and under three different lighting conditions.
-To measure the performance over variations such as viewpoint change, 
-blur, compression noise, rotation and zoom we also use the graffiti 
-image set introduced by Mikolajczyk and Schmid 
-\cite{mikolajczyk2005performance} in Section~\ref{S:Planar}.  This 
-dataset contains 8 scenes each with 6 images linked by homographies and 
-for that reason feature only planar or almost planar scenes.
 
 In the experiments we use the \emph{SIFT} descriptor and keypoint 
 detector with default parameters as implemented in the OpenCV library 
@@ -934,109 +928,6 @@ with \emph{Mirror-Match} in general performing better than
 \emph{Self-Match} overall perform equal to or better than 
 \emph{Ratio-Match}.
 
-\subsection{Planar Scenes}
-\label{S:Planar}
-
-\begin{figure*}[t!]
-	\centering
-    \includegraphics[width=2\columnwidth]{images/results_acr_all}
-    \caption{Accumulated results for each scene in the image dataset by 
-    Mikolajczyk and Schmid \cite{mikolajczyk2005performance}.}
-    \label{fig:acr_objects}
-\end{figure*}
-
-\begin{figure}[t]
-    \begin{subfigure}[t]{0.24\columnwidth}
-        \centering
-        \includegraphics[width=1\columnwidth]{images/acr/bark}
-    \end{subfigure}%
-    ~ %
-    \begin{subfigure}[t]{0.24\columnwidth}
-        \centering
-        \includegraphics[width=1\columnwidth]{images/acr/bikes}
-    \end{subfigure}%
-    ~ %
-    \begin{subfigure}[t]{0.24\columnwidth}
-        \centering
-        \includegraphics[width=1\columnwidth]{images/acr/boat}
-    \end{subfigure}%
-    ~ %
-    \begin{subfigure}[t]{0.24\columnwidth}
-        \centering
-        \includegraphics[width=1\columnwidth]{images/acr/graf}
-    \end{subfigure}%
-    \vspace{1.5 mm}
-    % Linebreak
-    \begin{subfigure}[t]{0.24\columnwidth}
-        \centering
-        \includegraphics[width=1\columnwidth]{images/acr/leuven}
-    \end{subfigure}%
-    ~ %
-    \begin{subfigure}[t]{0.24\columnwidth}
-        \centering
-        \includegraphics[width=1\columnwidth]{images/acr/trees}
-    \end{subfigure}%
-    ~ %
-    \begin{subfigure}[t]{0.24\columnwidth}
-        \centering
-        \includegraphics[width=1\columnwidth]{images/acr/ubc}
-    \end{subfigure}%
-    ~ %
-    \begin{subfigure}[t]{0.24\columnwidth}
-        \centering
-        \includegraphics[width=1\columnwidth]{images/acr/wall}
-    \end{subfigure}%
-    \caption{Scenes from the image dataset by Mikolajczyk and Schmid 
-    \cite{mikolajczyk2005performance} ordered as they appear in 
-Figure~\ref{fig:acr_objects}.}
-    \label{fig:acr_images}
-\end{figure}
-
-To evaluate local feature descriptors, Mikolajczyk and Schmid introduced
-a serie of $8$ image sets featuring different transformations such as 
-compression noise, rotation and zoom, blur and viewpoint change. All 
-images are tied by homographies which makes them convenient for testing 
-purposes but as a consequence they all depict planar scenes which is 
-restrictive in terms of image variation. Each scene contains 6 different 
-images ranged in order of increasing levels of transformations. The 
-transformation between image 1 and image 2 in a scene is only slight 
-while image 6 for the most cases is markedly different than image 1.
-
-For each scene we match the first image in the scene with image 3, 4, 5 
-and 6 and show the accumulated result weighed by the possible number of 
-true correspondences for each pair. We exclude the comparison with image 
-2 because it is trivial in most cases and does not tell us much about 
-the relative performance of the different methods. We find inliers by 
-using the homography between image pairs as follows: Given a potential 
-match between two pixels $p_1$ and $p_2$, $m = \left(p_1, p_2\right)$, 
-and a homography $H$ relating the two images $I_1$ and $I_2$, we can 
-calculate if $m$ is an inlier by checking if the two points satisfy the 
-following criteria:
-\begin{equation*}
-\left\vert H p_1 - p_2 \right\vert + \left\vert H^{-1}p_2 - p_1 \right\vert < d_{\max}
-\end{equation*}
-That is, the distance between $p_1$ translated to $I_2$ and $p_2$ 
-\emph{plus} the distance between $p_2$ translated to $I_1$ should be 
-less than a certain threshold (we use $d_{\max}=10$ pixels here).
-
-Figure~\ref{fig:acr_objects} shows the results plotted with precision on 
-the y-axis and recall along the x-axis. For scenes such as `bark, `boat' 
-(zoom and rotation), `leuven' (light) and `wall' (viewpoint) all methods 
-in the framework show similar results, largely because the precision for 
-all methods approach 100\% for low recall which does not leave much room 
-for improvement. For `bikes' and `trees' (blur) as well as `ubc'
-(compression) and `graf' (viewpoint) we see \emph{Mirror-Match} clearly 
-outperforming \emph{Ratio-Match} although with a smaller margin than 
-with the 3D objects dataset. Because many images in the dataset are 
-trivial to match and a few are very difficult we see less spread in 
-between the algorithms than with the 3D objects dataset. However the 
-theoretical predictions still hold true with \emph{Mirror-Match} 
-performing better or equal to \emph{Ratio-Match-Ext} which in turns 
-perform better or equal to \emph{Ratio-Match}. As for \emph{Self-Match} 
-we are again confirmed that we can achieve performance rivaling 
-\emph{Ratio-Match} using only the \emph{query image} as \emph{baseline 
-set}.
-
 \subsection{Descriptor evaluation}
 \label{label:desc}
 
@@ -1049,18 +940,9 @@ set}.
         \label{fig:descriptors}
     \end{subfigure}%
 
-    \begin{subfigure}[t]{1\textwidth}
-        \centering
-        \includegraphics[width=1\columnwidth]{images/results_descriptors_easy}
-        \caption{Keypoint / Descriptor combinations evaluated on `Bikes' 
-        scene}
-        \label{fig:descriptors_easy}
-    \end{subfigure}%
-    \caption{a) Keypoint / Descriptor combinations measured on 15 pairs 
-    of photos of 3D objects taken 15 degrees apart. K = Keypoint, D = 
-Descriptor\. b) Same experiment evaluated on a simple to match image 
-pair; image 1 and 3 in the `Bikes' scene from Mikolaczyk and Schmid's 
-review of descriptors \cite{mikolajczyk2005performance}.}
+    \caption{Keypoint / Descriptor combinations measured on 15 pairs of 
+    photos of 3D objects taken 15 degrees apart. K = Keypoint, D = 
+Descriptor\.}
 \end{figure*}
 
 To evaluate whether the improvement gains shown with the SIFT descriptor 
@@ -1106,16 +988,6 @@ and the binary features tested are not sufficiently discriminative to
 provide a viable case for preferring \emph{Mirror-Match} over 
 \emph{Ratio-Match}.
 
-To test this hypothesis we looked at the results from matching an image 
-pair with very little inter image variation. We compare two image 1 and 
-image 3 from the `bikes' scene in the image set released by Mikolajczyk 
-and Schmid \cite{mikolajczyk2005performance}. The results are displayed 
-in Figure~\ref{fig:descriptors_easy} and show a market improvement for 
-\emph{Self-Match}, \emph{Mirror-Match} and \emph{Ratio-Match-Ext} over 
-\emph{Ratio-Match} for the case of BRISK, BRIEF and FREAK as expected.  
-For SURF however the algorithms perform similarly at low recall while 
-\emph{Ratio-Match} show better performance at more lenient thresholds.
-
 \subsection{Performance}
 
 In terms of computational complexity the algorithms can be implemented 
@@ -1148,11 +1020,11 @@ as tested on a Intel\textregistered\ Core\texttrademark\ i5-3550 CPU @
     \noalign{\smallskip}
     %
     \emph{Self-Match} & $O(n\log(nm))$ & 118s  \\
-    \emph{Self-Match-Ext} & $O(n\log(n(n+m)))$ & 109s\\
+    %\emph{Self-Match-Ext} & $O(n\log(n(n+m)))$ & 109s\\
     \emph{Ratio-Match} & $O(n\log(m))$ & 114s\\
     \emph{Ratio-Match-Ext} & $O(n\log(n+m))$ & 112s\\
     \emph{Mirror-Match} & $O(n\log(n(n+m)))$ & 116s\\
-    \emph{Mirror-Match-Ext} & $O(n\log(n+m))$ & 110s \\
+    %\emph{Mirror-Match-Ext} & $O(n\log(n+m))$ & 110s \\
     \hline
 \end{tabular}
 \end{table}
@@ -1205,14 +1077,12 @@ to \emph{Ratio-Match} under three common assumptions.
 From an evaluation using images of rotated 3D objects we have shown that
 the theoretical conclusions are reflected in experimental data with 
 \emph{Mirror-Match} often outperforming \emph{Ratio-Match}
-significantly over 3024 image pairs. We went on to show that this 
-behaviour was repeated for the classical `graffiti' imageset although 
-with less variation in between the algorithms. This performance gain 
-comes free in terms of both computational complexity as well as actual 
-time consumption as measured over 45 image pairs. Finally evaluations 
-across several different descriptors show that the gains in performance 
-are tied to descriptor performance with significantly smaller gains 
-occuring with descriptors that are less performant.
+significantly over 3024 image pairs. This performance gain comes free in 
+terms of both computational complexity as well as actual time 
+consumption as measured over 45 image pairs. Finally evaluations across 
+several different descriptors show that the gains in performance are 
+tied to descriptor performance with significantly smaller gains occuring 
+with descriptors that are less performant.
 
 With the framework we introduced three simple methods that are all 
 applicable in situations where \emph{Ratio-Match} is currently used.  
