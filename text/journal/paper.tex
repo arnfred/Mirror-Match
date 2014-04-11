@@ -308,8 +308,9 @@ decided uniquely based on the \emph{target image}. In turn
 \emph{Mirror-Match-Ext} as introduced by the authors in 
 \cite{arnfred2013mirror}, works by constructing the \emph{proposal set} 
 and \emph{baseline set} by combining features from both the \emph{query} 
-and \emph{target image}. 
-
+and \emph{target image}. By similar compositions of the \emph{proposal} 
+and \emph{baseline set} we derive four more algorithms as illustrated in 
+Figure~\ref{fig:overview}.
 
 \begin{algorithm}[htb]
 \caption{Generalized matching algorithm for two images}
@@ -347,9 +348,10 @@ nearest neighbors of $F_{target}$. The other algorithms can be optimized
 similarly. In Figure~\ref{fig:matching} we illustrate the structure of 
 this algorithm.
 
-For some methods it is possible that the \emph{proposal match} is a 
-feature from the \emph{query image}, in which case we discard the match 
-as an untrue correspondence.  It also happens that we encounter 
+For methods where the \emph{proposal set} includes the \emph{query 
+features} it is possible that the \emph{proposal match} is a feature 
+from the \emph{query image}, in which case we discard the match as an 
+untrue correspondence.  It also happens that we encounter 
 correspondences where the uniqueness ratio is more than $1$ in which 
 case we set it to $1$ to maintain a bounded \emph{uniqueness ratio}.  
 Take for example the case of \emph{Self-Match}. Using this method we 
@@ -357,7 +359,10 @@ might find that the nearest neighbor of a feature in the target image is
 further from the query feature than the nearest neighbor in the query 
 image. In this case the match is discarded.
 
+% TODO: include point about two of the algorithms being identical
+%
 \subsection{Generalized Uniqueness Ratio}
+%
 
 \begin{figure}[t]
 \centering
@@ -369,15 +374,18 @@ descriptors, $x$ and $y$.}
 \end{figure}
 %
 
-For $F_{query} = \left\{f_{q_1} \ldots f_{q_n}\right\}$ and $F_{target} 
-= \left\{f_{t_1} \ldots f_{t_m}\right\}$.  We can obtain $F_{proposed}$ 
-and $F_{baseline}$ from these sets according to the algorithm used (see 
-Figure~\ref{fig:overview}). $r = \text{r}(f_{q}, F_{proposed}, 
-F_{baseline})$ is the ratio of query feature $f_{q}$ given 
-$F_{proposed}$ and $F_{baseline}$.  If $f_{p}$ is the nearest neighbor 
-of $f_{q}$ in $F_{proposed}$ and $f_{b}$ is the nearest neighbor of 
-$f_{q}$ in $F_{baseline} \setminus \left\{f_{p}\right\}$ then the 
-generalized \emph{uniqueness} ratio is:
+The main distinguishing factor in between the algorithms in the 
+framework is the final ratio between the distance of the two nearest 
+neighbors of a query feature which decides if we keep or discard a 
+match. We illustrate this process in Figure~\ref{fig:matching}.
+
+We can define a calculation of this ratio common to all algorithms in 
+the framework which allows us to compare the algorithms theoretically. 
+The theoretical ratio, $r$ is defined as follows:
+
+If $f_{p}$ is the nearest neighbor of $f_{q}$ in $F_{proposed}$ and 
+$f_{b}$ is the nearest neighbor of $f_{q}$ in $F_{baseline} \setminus 
+\left\{f_{p}\right\}$ then the generalized \emph{uniqueness} ratio is:
 \begin{align*}
     r &= \text{r}(f_{q}, F_{proposed}, F_{baseline}) \\
         &= \frac{d(f_{q}, f_{p})}{d(f_{q}, f_{b})}
@@ -448,37 +456,7 @@ as assumed by \emph{Ratio-Match}}
      to share part of the same scene.}
     \end{enumerate}
 
-Based on these assumptions we first prove that the results of 
-\emph{Self-Match} is identical to \emph{Self-Match-Ext}. To do this, we 
-look at the nearest neighbor $f_{nn}$ of every query feature $f_{q}$ and 
-consider the two cases of $f_{nn} \in F_{query}$ and $f_{nn} \in
-F_{target}$. For $f_{nn} \in F_{target}$ the uniqueness ratio of 
-\emph{Self-Match-Ext} is:
-\begin{align*}
-    r &= \text{r}(f_{q}, F_{proposed}, F_{baseline}) \\
-        &= \text{r}(f_{q}, F_{query} \cup F_{target}, F_{baseline})\\
-        &= \text{r}(f_{q}, F_{target}, F_{baseline})
-\end{align*}
-
-Since $F_{proposed} = F_{target}$ for \emph{Self-Match} this shows that
-when the nearest neighbor is found in the target image, the two 
-algorithms behave identically. For $f_{nn} \in F_{query}$ 
-\emph{Self-Match} gives us the following ratio:
-\begin{align*}
-    r &= \text{r}(f_{q}, F_{proposed}, F_{baseline}) \\
-        &= \text{r}(f_{q}, F_{target}, F_{query}) \\
-        &\geq 1
-\end{align*}
-
-The closest neighbor is found in the query image, so $d(f_{q}, f_{nn}) < 
-d(f_{q},f_{p})$ where $f_{p}$ is the nearest neighbor from 
-$F_{proposal}$. \emph{Self-Match-Ext} does not return a correspondence 
-found in the \emph{query image} and since $\tau \in [0,1]$, neither does 
-\emph{Self-Match}. This proves that for any set of \emph{query features} 
-\emph{Self-Match} returns the same matches as \emph{Self-Match-Ext}. For 
-this reason both algorithms will later be referred to as just 
-\emph{Self-Match}.
-
+Based on these assumptions we first prove that 
 The above proof can easily be extended to show that \emph{Mirror-Match 
 1} and \emph{Mirror-Match-Ext} returns the same correspondences too, and 
 both will be referred to as \emph{Mirror Match} from here on.
@@ -904,8 +882,8 @@ with \emph{Mirror-Match} in general performing better than
 \label{label:desc}
 
 \begin{figure*}[t]
-    photos of 3D objects taken 15 degrees apart. K = Keypoint, D = 
-Descriptor\.}
+    \centering
+    \includegraphics[width=2\columnwidth]{images/results_descriptors_imageset1}
     \caption{Keypoint / Descriptor combinations measured on 15 pairs of 
     photos of 3D objects taken 15 degrees apart. K = Keypoint, D = 
 Descriptor.}
@@ -1059,6 +1037,57 @@ images. \emph{Ratio-Match-Ext} and \emph{Mirror-Match} on the other hand
 can easily replace \emph{Ratio-Match} without any performance penalty 
 and with an increase in precisionon but are both limited to matching 
 image pairs like \emph{Ratio-Match}.
+
+\appendix
+\section{Proof of equivalence between \emph{Self-Match} and 
+\emph{Self-Match-Ext}}
+In this appendix we prove the equivalence between \emph{Self-Match} and 
+\emph{Self-Match-Ext}. To do this, we look at the nearest neighbor 
+$f_{nn}$ of every query feature $f_{q}$ and consider the two cases of 
+$f_{nn} \in F_{query}$ and $f_{nn} \in
+F_{target}$. For $f_{nn} \in F_{target}$ the uniqueness ratio of 
+\emph{Self-Match-Ext} is:
+\begin{align*}
+    r &= \text{r}(f_{q}, F_{proposed}, F_{baseline}) \\
+        &= \text{r}(f_{q}, F_{query} \cup F_{target}, F_{baseline})\\
+        &= \text{r}(f_{q}, F_{target}, F_{baseline})
+\end{align*}
+
+Since $F_{proposed} = F_{target}$ for \emph{Self-Match} this shows that
+when the nearest neighbor is found in the target image, the two 
+algorithms behave identically. For $f_{nn} \in F_{query}$ we know that 
+the best match for the query feature is in the query image itself. Since 
+neither algorithm returns a correspondence within the same image, they 
+also behave identically for this case. This proves that for any set of 
+\emph{query features} \emph{Self-Match} returns the same matches as 
+\emph{Self-Match-Ext}.
+
+\section{Proof of equivalence between \emph{Mirror-Match} and 
+\emph{Mirror-Match-Ext}}
+
+In this appendix we prove the equivalence between \emph{Mirror-Match} 
+and \emph{Mirror-Match-Ext}. This proof is almost identical to the 
+equivalence proof between \emph{Self-Match} and \emph{Self-Match-Ext}. 
+To prove this, we look at the nearest neighbor $f_{nn}$ of every query 
+feature $f_{q}$ and consider the two cases of $f_{nn} \in F_{query}$ and 
+$f_{nn} \in
+F_{target}$. For $f_{nn} \in F_{target}$ the uniqueness ratio of 
+\emph{Mirror-Match-Ext} is:
+\begin{align*}
+    r &= \text{r}(f_{q}, F_{proposed}, F_{baseline}) \\
+        &= \text{r}(f_{q}, F_{query} \cup F_{target}, F_{baseline})\\
+        &= \text{r}(f_{q}, F_{target}, F_{baseline})
+\end{align*}
+
+Since $F_{proposed} = F_{target}$ for \emph{Mirror-Match} this shows that
+when the nearest neighbor is found in the target image, the two 
+algorithms behave identically. For $f_{nn} \in F_{query}$ we know that 
+the best match for the query feature is in the query image itself. Since 
+neither algorithm returns a correspondence within the same image, they 
+also behave identically for this case. This proves that for any set of 
+\emph{query features} \emph{Mirror-Match} returns the same matches as 
+\emph{Mirror-Match-Ext}.
+
 
 \bibliographystyle{IEEEtran}
 \bibliography{tail/bibliography}
