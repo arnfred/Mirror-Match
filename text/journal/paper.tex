@@ -60,7 +60,7 @@ Solutions in computer vision involving the matching of local image
 features frequently use \emph{Ratio-Match} as introduced by Lowe and 
 others, but is this really the best approach? We formalize the 
 theoretical foundation of \emph{Ratio-Match} and propose a general 
-framework encompassing \emph{Ratio-Match} and five other matching 
+framework encompassing \emph{Ratio-Match} and three other matching 
 methods. Using the framework we establish a theoretical order of 
 performance in terms of precision and recall between the methods and 
 prove that \emph{Ratio-Match} is consistently equalled or outperformed 
@@ -156,37 +156,40 @@ discussed in this paper were introduced by the authors as
 feature points in both images to decide if a match is valid.
 
 A plethora of solutions have combined ratio match with various geometric 
-constraints to improve matching. These constraints are
-based on assumptions regarding the transformation between the query and 
-target images. At the stricter end we have epipolar constraints assuming
+constraints to improve matching. These constraints are based on 
+assumptions regarding the transformation between the query and target 
+images. At the stricter end we have epipolar constraints assuming
 that the images can be tied by a homography \cite{torr2000mlesac}, 
 \cite{chum2005matching} and angular constraints assuming the 
 correspondences are angled similarly \cite{kim2008efficient}, 
-\cite{schmid1997local}, \cite{leordeanu2005spectral}. Instead of 
-modelling the relationship between two images as an epipolar relation, 
-we can try to allow for more lenient transformation with more 
-sophisticated models.  Torresani et al.~\cite{torresani2008feature} 
-attempted to model these transformations using graph matching similar to 
-\cite{deriche1994robust}. Others define image regions and reject or 
-accept correspondences based on the regions they connect 
+\cite{schmid1997local}. Often these approaches are made computationally 
+feasible by modelling the case of feature correspondences as an instance 
+of graph matching where each feature is a vertex and edge values 
+correspond to a geometric relation between two features. In this case 
+approximate graph matching algorithms can be used to efficiently 
+establish an isomorphism between the graph of features in two images 
+\cite{leordeanu2005spectral}, \cite{torresani2008feature}, 
+\cite{yarkony2010covering}. Finally others define image regions and 
+reject or accept correspondences based on the regions they connect 
 \cite{cho2009feature}, \cite{wu2011robust}.
 
 Any matching method relying on geometric constraints is restrained by an
 inherent assumptions about the geometric relationship between the two 
-images. Broad assumptions such as the epipolar constraint only apply in 
-simple image transformations. For more complex transformations we need 
-models suitable for each particular case and hence limit the algorithm 
-to the subset of images that fit the model.  In the case of object 
-recognition for example, the transformations from one scene to another 
-often feature a change
-in perspective, background and sometimes variations within the object 
-itself.  A person can change pose, a car model can have different 
-configurations, a flower can bloom etc.
+images. Broad assumptions such as angular constraints often used in 
+graph matching only apply to simple image transformations. For more 
+complex transformations we need models suitable for each particular case 
+and hence limit the algorithm to the subset of images that fit the 
+model. In the case of object recognition for example, the 
+transformations from one scene to another often feature a change in 
+perspective, background and sometimes variations within the object 
+itself. In most circumstances this makes these methods unsuited for 
+epipolar or angular constraints.
 
-When matching these instances we are forced to either create a 
-sophisticated model that represents the variables of transformation 
-within the object, or alternatively find correspondences using an 
-algorithm with no inherent geometric assumptions. In addition the 
+If we intent to match these instances using geometric features we are 
+forced to used a sophisticated model that reflects the variations in 
+which we find these objects, an in the process lose generality. For this 
+reason general descriptor based algorithms are crucial for 
+correspondence applications calling for generality. In addition the 
 advantage of purely descriptor based methods is motivated by the fact 
 that any geometric method acts as a filter on a given set of 
 correspondences.  If this set contains less incorrect correspondences, 
@@ -200,7 +203,15 @@ framework of matching methods. We go on to formally establish an order
 comparing how well different methods within the framework compares in 
 terms of precision and recall. Our experimental evaluations confirm the 
 theoretical results and show that \emph{Ratio-Match} on all counts is a 
-unoptimal choice as a matching algorithm independent of application.
+unoptimal choice as a matching algorithm independent of application. 
+
+In the author's last paper we introduced \emph{Mirror Match} and 
+\emph{Mirror-Match with Clustering}, two algorithms that we showed to 
+perform better than the state of the art. The novel contributions of 
+this paper consists of two new algorithms completing a framework of four 
+related matching algorithms as well as the theoretical foundation which 
+enables us to understand why \emph{Mirror Match} performs better than 
+\emph{Ratio Match} in the first place.
 
 The paper is organized as follows. I section~\ref{S:MatchingMethods} we 
 introduce the original \emph{Ratio-Match}, extend on this method to 
@@ -224,7 +235,7 @@ given threshold, $\tau$. Given $f_q$, a feature from the \emph{query
 image} and $F_{target}$, a set of features from the \emph{target image}, 
 the nearest neighbor of $f_q$ in $F_{target}$ is:
 \begin{equation*}
-    f_{nn} = \argmin_{f_t \in F_{target}} d(f_q, f_t)
+    \argmin_{f_t \in F_{target}} d(f_q, f_t)
 \end{equation*}
 Here, $d(f_i, f_j)$ is the distance between the feature descriptors.  
 With SIFT and SURF this is the euclidian distance of the feature vectors
@@ -263,16 +274,20 @@ nomenclature:
 \item{Let $\tau \in [0 \ldots 1]$ be a threshold used to decide whether 
     to keep a match or discard it. We keep a match only if is has a 
 \emph{uniqueness ratio} lower than $\tau$}
-\item{Let the \emph{proposed match} be the nearest neighbor of $f_q$
-    picked from a set of feature points that we will call the 
-\emph{proposal set} which does not include $f_q$}
-\item{Let the \emph{baseline match} be the nearest neighbor of $f_q$ 
-    picked from a set of feature points that we will call the 
-\emph{baseline set} which neither contains the \emph{proposed match} nor 
-$f_q$}
+\item{Let the \emph{proposed match} be the nearest neighbor of the query 
+    feature $f_q$ picked from a set of feature points that we will call 
+the \emph{proposal set} which does not contain the query feature itself}
+\item{Let the \emph{baseline match} be the nearest neighbor of the query 
+    feature $f_q$ picked from a set of feature points that we will call 
+the \emph{baseline set} which neither contains the \emph{proposed match} 
+nor the query feature}
 \end{itemize}
 
-\begin{figure}[b]
+%
+\subsection{A framework of matching methods}
+%
+
+\begin{figure}[t]
 \centering
 \includegraphics[width=0.85\columnwidth]{images/overview}
 \caption{Graphical representation of the \emph{Baseline} and 
@@ -280,68 +295,21 @@ $f_q$}
 \label{fig:overview}
 \end{figure}
 
-In the case of \emph{Ratio-Match} \cite{lowe2004sift} the \emph{proposal 
-set} consists of all the feature points in the target image.  Similarly 
-the \emph{baseline set} consists of all the feature points in the target 
+Given two images we can construct the proposal and baseline sets in six 
+different ways as illustrated in Figure~\ref{fig:overview}. In the case 
+of \emph{Ratio-Match} \cite{lowe2004sift} the \emph{proposal set} 
+consists of all the feature points in the target image.  Similarly the 
+\emph{baseline set} consists of all the feature points in the target 
 image except the \emph{proposed} match. For \emph{Ratio-Match} this 
-practically means that given a feature, $f_q$, the \emph{proposed match} 
-and the \emph{baseline match} are the two nearest neighbors in the set 
-of feature points in the \emph{target image}.
-
-Brown et al.\ extends \emph{Ratio-Match} for the case of $n$ target 
-images by letting the baseline be the average of the distance to the 
-second nearest neighbors for all $n$ target images 
-\cite{brown2005multi}.  ``\emph{[W]e can improve outlier rejection}'' 
-they write ``\emph{by using information from all of the images (rather 
-than just the two being matched) This improves the matching 
-precision}''.  The idea of improving matching precision by expanding the 
-knowledge used to reject outliers is the central tenet in this paper.
-
-%
-\subsection{A framework of matching methods}
-%
-\begin{table}[t]
-\caption{Calculating the uniqueness ratio using different sources for 
-    the \emph{proposal set} and \emph{baseline set} for the case of two 
-images.}
-\label{table:distinctness}
-	\centering
-%	\small
-\bgroup
-\def\arraystretch{1.5}
-    \begin{tabular}{l l | l l}
-        %
-        %&  \multicolumn{1}{l}{Target}
-        %& \multicolumn{1}{l}{Target and Query} \\
-\multicolumn{2}{r}{} & \multicolumn{2}{c}{\emph{Proposal Set}} \\
-                     & & Target & Target and Query \\
-        \cline{2-4}
-        \multirow{3}{*}{\rotatebox[origin=c]{90}{\emph{Baseline Set}}} &
-  Query            & \emph{Self-Match}   & \emph{Self-Match-Ext} \\
-& Target           & \emph{Ratio-Match}   & \emph{Ratio-Match-Ext} \\
-& Target and Query & \emph{Mirror-Match} & \emph{Mirror-Match-Ext} \\
-        \cline{2-4}
-\end{tabular}
-\egroup
-\end{table}
-
-\emph{Ratio-Match} is only one instance of a framework of algorithms we can 
-construct by different combinations of \emph{proposed} and 
-\emph{baseline sets}. As shown in Table~\ref{table:distinctness} for the 
-case of two images the \emph{proposal set} can be constructed by either 
-looking only at the nearest neighbors in the target image, or 
-alternatively by looking at the nearest neighbors in both the query and 
-target image. The \emph{baseline set} can either be the query image 
-itself, the target image or the combination of the two.  Seen in this 
-light, the matching algorithm \emph{Ratio-Match} draws both its 
-\emph{proposal set} and \emph{baseline set} from the target image. In 
-turn \emph{Mirror-Match-Ext} as introduced by the authors in 
+practically means that given a query feature, $f_q$, the \emph{proposed 
+match} and the \emph{baseline match} are the two nearest neighbors in 
+the set of feature points in the \emph{target image} and the ratio is 
+decided uniquely based on the \emph{target image}. In turn 
+\emph{Mirror-Match-Ext} as introduced by the authors in 
 \cite{arnfred2013mirror}, works by constructing the \emph{proposal set} 
 and \emph{baseline set} by combining features from both the \emph{query} 
-and \emph{target image}. Alternatively \emph{Self-Match} looks only to 
-the query image for the \emph{baseline set} but constructs the 
-\emph{proposal set} from the target image like \emph{Ratio-Match}. In 
-Figure~\ref{fig:overview} we illustrate how each method is derrived.  
+and \emph{target image}. 
+
 
 \begin{algorithm}[htb]
 \caption{Generalized matching algorithm for two images}
@@ -350,14 +318,18 @@ Figure~\ref{fig:overview} we illustrate how each method is derrived.
     \Require $I_{query}, I_{target}$ : images, $\tau \in [0,1]$
     \State $F_{query} = get\_features(I_{query})$
     \State $F_{target} = get\_features(I_{target})$
-\State $F_{proposal} = get\_proposal\_set(F_{query}, F_{target})$
-\State $F_{baseline} = get\_baseline\_set(F_{query}, F_{target})$
+\State $F_{proposal-all} = get\_proposal\_features(F_{query}, 
+F_{target})$
+\State $F_{baseline-all} = get\_baseline\_features(F_{query}, 
+F_{target})$
 \State $M = \varnothing$
 \ForAll{$f_q \in F_{query}$}
-    \State $f_p \gets getNearestNeighbo\text{r}(f_q, F_{proposal} \setminus 
-    \left\{f_q\right\})$
-    \State $f_b \gets getNearestNeighbo\text{r}(f_q, F_{baseline} \setminus 
-    \left\{f_q, f_p\right\})$
+    \State $F_{proposal} = F_{proposal-all} \setminus 
+    \left\{f_q\right\}$
+    \State $F_{baseline} = F_{baseline-all} \setminus \left\{f_q, 
+    f_p\right\}$
+    \State $f_p \gets getNearestNeighbo\text{r}(f_q, F_{proposal})$
+    \State $f_b \gets getNearestNeighbo\text{r}(f_q, F_{baseline})$
     \State $ratio \gets distance(f_q, f_p) / distance(f_q, f_b)$
     \If{$(ratio < \tau) \wedge (f_p \in F_{target})$}
         \State $matches \gets matches \cup \left(f_q, f_p\right)$
@@ -369,7 +341,7 @@ Figure~\ref{fig:overview} we illustrate how each method is derrived.
 
 In algorithm~\ref{alg-gen} we show the generalized matching framework 
 where the \emph{proposal set} and \emph{baseline set} are defined 
-according to Table~\ref{table:distinctness}.  In practice for i.e.\ 
+according to Figure~\ref{fig:overview}.  In practice for i.e.\ 
 \emph{Ratio-Match} we can obtain $f_p$ and $f_b$ by finding the 2 
 nearest neighbors of $F_{target}$. The other algorithms can be optimized 
 similarly. In Figure~\ref{fig:matching} we illustrate the structure of 
@@ -400,7 +372,7 @@ descriptors, $x$ and $y$.}
 For $F_{query} = \left\{f_{q_1} \ldots f_{q_n}\right\}$ and $F_{target} 
 = \left\{f_{t_1} \ldots f_{t_m}\right\}$.  We can obtain $F_{proposed}$ 
 and $F_{baseline}$ from these sets according to the algorithm used (see 
-Table~\ref{table:distinctness}). $r = \text{r}(f_{q}, F_{proposed}, 
+Figure~\ref{fig:overview}). $r = \text{r}(f_{q}, F_{proposed}, 
 F_{baseline})$ is the ratio of query feature $f_{q}$ given 
 $F_{proposed}$ and $F_{baseline}$.  If $f_{p}$ is the nearest neighbor 
 of $f_{q}$ in $F_{proposed}$ and $f_{b}$ is the nearest neighbor of 
@@ -447,7 +419,7 @@ return identical results.
 Under three assumptions that largely reflects the performance of 
 matching feature points in practice we can theoretically compare the 
 performance of the different algorithms shown in 
-Table~\ref{table:distinctness}.
+Figure~\ref{fig:overview}.
 
 \begin{enumerate}
     \item{For a query and target image we assume that for any point in 
@@ -931,18 +903,13 @@ with \emph{Mirror-Match} in general performing better than
 \subsection{Descriptor evaluation}
 \label{label:desc}
 
-\begin{figure*}[t!]
-    \begin{subfigure}[t]{1\textwidth}
-        \centering
-        \includegraphics[width=1\columnwidth]{images/results_descriptors_imageset1}
-        \caption{Keypoint /Descriptor combinations evaluated on 3D 
-        Objects}
-        \label{fig:descriptors}
-    \end{subfigure}%
-
-    \caption{Keypoint / Descriptor combinations measured on 15 pairs of 
+\begin{figure*}[t]
     photos of 3D objects taken 15 degrees apart. K = Keypoint, D = 
 Descriptor\.}
+    \caption{Keypoint / Descriptor combinations measured on 15 pairs of 
+    photos of 3D objects taken 15 degrees apart. K = Keypoint, D = 
+Descriptor.}
+    \label{fig:descriptors}
 \end{figure*}
 
 To evaluate whether the improvement gains shown with the SIFT descriptor 
