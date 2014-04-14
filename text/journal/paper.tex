@@ -205,12 +205,12 @@ terms of precision and recall. Our experimental evaluations confirm the
 theoretical results and show that \emph{Ratio-Match} on all counts is a 
 unoptimal choice as a matching algorithm independent of application. 
 
-In the author's last paper we introduced \emph{Mirror Match} and 
+In the author's last paper we introduced \emph{Mirror-Match} and 
 \emph{Mirror-Match with Clustering}, two algorithms that we showed to 
 perform better than the state of the art. The novel contributions of 
 this paper consists of two new algorithms completing a framework of four 
 related matching algorithms as well as the theoretical foundation which 
-enables us to understand why \emph{Mirror Match} performs better than 
+enables us to understand why \emph{Mirror-Match} performs better than 
 \emph{Ratio Match} in the first place.
 
 The paper is organized as follows. I section~\ref{S:MatchingMethods} we 
@@ -305,12 +305,16 @@ practically means that given a query feature, $f_q$, the \emph{proposed
 match} and the \emph{baseline match} are the two nearest neighbors in 
 the set of feature points in the \emph{target image} and the ratio is 
 decided uniquely based on the \emph{target image}. In turn 
-\emph{Mirror-Match-Ext} as introduced by the authors in 
+\emph{Mirror-Match} as introduced by the authors in 
 \cite{arnfred2013mirror}, works by constructing the \emph{proposal set} 
 and \emph{baseline set} by combining features from both the \emph{query} 
-and \emph{target image}. By similar compositions of the \emph{proposal} 
+and \emph{target image}. By similar variations of the \emph{proposal} 
 and \emph{baseline set} we derive four more algorithms as illustrated in 
-Figure~\ref{fig:overview}.
+Figure~\ref{fig:overview}, however we will not discuss 
+\emph{Self-Match-Ext} and \emph{Both-Match} further in this paper since 
+we show them to be equivalent with \emph{Self-Match} and 
+\emph{Mirror-Match} respectively in Appendix~\ref{A:self} and 
+\ref{A:mirror}.
 
 \begin{algorithm}[htb]
 \caption{Generalized matching algorithm for two images}
@@ -359,7 +363,6 @@ might find that the nearest neighbor of a feature in the target image is
 further from the query feature than the nearest neighbor in the query 
 image. In this case the match is discarded.
 
-% TODO: include point about two of the algorithms being identical
 %
 \subsection{Generalized Uniqueness Ratio}
 %
@@ -377,7 +380,7 @@ descriptors, $x$ and $y$.}
 The main distinguishing factor in between the algorithms in the 
 framework is the final ratio between the distance of the two nearest 
 neighbors of a query feature which decides if we keep or discard a 
-match. We illustrate this process in Figure~\ref{fig:matching}.
+match. We illustrate this process in Figure~\ref{fig:matching}. 
 
 We can define a calculation of this ratio common to all algorithms in 
 the framework which allows us to compare the algorithms theoretically. 
@@ -456,17 +459,12 @@ as assumed by \emph{Ratio-Match}}
      to share part of the same scene.}
     \end{enumerate}
 
-Based on these assumptions we first prove that 
-The above proof can easily be extended to show that \emph{Mirror-Match 
-1} and \emph{Mirror-Match-Ext} returns the same correspondences too, and 
-both will be referred to as \emph{Mirror Match} from here on.
-
-For the case of \emph{Ratio-Match} and \emph{Ratio-Match-Ext} however we 
-can show that \emph{Ratio-Match-Ext} is equal or better than 
-\emph{Ratio-Match}.  Consider again the nearest neighbor $f_{nn}$ of a 
-query feature $f_{q}$ and the two cases where we either have the $f_{nn} 
-\in F_{query}$ or $f_{nn} \in F_{target}$. For $f_{nn} \in F_{target}$ 
-the uniqueness ratio of \emph{Ratio-Match-Ext} is:
+Based on these assumptions we prove that \emph{Ratio-Match-Ext} is equal 
+or better than \emph{Ratio-Match} in terms both precision and recall.  
+Consider the nearest neighbor $f_{nn}$ of a query feature $f_{q}$ and 
+the two cases where we either have the $f_{nn} \in F_{query}$ or $f_{nn} 
+\in F_{target}$. For $f_{nn} \in F_{target}$ the uniqueness ratio of 
+\emph{Ratio-Match-Ext} is:
 \begin{align*}
     r &= \text{r}(f_{q}, F_{proposed}, F_{baseline}) \\
         &= \text{r}(f_{q}, F_{query} \cup F_{target}, F_{baseline})\\
@@ -482,24 +480,23 @@ algorithms behave identically. For $f_{nn} \in F_{query}$
         &= \text{r}(f_{q}, F_{target}, F_{target})
 \end{align*}
 
-Where as \emph{Ratio-Match-Ext} does not return the correspondence if 
-the nearest neighbor of a query feature is in the \emph{query image}, 
-\emph{Ratio-Match} is likely to do so, since the uniqueness ratio is 
-found by dividing with the second nearest neighbor in the \emph{target 
-image}. This shows us that for cases where a query feature has a nearest 
-neighbor in the \emph{query image}, \emph{Ratio-Match-Ext} is superior 
-to \emph{Ratio-Match}. Since query features with a nearest neighbor in 
-the \emph{query image} are false correspondences per assumption \#1 and 
-\#2, this proves that \emph{Ratio-Match-Ext} has superior 
-\emph{Precision} to \emph{Ratio-Match} while maintaining equal 
-\emph{Recall}.
 
-Finally we show that \emph{Mirror Match} is equal or better than 
-\emph{Ratio-Match-Ext}. Consider as before the nearest neighbor $f_{nn}$ 
-of a query feature $f_{q}$. When $f_{nn}$ resides in the \emph{query 
-image} both algorithms behave alike and discard the match.  However, 
-consider the uniqueness ratio of \emph{Mirror Match} for the case where 
-$f_{nn}$ resides in the \emph{target image}:
+That is, \emph{Ratio-Match} calculates the ratio based on the two 
+nearest correspondences in the \emph{Target Image}. 
+\emph{Ratio-Match-Ext} on the other hand does not return any 
+correspondence because the nearest neighbor is in the \emph{Query 
+Image}. Since query features with a nearest neighbor in the \emph{query 
+image} are false correspondences per assumption \#1 and \#2, this proves 
+that \emph{Ratio-Match-Ext} has superior \emph{Precision} to 
+\emph{Ratio-Match} while maintaining equal \emph{Recall}.
+
+Next we show that \emph{Mirror-Match} is equal or better than 
+\emph{Ratio-Match-Ext} in terms of precision and recall. Consider as 
+before the nearest neighbor $f_{nn}$ of a query feature $f_{q}$. When 
+$f_{nn}$ resides in the \emph{query image} both algorithms behave alike 
+and discard the match.  However, consider the uniqueness ratio of 
+\emph{Mirror-Match} for the case where $f_{nn}$ resides in the 
+\emph{target image}:
 \begin{align*}
     r &= \text{r}(f_{q}, F_{proposed}, F_{baseline}) \\
         &= \text{r}(f_{q}, F_{proposed}, F_{query} \cup F_{target})\\
@@ -511,22 +508,24 @@ For a true correspondence we have that the uniqueness ratio using
 $F_{query}$ as baseline is distributed similarly to the ratio when using 
 $F_{target}$ by assumption \#3. In this case the algorithm performs like 
 \emph{Ratio-Match-Ext}.  However for an untrue correspondence with a 
-baseline match in the \emph{query image} which is closer than the
-baseline match in the \emph{target image}, \emph{Mirror Match} will 
-return a worse uniqueness ratio. This in turns means that \emph{Mirror 
-Match} is equal or better than \emph{Ratio-Match-Ext} in terms of  
+baseline match in the query image which is closer than the
+baseline match in the target image, \emph{Mirror-Match} will return a 
+worse uniqueness ratio. This in turns means that \emph{Mirror-Match} is 
+equal or better than \emph{Ratio-Match-Ext} in terms of  
 \emph{Precision} while maintaining equal \emph{Recall}.
+
+Using a similar procedure we prove that \emph{Self-Match} is equal to
+\emph{Self-Match-Ext} and \emph{Both-Match} is equal to \emph{Mirror
+Match} in Appendix~\ref{A:self} and \ref{A:mirror} respectively.
 
 For any given recall we have proven based on assumption \#1-3 that the 
 precision of the algorithms in the framework compares as follows:
 \begin{align*}
-    \textit{Self-Match} &= \textit{Self-Match-Ext} \\
-    \textit{Mirror-Match} &= \textit{Mirror-Match-Ext} \\
     \textit{Ratio-Match} &\leq \textit{Ratio-Match-Ext} \leq 
-    \textit{Mirror Match}
+    \textit{Mirror-Match}
 \end{align*}
 
-The difference between \emph{Self-Match} and \emph{Ratio-Match} is is 
+The difference between \emph{Self-Match} and \emph{Ratio-Match} is
 the source of the \emph{baseline set}. For true correspondences we 
 assume that they should perform similarly but as for the rest the 
 performance of the two depends entirely on the images we are matching. 
@@ -581,7 +580,7 @@ According to the second assumption, feature descriptors behave such that
 when matched, a true correspondence to a query feature will always be 
 the nearest neighbor. For actual feature detectors and descriptors 
 Mikolajczyk and Tuytelaars shows that this property depends strongly on 
-the differences between \emph{query} and \emph{target} image 
+the differences between query and target image 
 \cite{mikolajczyk2005performance} \cite{tuytelaars2008local}. In the 
 degenerate case where the closest match is not an actual correspondence, 
 it is often the case that other matches are similarly close resulting in 
@@ -605,22 +604,22 @@ correspondences for 84 different 3D objects.}
 \end{figure}
 
 The last assumption states that the uniqueness ratio using either the 
-\emph{query} or \emph{target image} as the baseline set would be similar
+\emph{query} or target image as the baseline set would be similar
 in distribution when we know that the feature point we are matching has 
 a true correspondence. For an ideal feature descriptor where any true 
 correspondence between two feature points will have a distance of $0$, 
 the third assumption is obviously true for any cases where the second 
-closest feature point has a true correspondence in the other image. In 
-the general case it is likely that the baseline yields different 
-uniqueness ratios depending on the features it contains, but for the 
-case where the baseline match has a true correspondence in the other 
-image we can verify the assumption by looking at the performance of 
-\emph{Self-Match} compared with \emph{Ratio-Match}. To compare we plot 
-the actual \emph{uniqueness ratios} measured from 84 3D objects in 
-Figure~\ref{fig:ratio_hist}. For ratios lower than $0.7$ this is 
-generally the case, but as we approach more lenient thresholds the 
-performance of \emph{Mirror-Match} might no longer be equal or better 
-than \emph{Ratio-Match-Ext} in terms of precision.
+closest feature point has a true correspondence in the other image. For 
+non-ideal feature descriptors where the baseline match has a true 
+correspondence in the other image we can verify the assumption by 
+looking at the \emph{uniqueness ratio} for a true correspondences when 
+it is based on the query image compared to when it is based on the 
+target image. To compare we plot the actual \emph{uniqueness ratios} 
+measured from $84$ 3D objects in Figure~\ref{fig:ratio_hist}. For ratios 
+lower than $0.7$ this is generally the case, but as we approach more 
+lenient thresholds the performance of \emph{Mirror-Match} might no 
+longer be equal or better than \emph{Ratio-Match-Ext} in terms of 
+precision.
 % Needs rewording
 
 \section{Experiments and Results}
@@ -833,11 +832,20 @@ true correspondences for the particular object. This ensures that each
 object contributes equally to the final result despite some objects
 resulting in disproportionally more matches than others.
 
-The results can be seen in Figure~\ref{fig:all_objects}. In the figure 
+The results can be seen in Figure~\ref{fig:all_objects}. In the figure
 we see the performance of the different matching methods in our proposed
-framework for $12$ increasingly bigger rotations. The results are shown 
-in a precision / recall plot to make it easy to compare performance in 
-terms of precision at similar levels of recall.  
+framework for $12$ increasingly bigger rotations. The results are shown
+in a precision / recall plot to make it easy to compare performance in
+terms of precision at similar levels of recall. For the application of
+feature matching it is important to keep in mind that for many
+applications, such as image stitching, object and scene recognition and
+near duplicate detection, precision is much more important than recall,
+since a handfull of highly reliable correspondences tells us much more
+about the similarity of image components than a high number of imprecise
+matches. For applications where we intent to combine one of the
+algorithms with a geometric method, we would ideally like for it to
+produce results with a high recall that can then be further filtered by
+a geometric method.
 
 For objects in the top row rotated between $5$ and $20$ degrees we see a 
 gradual increase in the performance gap between the methods as the angle 
@@ -864,7 +872,7 @@ other image.
 In the middle row featuring rotations of between $25$ and $40$ degrees 
 we see the strongest improvement of \emph{Mirror-Match} compared to 
 \emph{Ratio-Match} generally peaking at around
-a 20 percentage-point increase in precision. Finally the the performance
+a $20$ percentage-point increase in precision. Finally the the performance
 gain decreases as we further increase the rotation to between $45$ and 
 $60$. We suspect that this is partly because assumption \#2 that a 
 descriptor is well behaved and match best with a descriptor of a true 
@@ -952,8 +960,7 @@ over three separate runs of each algorithm implemented using the same
 data structures and libraries in Python. 
 
 \begin{table}[htb]
-\caption{Complexity and running times tested on 15 image pairs on 3 
-lighting conditions with average $n = 236.73$ and average $m = 247.38$ 
+\caption{Complexity and running times tested on 45 image pairs with average $n = 237$ and average $m = 247$ 
 as tested on a Intel\textregistered\ Core\texttrademark\ i5-3550 CPU @ 
 3.30~GHz with 8~GB memory.}
 \label{table:running_times}
@@ -968,8 +975,8 @@ as tested on a Intel\textregistered\ Core\texttrademark\ i5-3550 CPU @
     %\emph{Self-Match-Ext} & $O(n\log(n(n+m)))$ & 109s\\
     \emph{Ratio-Match} & $O(n\log(m))$ & 114s\\
     \emph{Ratio-Match-Ext} & $O(n\log(n+m))$ & 112s\\
-    \emph{Mirror-Match} & $O(n\log(n(n+m)))$ & 116s\\
-    %\emph{Mirror-Match-Ext} & $O(n\log(n+m))$ & 110s \\
+    %\emph{Both-Match} & $O(n\log(n(n+m)))$ & 116s\\
+    \emph{Mirror-Match} & $O(n\log(n+m))$ & 110s \\
     \hline
 \end{tabular}
 \end{table}
@@ -1039,8 +1046,10 @@ and with an increase in precisionon but are both limited to matching
 image pairs like \emph{Ratio-Match}.
 
 \appendix
-\section{Proof of equivalence between \emph{Self-Match} and 
-\emph{Self-Match-Ext}}
+
+\subsection{Proof of equivalence of Self-Match and Self-Match-Ext}
+\label{A:self}
+
 In this appendix we prove the equivalence between \emph{Self-Match} and 
 \emph{Self-Match-Ext}. To do this, we look at the nearest neighbor 
 $f_{nn}$ of every query feature $f_{q}$ and consider the two cases of 
@@ -1062,31 +1071,31 @@ also behave identically for this case. This proves that for any set of
 \emph{query features} \emph{Self-Match} returns the same matches as 
 \emph{Self-Match-Ext}.
 
-\section{Proof of equivalence between \emph{Mirror-Match} and 
-\emph{Mirror-Match-Ext}}
+\subsection{Proof of equivalence of Both-Match and Mirror-Match}
+\label{A:mirror}
 
-In this appendix we prove the equivalence between \emph{Mirror-Match} 
-and \emph{Mirror-Match-Ext}. This proof is almost identical to the 
-equivalence proof between \emph{Self-Match} and \emph{Self-Match-Ext}. 
-To prove this, we look at the nearest neighbor $f_{nn}$ of every query 
-feature $f_{q}$ and consider the two cases of $f_{nn} \in F_{query}$ and 
-$f_{nn} \in
+In this appendix we prove the equivalence between \emph{Both-Match} and 
+\emph{Mirror-Match}. This proof is almost identical to the equivalence 
+proof between \emph{Self-Match} and \emph{Self-Match-Ext}. To prove 
+this, we look at the nearest neighbor $f_{nn}$ of every query feature 
+$f_{q}$ and consider the two cases of $f_{nn} \in F_{query}$ and $f_{nn} 
+\in
 F_{target}$. For $f_{nn} \in F_{target}$ the uniqueness ratio of 
-\emph{Mirror-Match-Ext} is:
+\emph{Mirror-Match} is:
 \begin{align*}
     r &= \text{r}(f_{q}, F_{proposed}, F_{baseline}) \\
         &= \text{r}(f_{q}, F_{query} \cup F_{target}, F_{baseline})\\
         &= \text{r}(f_{q}, F_{target}, F_{baseline})
 \end{align*}
 
-Since $F_{proposed} = F_{target}$ for \emph{Mirror-Match} this shows that
+Since $F_{proposed} = F_{target}$ for \emph{Both-Match} this shows that
 when the nearest neighbor is found in the target image, the two 
 algorithms behave identically. For $f_{nn} \in F_{query}$ we know that 
 the best match for the query feature is in the query image itself. Since 
 neither algorithm returns a correspondence within the same image, they 
 also behave identically for this case. This proves that for any set of 
-\emph{query features} \emph{Mirror-Match} returns the same matches as 
-\emph{Mirror-Match-Ext}.
+\emph{query features} \emph{Both-Match} returns the same matches as 
+\emph{Mirror-Match}.
 
 
 \bibliographystyle{IEEEtran}
