@@ -1,25 +1,438 @@
-% To compile, make sure to have the following packages installed:
-% texlive, texlive-latex-extra, texlive-science, 
-% texlive-fonts-recommended, texlive-fonts-extras
+%% bare_jrnl_compsoc.tex
+%% V1.3
+%% 2007/01/11
+%% by Michael Shell
+%% See:
+%% http://www.michaelshell.org/
+%% for current contact information.
+%%
+%% This is a skeleton file demonstrating the use of IEEEtran.cls
+%% (requires IEEEtran.cls version 1.7 or later) with an IEEE Computer
+%% Society journal paper.
+%%
+%% Support sites:
+%% http://www.michaelshell.org/tex/ieeetran/
+%% http://www.ctan.org/tex-archive/macros/latex/contrib/IEEEtran/
+%% and
+%% http://www.ieee.org/
 
-\documentclass[journal]{IEEEtran}
+%%*************************************************************************
+%% Legal Notice:
+%% This code is offered as-is without any warranty either expressed or
+%% implied; without even the implied warranty of MERCHANTABILITY or
+%% FITNESS FOR A PARTICULAR PURPOSE! 
+%% User assumes all risk.
+%% In no event shall IEEE or any contributor to this code be liable for
+%% any damages or losses, including, but not limited to, incidental,
+%% consequential, or any other damages, resulting from the use or misuse
+%% of any information contained here.
+%%
+%% All comments are the opinions of their respective authors and are not
+%% necessarily endorsed by the IEEE.
+%%
+%% This work is distributed under the LaTeX Project Public License (LPPL)
+%% ( http://www.latex-project.org/ ) version 1.3, and may be freely used,
+%% distributed and modified. A copy of the LPPL, version 1.3, is included
+%% in the base LaTeX documentation of all distributions of LaTeX released
+%% 2003/12/01 or later.
+%% Retain all contribution notices and credits.
+%% ** Modified files should be clearly indicated as such, including  **
+%% ** renaming them and changing author support contact information. **
+%%
+%% File list of work: IEEEtran.cls, IEEEtran_HOWTO.pdf, bare_adv.tex,
+%%                    bare_conf.tex, bare_jrnl.tex, bare_jrnl_compsoc.tex
+%%*************************************************************************
+
+% *** Authors should verify (and, if needed, correct) their LaTeX system  ***
+% *** with the testflow diagnostic prior to trusting their LaTeX platform ***
+% *** with production work. IEEE's font choices can trigger bugs that do  ***
+% *** not appear when using other class files.                            ***
+% The testflow support page is at:
+% http://www.michaelshell.org/tex/testflow/
+
+
+
+
+% Note that the a4paper option is mainly intended so that authors in
+% countries using A4 can easily print to A4 and see how their papers will
+% look in print - the typesetting of the document will not typically be
+% affected with changes in paper size (but the bottom and side margins will).
+% Use the testflow package mentioned above to verify correct handling of
+% both paper sizes by the user's LaTeX system.
+%
+% Also note that the "draftcls" or "draftclsnofoot", not "draft", option
+% should be used if it is desired that the figures are to be displayed in
+% draft mode.
+%
+% The Computer Society usually requires 10pt for submissions.
+%
+\documentclass[10pt,journal,cspaper,compsoc]{IEEEtran}
+%
+% If IEEEtran.cls has not been installed into the LaTeX system files,
+% manually specify the path to it like:
+% \documentclass[12pt,journal,compsoc]{../sty/IEEEtran}
+
+
+
+
+
+% Some very useful LaTeX packages include:
+% (uncomment the ones you want to load)
+
+
+% *** MISC UTILITY PACKAGES ***
+%
+%\usepackage{ifpdf}
+% Heiko Oberdiek's ifpdf.sty is very useful if you need conditional
+% compilation based on whether the output is pdf or dvi.
+% usage:
+% \ifpdf
+%   % pdf code
+% \else
+%   % dvi code
+% \fi
+% The latest version of ifpdf.sty can be obtained from:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/oberdiek/
+% Also, note that IEEEtran.cls V1.7 and later provides a builtin
+% \ifCLASSINFOpdf conditional that works the same way.
+% When switching from latex to pdflatex and vice-versa, the compiler may
+% have to be run twice to clear warning/error messages.
+
+
+
+
+
+
+% *** CITATION PACKAGES ***
+%
+\ifCLASSOPTIONcompsoc
+  % IEEE Computer Society needs nocompress option
+  % requires cite.sty v4.0 or later (November 2003)
+  \usepackage[nocompress]{cite}
+\else
+  % normal IEEE
+  \usepackage{cite}
+\fi
+% cite.sty was written by Donald Arseneau
+% V1.6 and later of IEEEtran pre-defines the format of the cite.sty package
+% \cite{} output to follow that of IEEE. Loading the cite package will
+% result in citation numbers being automatically sorted and properly
+% "compressed/ranged". e.g., [1], [9], [2], [7], [5], [6] without using
+% cite.sty will become [1], [2], [5]--[7], [9] using cite.sty. cite.sty's
+% \cite will automatically add leading space, if needed. Use cite.sty's
+% noadjust option (cite.sty V3.8 and later) if you want to turn this off.
+% cite.sty is already installed on most LaTeX systems. Be sure and use
+% version 4.0 (2003-05-27) and later if using hyperref.sty. cite.sty does
+% not currently provide for hyperlinked citations.
+% The latest version can be obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/cite/
+% The documentation is contained in the cite.sty file itself.
+%
+% Note that some packages require special options to format as the Computer
+% Society requires. In particular, Computer Society  papers do not use
+% compressed citation ranges as is done in typical IEEE papers
+% (e.g., [1]-[4]). Instead, they list every citation separately in order
+% (e.g., [1], [2], [3], [4]). To get the latter we need to load the cite
+% package with the nocompress option which is supported by cite.sty v4.0
+% and later. Note also the use of a CLASSOPTION conditional provided by
+% IEEEtran.cls V1.7 and later.
+
+
+
+
+
+% *** GRAPHICS RELATED PACKAGES ***
+%
+\ifCLASSINFOpdf
+  \usepackage[pdftex]{graphicx}
+  % declare the path(s) where your graphic files are
+  % \graphicspath{{../pdf/}{../jpeg/}}
+  % and their extensions so you won't have to specify these with
+  % every instance of \includegraphics
+  % \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
+\else
+  % or other class option (dvipsone, dvipdf, if not using dvips). graphicx
+  % will default to the driver specified in the system graphics.cfg if no
+  % driver is specified.
+  \usepackage[dvips]{graphicx}
+  % declare the path(s) where your graphic files are
+  % \graphicspath{{../eps/}}
+  % and their extensions so you won't have to specify these with
+  % every instance of \includegraphics
+  % \DeclareGraphicsExtensions{.eps}
+\fi
+% graphicx was written by David Carlisle and Sebastian Rahtz. It is
+% required if you want graphics, photos, etc. graphicx.sty is already
+% installed on most LaTeX systems. The latest version and documentation can
+% be obtained at: 
+% http://www.ctan.org/tex-archive/macros/latex/required/graphics/
+% Another good source of documentation is "Using Imported Graphics in
+% LaTeX2e" by Keith Reckdahl which can be found as epslatex.ps or
+% epslatex.pdf at: http://www.ctan.org/tex-archive/info/
+%
+% latex, and pdflatex in dvi mode, support graphics in encapsulated
+% postscript (.eps) format. pdflatex in pdf mode supports graphics
+% in .pdf, .jpeg, .png and .mps (metapost) formats. Users should ensure
+% that all non-photo figures use a vector format (.eps, .pdf, .mps) and
+% not a bitmapped formats (.jpeg, .png). IEEE frowns on bitmapped formats
+% which can result in "jaggedy"/blurry rendering of lines and letters as
+% well as large increases in file sizes.
+%
+% You can find documentation about the pdfTeX application at:
+% http://www.tug.org/applications/pdftex
+
+
+
+
+
+% *** MATH PACKAGES ***
+%
+\usepackage[cmex10]{amsmath}
+% A popular package from the American Mathematical Society that provides
+% many useful and powerful commands for dealing with mathematics. If using
+% it, be sure to load this package with the cmex10 option to ensure that
+% only type 1 fonts will utilized at all point sizes. Without this option,
+% it is possible that some math symbols, particularly those within
+% footnotes, will be rendered in bitmap form which will result in a
+% document that can not be IEEE Xplore compliant!
+%
+% Also, note that the amsmath package sets \interdisplaylinepenalty to 10000
+% thus preventing page breaks from occurring within multiline equations. Use:
+%\interdisplaylinepenalty=2500
+% after loading amsmath to restore such page breaks as IEEEtran.cls normally
+% does. amsmath.sty is already installed on most LaTeX systems. The latest
+% version and documentation can be obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/required/amslatex/math/
+
+
+
+
+
+% *** SPECIALIZED LIST PACKAGES ***
+%
+%\usepackage{algorithmic}
+% algorithmic.sty was written by Peter Williams and Rogerio Brito.
+% This package provides an algorithmic environment fo describing algorithms.
+% You can use the algorithmic environment in-text or within a figure
+% environment to provide for a floating algorithm. Do NOT use the algorithm
+% floating environment provided by algorithm.sty (by the same authors) or
+% algorithm2e.sty (by Christophe Fiorio) as IEEE does not use dedicated
+% algorithm float types and packages that provide these will not provide
+% correct IEEE style captions. The latest version and documentation of
+% algorithmic.sty can be obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/algorithms/
+% There is also a support site at:
+% http://algorithms.berlios.de/index.html
+% Also of interest may be the (relatively newer and more customizable)
+% algorithmicx.sty package by Szasz Janos:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/algorithmicx/
+
+
+
+
+% *** ALIGNMENT PACKAGES ***
+%
+%\usepackage{array}
+% Frank Mittelbach's and David Carlisle's array.sty patches and improves
+% the standard LaTeX2e array and tabular environments to provide better
+% appearance and additional user controls. As the default LaTeX2e table
+% generation code is lacking to the point of almost being broken with
+% respect to the quality of the end results, all users are strongly
+% advised to use an enhanced (at the very least that provided by array.sty)
+% set of table tools. array.sty is already installed on most systems. The
+% latest version and documentation can be obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/required/tools/
+
+
+%\usepackage{mdwmath}
+%\usepackage{mdwtab}
+% Also highly recommended is Mark Wooding's extremely powerful MDW tools,
+% especially mdwmath.sty and mdwtab.sty which are used to format equations
+% and tables, respectively. The MDWtools set is already installed on most
+% LaTeX systems. The lastest version and documentation is available at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/mdwtools/
+
+
+% IEEEtran contains the IEEEeqnarray family of commands that can be used to
+% generate multiline equations as well as matrices, tables, etc., of high
+% quality.
+
+
+%\usepackage{eqparbox}
+% Also of notable interest is Scott Pakin's eqparbox package for creating
+% (automatically sized) equal width boxes - aka "natural width parboxes".
+% Available at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/eqparbox/
+
+
+
+
+
+% *** SUBFIGURE PACKAGES ***
+\ifCLASSOPTIONcompsoc
+%\usepackage[tight,normalsize,sf,SF]{subfigure}
+\else
+%\usepackage[tight,footnotesize]{subfigure}
+ \fi
+% subfigure.sty was written by Steven Douglas Cochran. This package makes it
+% easy to put subfigures in your figures. e.g., "Figure 1a and 1b". For IEEE
+% work, it is a good idea to load it with the tight package option to reduce
+% the amount of white space around the subfigures. Computer Society papers
+% use a larger font and \sffamily font for their captions, hence the
+% additional options needed under compsoc mode. subfigure.sty is already
+% installed on most LaTeX systems. The latest version and documentation can
+% be obtained at:
+% http://www.ctan.org/tex-archive/obsolete/macros/latex/contrib/subfigure/
+% subfigure.sty has been superceeded by subfig.sty.
+
+
+%\ifCLASSOPTIONcompsoc
+%  \usepackage[caption=false]{caption}
+%  \usepackage[font=normalsize,labelfont=sf,textfont=sf]{subfig}
+%\else
+%  \usepackage[caption=false]{caption}
+%  \usepackage[font=footnotesize]{subfig}
+%\fi
+% subfig.sty, also written by Steven Douglas Cochran, is the modern
+% replacement for subfigure.sty. However, subfig.sty requires and
+% automatically loads Axel Sommerfeldt's caption.sty which will override
+% IEEEtran.cls handling of captions and this will result in nonIEEE style
+% figure/table captions. To prevent this problem, be sure and preload
+% caption.sty with its "caption=false" package option. This is will preserve
+% IEEEtran.cls handing of captions. Version 1.3 (2005/06/28) and later 
+% (recommended due to many improvements over 1.2) of subfig.sty supports
+% the caption=false option directly:
+%\ifCLASSOPTIONcompsoc
+%  \usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+%\else
+%  \usepackage[caption=false,font=footnotesize]{subfig}
+%\fi
+%
+% The latest version and documentation can be obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/subfig/
+% The latest version and documentation of caption.sty can be obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/caption/
+
+
+
+
+% *** FLOAT PACKAGES ***
+%
+%\usepackage{fixltx2e}
+% fixltx2e, the successor to the earlier fix2col.sty, was written by
+% Frank Mittelbach and David Carlisle. This package corrects a few problems
+% in the LaTeX2e kernel, the most notable of which is that in current
+% LaTeX2e releases, the ordering of single and double column floats is not
+% guaranteed to be preserved. Thus, an unpatched LaTeX2e can allow a
+% single column figure to be placed prior to an earlier double column
+% figure. The latest version and documentation can be found at:
+% http://www.ctan.org/tex-archive/macros/latex/base/
+
+
+
+%\usepackage{stfloats}
+% stfloats.sty was written by Sigitas Tolusis. This package gives LaTeX2e
+% the ability to do double column floats at the bottom of the page as well
+% as the top. (e.g., "\begin{figure*}[!b]" is not normally possible in
+% LaTeX2e). It also provides a command:
+%\fnbelowfloat
+% to enable the placement of footnotes below bottom floats (the standard
+% LaTeX2e kernel puts them above bottom floats). This is an invasive package
+% which rewrites many portions of the LaTeX2e float routines. It may not work
+% with other packages that modify the LaTeX2e float routines. The latest
+% version and documentation can be obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/sttools/
+% Documentation is contained in the stfloats.sty comments as well as in the
+% presfull.pdf file. Do not use the stfloats baselinefloat ability as IEEE
+% does not allow \baselineskip to stretch. Authors submitting work to the
+% IEEE should note that IEEE rarely uses double column equations and
+% that authors should try to avoid such use. Do not be tempted to use the
+% cuted.sty or midfloat.sty packages (also by Sigitas Tolusis) as IEEE does
+% not format its papers in such ways.
+
+
+
+
+%\ifCLASSOPTIONcaptionsoff
+%  \usepackage[nomarkers]{endfloat}
+% \let\MYoriglatexcaption\caption
+% \renewcommand{\caption}[2][\relax]{\MYoriglatexcaption[#2]{#2}}
+%\fi
+% endfloat.sty was written by James Darrell McCauley and Jeff Goldberg.
+% This package may be useful when used in conjunction with IEEEtran.cls'
+% captionsoff option. Some IEEE journals/societies require that submissions
+% have lists of figures/tables at the end of the paper and that
+% figures/tables without any captions are placed on a page by themselves at
+% the end of the document. If needed, the draftcls IEEEtran class option or
+% \CLASSINPUTbaselinestretch interface can be used to increase the line
+% spacing as well. Be sure and use the nomarkers option of endfloat to
+% prevent endfloat from "marking" where the figures would have been placed
+% in the text. The two hack lines of code above are a slight modification of
+% that suggested by in the endfloat docs (section 8.3.1) to ensure that
+% the full captions always appear in the list of figures/tables - even if
+% the user used the short optional argument of \caption[]{}.
+% IEEE papers do not typically make use of \caption[]'s optional argument,
+% so this should not be an issue. A similar trick can be used to disable
+% captions of packages such as subfig.sty that lack options to turn off
+% the subcaptions:
+% For subfig.sty:
+% \let\MYorigsubfloat\subfloat
+% \renewcommand{\subfloat}[2][\relax]{\MYorigsubfloat[]{#2}}
+% For subfigure.sty:
+% \let\MYorigsubfigure\subfigure
+% \renewcommand{\subfigure}[2][\relax]{\MYorigsubfigure[]{#2}}
+% However, the above trick will not work if both optional arguments of
+% the \subfloat/subfig command are used. Furthermore, there needs to be a
+% description of each subfigure *somewhere* and endfloat does not add
+% subfigure captions to its list of figures. Thus, the best approach is to
+% avoid the use of subfigure captions (many IEEE journals avoid them anyway)
+% and instead reference/explain all the subfigures within the main caption.
+% The latest version of endfloat.sty and its documentation can obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/endfloat/
+%
+% The IEEEtran \ifCLASSOPTIONcaptionsoff conditional can also be used
+% later in the document, say, to conditionally put the References on a 
+% page by themselves.
+
+
+
+
+% *** PDF, URL AND HYPERLINK PACKAGES ***
+%
+%\usepackage{url}
+% url.sty was written by Donald Arseneau. It provides better support for
+% handling and breaking URLs. url.sty is already installed on most LaTeX
+% systems. The latest version can be obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/misc/
+% Read the url.sty source comments for usage information. Basically,
+% \url{my_url_here}.
+
+
+
+
+
+% *** Do not adjust lengths that control margins, column widths, etc. ***
+% *** Do not use packages that alter fonts (such as pslatex).         ***
+% There should be no need to do such things with IEEEtran.cls V1.6 and later.
+% (Unless specifically asked to do so by the journal or conference you plan
+% to submit to, of course. )
+
+
 %\documentclass{article}
 \usepackage{footnote}
-\usepackage{multirow}
+\usepackage{multirow} 
 %\usepackage[font={small}]{caption}
 %\usepackage{sidecap}
-\usepackage{graphicx}
 \usepackage{cite}
 \usepackage[draft]{hyperref}
 %\usepackage[options]{nohyperref}
 %\usepackage{url}
 %\usepackage[stable]{footmisc}
-%\usepackage{caption}
 %\usepackage{adjustbox}
+\usepackage{balance}
 \usepackage{subcaption}
 \usepackage{algpseudocode}
 \usepackage{algorithm}
-\usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{bbm}
 \usepackage[T1]{fontenc}
@@ -39,99 +452,221 @@
 	\right.
 }
 
-\title{A decade of lost precision: Introducing a general framework for 
-image feature matching without geometric constraints}
-
-\author{%
-\IEEEauthorblockN{%
-Jonas Toft Arnfred,\IEEEauthorrefmark{1} Stefan 
-Winkler,\IEEEauthorrefmark{1} Sabine S\"usstrunk\IEEEauthorrefmark{2}}\\
-\vspace{1mm}
-\IEEEauthorblockA{%
-\IEEEauthorrefmark{1}~Advanced Digital Sciences Center (ADSC), University of Illinois at Urbana-Champaign (UIUC), Singapore\\
-\IEEEauthorrefmark{2}~\'Ecole Polytechnique F\'ed\'erale de Lausanne (EPFL), Switzerland}
-}
 
 \begin{document}
-\maketitle
 %
+% paper title
+% can use linebreaks \\ within to get better formatting as desired
+\title{Decade of Lost Precision:\\
+A General Framework For Image Feature Matching Without Geometric Constraints}
+%
+%
+% author names and IEEE memberships
+% note positions of commas and nonbreaking spaces ( ~ ) LaTeX will not break
+% a structure at a ~ so this keeps an author's name from being broken across
+% two lines.
+% use \thanks{} to gain access to the first footnote area
+% a separate \thanks must be used for each paragraph as LaTeX2e's \thanks
+% was not built to handle multiple paragraphs
+%
+%
+%\IEEEcompsocitemizethanks is a special \thanks that produces the bulleted
+% lists the Computer Society journals use for "first footnote" author
+% affiliations. Use \IEEEcompsocthanksitem which works much like \item
+% for each affiliation group. When not in compsoc mode,
+% \IEEEcompsocitemizethanks becomes like \thanks and
+% \IEEEcompsocthanksitem becomes a line break with idention. This
+% facilitates dual compilation, although admittedly the differences in the
+% desired content of \author between the different types of papers makes a
+% one-size-fits-all approach a daunting prospect. For instance, compsoc 
+% journal papers have the author affiliations above the "Manuscript
+% received ..."  text while in non-compsoc journals this is reversed. Sigh.
+
+\author{Jonas~Toft~Arnfred,
+        Stefan~Winkler,
+        Sabine~S\"usstrunk% <-this % stops a space
+\IEEEcompsocitemizethanks{\IEEEcompsocthanksitem J.~T.~Arnfred and S.~Winkler are with the Advanced Digital Sciences Center (ADSC), University of Illinois at Urbana-Champaign (UIUC), Singapore.\protect\\
+% note need leading \protect in front of \\ to get a newline within \thanks as
+% \\ is fragile and will error, could use \hfil\break instead.
+% E-mail: 
+\IEEEcompsocthanksitem S.~S\"usstrunk is with the \'Ecole Polytechnique F\'ed\'erale de Lausanne (EPFL), Switzerland.}% <-this % stops a space
+\thanks{}}
+
+%\IEEEauthorblockN{%
+%Jonas Toft Arnfred,\IEEEauthorrefmark{1} Stefan Winkler,\IEEEauthorrefmark{1} Sabine S\"usstrunk\IEEEauthorrefmark{2}}\\
+%\vspace{1mm}
+%\IEEEauthorblockA{%
+%\IEEEauthorrefmark{1}~Advanced Digital Sciences Center (ADSC), University of Illinois at Urbana-Champaign (UIUC), Singapore\\
+%\IEEEauthorrefmark{2}~\'Ecole Polytechnique F\'ed\'erale de Lausanne (EPFL), Switzerland}
+
+% note the % following the last \IEEEmembership and also \thanks - 
+% these prevent an unwanted space from occurring between the last author name
+% and the end of the author line. i.e., if you had this:
+% 
+% \author{....lastname \thanks{...} \thanks{...} }
+%                     ^------------^------------^----Do not want these spaces!
+%
+% a space would be appended to the last name and could cause every name on that
+% line to be shifted left slightly. This is one of those "LaTeX things". For
+% instance, "\textbf{A} \textbf{B}" will typeset as "A B" not "AB". To get
+% "AB" then you have to do: "\textbf{A}\textbf{B}"
+% \thanks is no different in this regard, so shield the last } of each \thanks
+% that ends a line with a % and do not let a space in before the next \thanks.
+% Spaces after \IEEEmembership other than the last one are OK (and needed) as
+% you are supposed to have spaces between the names. For what it is worth,
+% this is a minor point as most people would not even notice if the said evil
+% space somehow managed to creep in.
+
+
+
+% The paper headers
+%\markboth{IEEE Trans. PAMI}%
+%{Shell \MakeLowercase{\textit{et al.}}: Bare Demo of IEEEtran.cls for Computer Society Journals}
+% The only time the second header will appear is for the odd numbered pages
+% after the title page when using the twoside option.
+% 
+% *** Note that you probably will NOT want to include the author's ***
+% *** name in the headers of peer review papers.                   ***
+% You can use \ifCLASSOPTIONpeerreview for conditional compilation here if
+% you desire.
+
+
+
+% The publisher's ID mark at the bottom of the page is less important with
+% Computer Society journal papers as those publications place the marks
+% outside of the main text columns and, therefore, unlike regular IEEE
+% journals, the available text space is not reduced by their presence.
+% If you want to put a publisher's ID mark on the page you can do it like
+% this:
+%\IEEEpubid{0000--0000/00\$00.00~\copyright~2007 IEEE}
+% or like this to get the Computer Society new two part style.
+%\IEEEpubid{\makebox[\columnwidth]{\hfill 0000--0000/00/\$00.00~\copyright~2007 IEEE}%
+%\hspace{\columnsep}\makebox[\columnwidth]{Published by the IEEE Computer Society\hfill}}
+% Remember, if you use this you must call \IEEEpubidadjcol in the second
+% column for its text to clear the IEEEpubid mark (Computer Society jorunal
+% papers don't need this extra clearance.)
+
+
+
+
+% for Computer Society papers, we must declare the abstract and index terms
+% PRIOR to the title within the \IEEEcompsoctitleabstractindextext IEEEtran
+% command as these need to go into the title area created by \maketitle.
+\IEEEcompsoctitleabstractindextext{%
 \begin{abstract}
-Solutions in computer vision involving the matching of local image 
+%\boldmath
+Computer vision applications that involve the matching of local image 
 features frequently use \emph{Ratio-Match} as introduced by Lowe and 
-others, but is this really the best approach? We formalize the 
+others, but is this really the optimal approach?  We formalize the 
 theoretical foundation of \emph{Ratio-Match} and propose a general 
 framework encompassing \emph{Ratio-Match} and three other matching 
-methods. Using the framework we establish a theoretical order of 
-performance in terms of precision and recall between the methods and 
-prove that \emph{Ratio-Match} is consistently equalled or outperformed 
-by all other methods of the framework.
+methods. Using this framework, we establish a theoretical 
+performance ranking in terms of precision and recall, 
+proving that all five methods consistently outperform or equal \emph{Ratio-Match}.
 
 We confirm the theoretical results experimentally on over 3000 image 
-pairs and show that we can easily increase matching precision
-without further assumptions about the images we are using. These gains 
-comes without increased computation time by changing only a few key 
-components of the \emph{Ratio-Match} algorithm.
-
+pairs and show that we can increase matching precision
+without further assumptions about the images we are using.  These gains 
+are achieved by making only a few key changes of the \emph{Ratio-Match} algorithm and do not increase computation times.
 \end{abstract}
+% IEEEtran.cls defaults to using nonbold math in the Abstract.
+% This preserves the distinction between vectors and scalars. However,
+% if the journal you are submitting to favors bold math in the abstract,
+% then you can use LaTeX's standard command \boldmath at the very start
+% of the abstract to achieve this. Many IEEE journals frown on math
+% in the abstract anyway. In particular, the Computer Society does
+% not want either math or citations to appear in the abstract.
+
+% Note that keywords are not normally used for peer review papers.
+\begin{keywords}
+Feature matching, ratio match, mirror match, self match
+\end{keywords}}
+
+
+% make the title area
+\maketitle
+
+
+% To allow for easy dual compilation without having to reenter the
+% abstract/keywords data, the \IEEEcompsoctitleabstractindextext text will
+% not be used in maketitle, but will appear (i.e., to be "transported")
+% here as \IEEEdisplaynotcompsoctitleabstractindextext when compsoc mode
+% is not selected <OR> if conference mode is selected - because compsoc
+% conference papers position the abstract like regular (non-compsoc)
+% papers do!
+\IEEEdisplaynotcompsoctitleabstractindextext
+% \IEEEdisplaynotcompsoctitleabstractindextext has no effect when using
+% compsoc under a non-conference mode.
+
+
+% For peer review papers, you can put extra information on the cover
+% page as needed:
+% \ifCLASSOPTIONpeerreview
+% \begin{center} \bfseries EDICS Category: 3-BBND \end{center}
+% \fi
 %
+% For peerreview papers, this IEEEtran command inserts a page break and
+% creates the second title. It will be ignored for other modes.
+\IEEEpeerreviewmaketitle
+
+
+
+
+
 \section{Introduction}
 %
 Matching image points is a crucial ingredient in almost all computer 
 vision algorithms that deal with sparse local image features. This 
-includes image categorisation \cite{bosch2008scene}, image stitching 
-\cite{brown2007automatic}, object detection \cite{zhang2007local} and 
-near duplicate detection \cite{zhao2009scale} to mention a few examples.  
+includes image categorization \cite{bosch2008scene}, image stitching 
+\cite{brown2007automatic}, object detection \cite{zhang2007local}, and 
+near duplicate detection \cite{zhao2009scale}, to mention just a few examples.  
 These problems all rely on being able to accurately find the 
 correspondence(s) of a point on an object in a \emph{query image} given 
 one or more \emph{target images} that might contain the same object.  In 
 many applications the target images have undergone transformations with 
-respect to the query image; in stereo vision, the camera angle is 
+respect to the query image; in stereo vision, the viewpoint is 
 different, while in object recognition and near duplicate detection both 
-the lighting and even the object itself can also be transformed.
+the lighting and even the object itself may also be transformed.
 
 In the literature two approaches to feature point matching have been 
 pursued and later merged. The geometric approach tries to find unique 
 keypoints in an image pair and match them based on their location.  The 
 descriptor centric approach on the other hand uses the local image 
-information around the keypoint to create a descriptor and match 
+information around the keypoint to create a descriptor and matches 
 descriptors based on their similarity.
 
-In the purely geometric approach we try to consistently match feature 
-points based on their position in the images. Scott and Longuet-Higgins 
+In the purely geometric approach, feature points are matched based on their position in the images. 
+Scott and Longuet-Higgins 
 \cite{scott1991algorithm} and Shapiro and Brady 
 \cite{shapiro1992feature} introduced the use of spectral methods by 
 deriving a coherent set of matches from the eigenvalues of the 
-correspondence matrix. Other examples of this approach include Sclaroff 
-and Pentland \cite{sclaroff1995modal} as well as Carcassoni and Hancock 
-\cite{carcassoni2003spectral}.
+correspondence matrix. Other examples of this approach include \cite{sclaroff1995modal,carcassoni2003spectral}.
 
 The descriptor centric approach on the other hand finds matches by 
-pairing keypoints from locations where the images are similar. The first 
+pairing similar keypoints. The first 
 examples of this approach used the correlation of the raw image data 
-immidiately surrounding the feature point \cite{deriche1994robust}, 
-\cite{baumberg2000reliable} to calculate this similarity. Later 
-algorithms were enhanced by creating invariant feature descriptors first 
+immediately surrounding the feature point \cite{deriche1994robust,baumberg2000reliable} to calculate this similarity. Later 
+algorithms were enhanced by invariant feature descriptors as first 
 introduced in \cite{schmid1997local} and later popularized by the work 
-of Lowe introducing SIFT \cite{lowe2004sift} and Bay introducing SURF 
+of Lowe introducing SIFT \cite{lowe2004sift} and Bay et al.\ introducing SURF 
 \cite{bay2006surf}.
 
-Many descriptor variations have since been proposed and a few surveys 
-have emerged comparing them. Mikolajczyk and Schmid evaluates 11 such 
+Many descriptor variations have since been proposed, and a few surveys 
+have emerged comparing them. Mikolajczyk and Schmid \cite{mikolajczyk2005performance} evaluate 11 such 
 feature descriptors in a paper where they also introduce the graffiti 
 image set which has later become a common benchmark for image matching 
-algorithms \cite{mikolajczyk2005performance}.  Later Moreels and Perona 
-evaluated 5 descriptors with different keypoint detectors using a large 
-image set consisting of 3D models \cite{moreels2007evaluation}. Finally 
-Heinly et al.\ take a closer look at binary features such as BRIEF 
-\cite{calonder2010brief}, BRISK \cite{leutenegger2011brisk} and ORB 
-\cite{rublee2011orb} comparing them to SIFT and SURF 
-\cite{heinly2012comparative}. 
+algorithms.  Moreels and Perona \cite{moreels2007evaluation}
+evaluate 5 descriptors with different keypoint detectors using a large 
+image set consisting of 3D models. 
+Heinly et al.\ \cite{heinly2012comparative} take a closer look at binary features such as BRIEF 
+\cite{calonder2010brief}, BRISK \cite{leutenegger2011brisk}, and ORB 
+\cite{rublee2011orb}, comparing them to SIFT and SURF. 
 
 A straightforward way to find a set of correspondences using only 
-feature points is to threshold the similarity measure of the feature 
+feature points is to apply a threshold to the similarity measure of the feature 
 vectors, accepting only correspondences that score above a certain 
-threshold \cite{szeliski2010}. When we match images with the assumption 
-that the correspondence between two feature points will be unique we can 
+level of similarity \cite{szeliski2010}. When we match images with the assumption 
+that the correspondence between two feature points will be unique, we can 
 further increase precision by only matching a feature point to its 
 nearest neighbor in terms of descriptor similarity. Instead of 
 thresholding based on similarity, Deriche et 
@@ -139,71 +674,64 @@ al.~\cite{deriche1994robust} and Baumberg~\cite{baumberg2000reliable}
 propose using the ratio of the similarity of the best to second best 
 correspondence of a given point to evaluate how unique it is. Their 
 finding has later been tested by several independent teams, all 
-concluding that thresholding based on the ratio is generally superior to 
-thresholding on similarity \cite{lowe2004sift}, 
-\cite{mikolajczyk2005performance}, \cite{moreels2007evaluation}, 
-\cite{rabin2009statistical}. Brown and Lowe extends ratio match to deal 
+concluding that thresholding based on this ratio is generally superior to 
+thresholding based on similarity \cite{lowe2004sift,mikolajczyk2005performance,moreels2007evaluation,rabin2009statistical}. 
+
+Brown and Lowe \cite{brown2005multi} extend ratio match to deal 
 with a set of images by using not the ratio of the best and second best 
 correspondence, but the average ratio of the best and the average of 
-second best correspondences across a set of images 
-\cite{brown2005multi}.  Rabin et al.\ tries to enhance descriptor 
+second best correspondences across a set of images.  Rabin et al.\ tries to enhance descriptor 
 matching by looking at the statistical distribution of local features in 
-the matched images, and only return a correspondence when such a 
+the matched images, and only return a match when such a 
 correspondence would not occur by mere chance 
 \cite{rabin2009statistical}. Finally, a precursor of the algorithms 
-discussed in this paper were introduced by the authors as 
-\emph{Mirror-Match} \cite{arnfred2013mirror} which makes use of the 
+discussed in this paper was introduced by the authors as 
+\emph{Mirror-Match} \cite{arnfred2013mirror}, which makes use of the 
 feature points in both images to decide if a match is valid.
 
 A plethora of solutions have combined ratio match with various geometric 
 constraints to improve matching. These constraints are based on 
 assumptions regarding the transformation between the query and target 
 images. At the stricter end we have epipolar constraints assuming
-that the images can be tied by a homography \cite{torr2000mlesac}, 
-\cite{chum2005matching} and angular constraints assuming the 
-correspondences are angled similarly \cite{kim2008efficient}, 
-\cite{schmid1997local}. Often these approaches are made computationally 
+that the images can be tied by a homography \cite{torr2000mlesac, chum2005matching} and angular constraints assuming the 
+correspondences are angled similarly \cite{kim2008efficient, schmid1997local}. Often these approaches are made computationally 
 feasible by modelling the case of feature correspondences as an instance 
 of graph matching where each feature is a vertex and edge values 
 correspond to a geometric relation between two features. In this case 
 approximate graph matching algorithms can be used to efficiently 
 establish an isomorphism between the graph of features in two images 
-\cite{leordeanu2005spectral}, \cite{torresani2008feature}, 
-\cite{yarkony2010covering}. Finally others define image regions and 
+\cite{leordeanu2005spectral, torresani2008feature, yarkony2010covering}. Finally others define image regions and 
 reject or accept correspondences based on the regions they connect 
-\cite{cho2009feature}, \cite{wu2011robust}.
+\cite{cho2009feature, wu2011robust}.
 
-Any matching method relying on geometric constraints is restrained by an
+Any matching method relying on geometric constraints is restrained by 
 inherent assumptions about the geometric relationship between the two 
-images. Broad assumptions such as angular constraints often used in 
-graph matching only apply to simple image transformations. For more 
-complex transformations we need models suitable for each particular case 
-and hence limit the algorithm to the subset of images that fit the 
-model. In the case of object recognition for example, the 
-transformations from one scene to another often feature a change in 
-perspective, background and sometimes variations within the object 
-itself. In most circumstances this makes these methods unsuited for 
-epipolar or angular constraints.
+images. Broad assumptions such as the epipolar constraint only apply in 
+simple image transformations. For more complex transformations we need 
+models suitable for each particular case, which limits the algorithm 
+to the subset of images that fit the model.  In the case of object 
+recognition for example, the transformations from one scene to another 
+often feature a change in perspective, background, and sometimes variations within the object 
+itself: a person can change pose, a car model can have different 
+configurations, a flower can bloom etc.
 
-If we intent to match these instances using geometric features we are 
-forced to used a sophisticated model that reflects the variations in 
-which we find these objects, an in the process lose generality. For this 
-reason general descriptor based algorithms are crucial for 
-correspondence applications calling for generality. In addition the 
-advantage of purely descriptor based methods is motivated by the fact 
-that any geometric method acts as a filter on a given set of 
-correspondences.  If this set contains less incorrect correspondences, 
+When matching these instances we are forced to either create a 
+sophisticated model that represents the variables of transformation 
+within the object, or alternatively find correspondences using an 
+algorithm with no inherent geometric assumptions. Besides, 
+any geometric method acts as a filter on a given set of 
+correspondences.  Therefore, if the initial set of purely descriptor-based matches contains fewer incorrect correspondences, 
 the final set can be calculated faster and more accurately.
 
-The methods we propose in this paper are designed to be free of 
+The methods we propose in this paper are designed to be free from 
 assumptions about image geometry. They extend and improve on Lowe's 
-\emph{Ratio-Match} \cite{lowe2004sift} and the author's \emph{Mirror 
+\emph{Ratio-Match} \cite{lowe2004sift} and the authors' \emph{Mirror 
 Match} \cite{arnfred2013mirror} by generalizing both algorithms to a 
-framework of matching methods. We go on to formally establish an order 
-comparing how well different methods within the framework compares in 
+framework of matching methods. We go on to formally establish a ranking
+based on how well different methods within the framework compare in 
 terms of precision and recall. Our experimental evaluations confirm the 
-theoretical results and show that \emph{Ratio-Match} on all counts is a 
-unoptimal choice as a matching algorithm independent of application. 
+theoretical results and show that \emph{Ratio-Match} on all counts is generally a 
+sub-optimal choice as a matching algorithm. 
 
 In the author's last paper we introduced \emph{Mirror-Match} and 
 \emph{Mirror-Match with Clustering}, two algorithms that we showed to 
@@ -220,57 +748,58 @@ framework theoretically.  In section~\ref{S:Experiments} we present
 evaluations and discuss the results obtained.  Section~\ref{S:Summary} 
 concludes the paper.
 
-\section{Matching Methods}
+\section{Matching Framework}
 \label{S:MatchingMethods}
 %
 \subsection{Ratio-Match}
 %
-\emph{Ratio-Match} as introduced by Deriche et al.
+\emph{Ratio-Match} as introduced by Deriche et al.\ 
 \cite{deriche1994robust} and later used by 
 Baumberg~\cite{baumberg2000reliable} and Lowe~\cite{lowe2004sift} makes 
 use of a \emph{uniqueness ratio}. For each feature in the \emph{query 
-image} we find a possible match by identifying the nearest neighbor and 
+image}, it finds a possible match by identifying the nearest neighbor and 
 returning this match only if the \emph{uniqueness ratio} is above a 
-given threshold, $\tau$. Given $f_q$, a feature from the \emph{query 
+given threshold $\tau$. 
+
+Given $f_q$, a feature from the \emph{query 
 image} and $F_{target}$, a set of features from the \emph{target image}, 
 the nearest neighbor of $f_q$ in $F_{target}$ is:
 \begin{equation*}
     \argmin_{f_t \in F_{target}} d(f_q, f_t)
 \end{equation*}
-Here, $d(f_i, f_j)$ is the distance between the feature descriptors.  
-With SIFT and SURF this is the euclidian distance of the feature vectors
-\cite{lowe2004sift} \cite{bay2006surf} where as BRIEF, BRISK and FREAK 
-measure the distance as the hamming distance \cite{leutenegger2011brisk} 
-\cite{calonder2010brief} \cite{alahi2012freak}.  If we let $f_p$ and 
-$f_b$ be the nearest and second nearest neighbor of a feature, $f_q$, 
+Here, $d(f_i, f_j)$ is the distance between feature descriptors.  
+With SIFT and SURF this is the Euclidean distance of the feature vectors
+\cite{lowe2004sift,bay2006surf}, whereas BRIEF, BRISK, and FREAK 
+use the Hamming distance \cite{leutenegger2011brisk,calonder2010brief,alahi2012freak}.  
+
+If we let $f_p$ and $f_b$ be the nearest and second nearest neighbor of a feature $f_q$, 
 the \emph{uniqueness ratio} is defined as follows:
 \begin{equation*}
-    r = d(f_q, f_p) / d(f_q, f_b)
+    r = d(f_q, f_p) / d(f_q, f_b).
 \end{equation*}
 Because $f_p$ is the nearest neighbor and $f_b$ the second nearest 
-neighbor we know that $d(f_q, f_p) \leq d(f_q, f_b)$ and since $d(f_i, 
-f_j) \geq 0, \forall f_i,f_j$, the uniqueness ratio is bounded by $0$ 
+neighbor, we know that $d(f_q, f_p) \leq d(f_q, f_b)$, and since $d(f_i, 
+f_j) \geq 0, \forall f_i,f_j$, the \emph{uniqueness ratio} is bounded by $0$ 
 and $1$, both inclusive. For the degenerate case where $d(f_q, f_b) = 0$
 we let the \emph{uniqueness ratio} be $0$.
 
 The underlying assumption in ratio match is that the point we seek to 
 match in the \emph{query image} has only one match in a given 
-\emph{target image} or no matches at all. In both cases should expect 
-that the \emph{second} nearest neighbor in the target image to be an 
+\emph{target image} or no matches at all. In both cases we should expect 
+the \emph{second} nearest neighbor in the target image to be an 
 untrue correspondence.  This means we can use the distance between the 
 feature point and the second closest descriptor as a \emph{baseline} for 
 false correspondences. By dividing the distance to the nearest neighbor 
-with this baseline we get an estimated measure for how distinct the 
+with this baseline, we get an estimated measure for how distinct the 
 correspondence is from a false match.  
 
 To make further discussion easier we introduce the following 
 nomenclature:
-
 \begin{itemize}
 \item{Let $f_q$ be any feature point in the \emph{query image} that we 
-    are currently trying to match}
+    are currently trying to match}.
 \item{Let $F$ be a set of features. $F_{target}$ for example is the set 
-    of features from the \emph{target image}}
+    of features from the \emph{target image}}.
 \item{Let $\tau \in [0 \ldots 1]$ be a threshold used to decide whether 
     to keep a match or discard it. We keep a match only if is has a 
 \emph{uniqueness ratio} lower than $\tau$}
@@ -344,38 +873,39 @@ F_{target})$
 \end{algorithmic}
 \end{algorithm}
 
-In algorithm~\ref{alg-gen} we show the generalized matching framework 
+Algorithm~\ref{alg-gen} shows the generalized matching framework 
 where the \emph{proposal set} and \emph{baseline set} are defined 
-according to Figure~\ref{fig:overview}.  In practice for i.e.\ 
-\emph{Ratio-Match} we can obtain $f_p$ and $f_b$ by finding the 2 
+according to Figure~\ref{fig:overview}.  In practice for e.g.\ 
+\emph{Ratio-Match} we can obtain $f_p$ and $f_b$ by finding the two 
 nearest neighbors of $F_{target}$. The other algorithms can be optimized 
-similarly. In Figure~\ref{fig:matching} we illustrate the structure of 
+similarly. Figure~\ref{fig:matching} illustrates the structure of 
 this algorithm.
 
-For methods where the \emph{proposal set} includes the \emph{query 
-features} it is possible that the \emph{proposal match} is a feature 
-from the \emph{query image}, in which case we discard the match as an 
-untrue correspondence.  It also happens that we encounter 
-correspondences where the uniqueness ratio is more than $1$ in which 
-case we set it to $1$ to maintain a bounded \emph{uniqueness ratio}.  
-Take for example the case of \emph{Self-Match}. Using this method we 
-might find that the nearest neighbor of a feature in the target image is 
-further from the query feature than the nearest neighbor in the query 
-image. In this case the match is discarded.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=0.9\columnwidth]{images/matching}
+\caption{Feature matching flow chart. $\tau$ 
+is the ratio threshold, and $d(x,y)$ is the distance between two feature 
+descriptors $x$ and $y$.}
+\label{fig:matching}
+\end{figure}
+%
+
+For some methods it is possible that the \emph{proposal match} is a 
+feature from the \emph{query image}, in which case we discard the match 
+as an untrue correspondence.  It also happens that we encounter 
+correspondences with a \emph{uniqueness ratio} above $1$, in which case we set 
+it to $1$ to maintain a bounded \emph{uniqueness ratio}.  Take for example the 
+case of \emph{Self-Match}. Using this method we might find that the 
+nearest neighbor of a feature in the target image is further from the 
+query feature than the nearest neighbor in the query image. In this case 
+the match is discarded.
 
 %
 \subsection{Generalized Uniqueness Ratio}
 %
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.9\columnwidth]{images/matching}
-\caption{Flow chart showing what happens when we match a feature. $\tau$ 
-is the ratio threshold and $d(x,y)$ is the distance between two feature 
-descriptors, $x$ and $y$.}
-\label{fig:matching}
-\end{figure}
-%
 
 The main distinguishing factor in between the algorithms in the 
 framework is the final ratio between the distance of the two nearest 
@@ -387,25 +917,26 @@ the framework which allows us to compare the algorithms theoretically.
 The theoretical ratio, $r$ is defined as follows:
 
 If $f_{p}$ is the nearest neighbor of $f_{q}$ in $F_{proposed}$ and 
-$f_{b}$ is the nearest neighbor of $f_{q}$ in $F_{baseline} \setminus 
-\left\{f_{p}\right\}$ then the generalized \emph{uniqueness} ratio is:
+$f_{b}$ is the nearest neighbor of $f_{q}$ in $F_{baseline} then the generalized \emph{uniqueness} ratio is:
+
 \begin{align*}
     r &= \text{r}(f_{q}, F_{proposed}, F_{baseline}) \\
-        &= \frac{d(f_{q}, f_{p})}{d(f_{q}, f_{b})}
+        &= \frac{d(f_{q}, f_{p})}{d(f_{q}, f_{b})}.
 \end{align*}
-We let $K$ be the number of possible true correspondences \emph{query} 
-and \emph{target image}. The \emph{precision} and \emph{recall} are then 
+
+We let $K$ be the number of possible true correspondences between \emph{query} 
+and \emph{target image}. \emph{Precision} and \emph{recall} are 
 defined as:
 \begin{align*}
     \textrm{Recall} &= \frac{\#\textrm{Correct Matches}}{K} \\
     \textrm{Precision} &= \frac{\#\textrm{Correct 
     Matches}}{\#\textrm{Correct Matches} + \#\textrm{Incorrect Matches}}
 \end{align*}
-Given $f_{nn} \in F_{target}$ defined as the nearest neighbor of any 
-$f_q \in F_{query}$ then we define the set of features $F_{true}$ as 
+Given $f_{nn} \in F_{target}$ as the nearest neighbor of any 
+$f_q \in F_{query}$, we define the set of features $F_{true}$ as 
 $\left\{ f_{q} \in F_{query} \mid f_{nn} \text{ is a true correspondence 
 of } f_{q} \right\}$ and $F_{false}$ as $F_{query} \setminus F_{true}$.  
-We can the define the number of correct and incorrect matches as 
+We can then define the number of correct and incorrect matches as 
 follows:
 \begin{align*}
     \textrm{keep\_match}(f_{q}) &= \twopartdef{ 1 }{\text{r}(f_{q}, 
@@ -421,28 +952,29 @@ follows:
 
 From the above we can conclude that the performance in terms of 
 precision and recall of any method from the proposed framework is 
-uniquely identified by the uniqueness ratio $r$.  If for every query 
+uniquely identified by the \emph{uniqueness ratio} $r$.  If for every query 
 feature $f_{q}$, $r$ is identical across two matching methods, then they 
 return identical results. 
 
-\subsection{Proofs of Ordering}
 
-Under three assumptions that largely reflects the performance of 
-matching feature points in practice we can theoretically compare the 
+\subsection{Proofs of Algorithm Performance}
+\label{S:Proofs}
+
+Under the following three assumptions, which largely reflect the performance of 
+matching feature points in practice, we can theoretically compare the 
 performance of the different algorithms shown in 
-Figure~\ref{fig:overview}.
-
+Figure~\ref{fig:overview}:
 \begin{enumerate}
     \item{For a query and target image we assume that for any point in 
         the query image there is at most one real correspondence in the 
     target image and no real correspondences in the query image itself 
-as assumed by \emph{Ratio-Match}}
+as assumed by \emph{Ratio-Match}.}
     \item{We assume that distances of feature descriptors are well 
             behaved.  More precisely, given $f_q$, a feature from the 
-            \emph{query image} and $f_{match}$, the real correspondence 
+            \emph{query image}, and $f_{match}$, the real correspondence 
             from the set of features in the \emph{target image} 
-            $F_{target}$, we have that $\forall f_i \in F_{proposal}, 
-            f_i \neq f_{match}: d(f_q,f_{match}) < d(f_q, f_i)$}
+            $F_{target}$, we have $\forall f_i \in F_{proposal}, 
+            f_i \neq f_{match}: d(f_q,f_{match}) < d(f_q, f_i)$.}
     %\item{We assume that features within one image resemble each other 
             %more than features in different images. That is, given 
             %$f_a,
@@ -453,7 +985,7 @@ as assumed by \emph{Ratio-Match}}
             %f_i)$}
      \item{For a set of query features $F_{query}$ with a true 
              correspondence in the \emph{target image}, we assume that 
-             the distribution of uniqueness ratios using $F_{target}$ as 
+             the distribution of \emph{uniqueness ratios} using $F_{target}$ as 
              the baseline set is similar to using $F_{query}$, since the 
          two images in the case of true correspondences are guaranteed 
      to share part of the same scene.}
@@ -470,14 +1002,13 @@ the two cases where we either have the $f_{nn} \in F_{query}$ or $f_{nn}
         &= \text{r}(f_{q}, F_{query} \cup F_{target}, F_{baseline})\\
         &= \text{r}(f_{q}, F_{target}, F_{baseline})
 \end{align*}
-
 Since $F_{proposed} = F_{target}$ for \emph{Ratio-Match} this shows that
 when the nearest neighbor is found in the target image, the two 
 algorithms behave identically. For $f_{nn} \in F_{query}$ 
 \emph{Ratio-Match} gives us the following ratio:
 \begin{align*}
     r &= \text{r}(f_{q}, F_{proposed}, F_{baseline}) \\
-        &= \text{r}(f_{q}, F_{target}, F_{target})
+        &= \text{r}(f_{q}, F_{target}, F_{target}).
 \end{align*}
 
 
@@ -501,42 +1032,41 @@ and discard the match.  However, consider the uniqueness ratio of
     r &= \text{r}(f_{q}, F_{proposed}, F_{baseline}) \\
         &= \text{r}(f_{q}, F_{proposed}, F_{query} \cup F_{target})\\
         &= max( \text{r}(f_{q}, F_{proposed}, F_{target}), 
-    \text{r}(f_{q}, F_{proposed}, F_{query}) )
+    \text{r}(f_{q}, F_{proposed}, F_{query}) ).
 \end{align*}
-
-For a true correspondence we have that the uniqueness ratio using 
-$F_{query}$ as baseline is distributed similarly to the ratio when using 
-$F_{target}$ by assumption \#3. In this case the algorithm performs like 
-\emph{Ratio-Match-Ext}.  However for an untrue correspondence with a 
-baseline match in the query image which is closer than the
-baseline match in the target image, \emph{Mirror-Match} will return a 
-worse uniqueness ratio. This in turns means that \emph{Mirror-Match} is 
-equal or better than \emph{Ratio-Match-Ext} in terms of  
+For a true correspondence the \emph{uniqueness ratio} using 
+$F_{query}$ as a baseline is distributed similarly to the ratio when using 
+$F_{target}$ according to assumption \#3. In this case the algorithm performs like 
+\emph{Ratio-Match-Ext}.  However, for an untrue correspondence with a 
+baseline match in the \emph{query image} which is closer than the
+baseline match in the \emph{target image}, \emph{Mirror Match} will 
+return a worse \emph{uniqueness ratio}. This in turns means that \emph{Mirror 
+Match} is equal or better than \emph{Ratio-Match-Ext} in terms of  
 \emph{Precision} while maintaining equal \emph{Recall}.
 
 Using a similar procedure we prove that \emph{Self-Match} is equal to
 \emph{Self-Match-Ext} and \emph{Both-Match} is equal to \emph{Mirror
 Match} in Appendix~\ref{A:self} and \ref{A:mirror} respectively.
 
-For any given recall we have proven based on assumption \#1-3 that the 
-precision of the algorithms in the framework compares as follows:
+
+We have thus proven that -- based on assumptions \#1-3 -- for any given recall rate, the precision of the algorithms in the framework compares as follows:
 \begin{align*}
     \textit{Ratio-Match} &\leq \textit{Ratio-Match-Ext} \leq 
     \textit{Mirror-Match}
 \end{align*}
 
-The difference between \emph{Self-Match} and \emph{Ratio-Match} is
-the source of the \emph{baseline set}. For true correspondences we 
-assume that they should perform similarly but as for the rest the 
-performance of the two depends entirely on the images we are matching. 
-When we match images where the target image might not overlap at all 
+The difference between \emph{Self-Match} and \emph{Ratio-Match} is  
+the source of the \emph{baseline set}. For true correspondences 
+they should perform similarly, otherwise the 
+performance of the two depends entirely on the images being matched. 
+When we match images where the target image may not overlap at all 
 with the query image, using the query image and not the target image as 
 a \emph{baseline set} seems like a reasonable choice given that the 
 baseline set in this case would be closer to the feature matched and 
 more strictly rule out untrue correspondences.
 
 
-\subsection{Discussion of assumptions}
+\subsection{Discussion of Assumptions}
 \label{ref:disc_assumptions}
 
 % Assumption 1
@@ -554,48 +1084,65 @@ more strictly rule out untrue correspondences.
 
 % Assumption 3
 %For a query feature, $f_q$ with a true correspondence in the 
-%\emph{target image}, we assume that the uniqueness ratio using 
-%$F_{target}$ is similar to the uniqueness ratio using $F_{query}$, 
+%\emph{target image}, we assume that the \emph{uniqueness ratio} using 
+%$F_{target}$ is similar to the \emph{uniqueness ratio} using $F_{query}$, 
 %since the two images in this case are guaranteed to share part of the 
 %same scene
 
-The three assumptions proposed in order to formalize the order of the 
-algorithms have been chosen to reflect conditions under which we ideally
-would match feature points. However, for each assumption there exists 
-corner cases where it is no longer valid. In this section we intent to 
-discuss these corner cases in order to give an impression of the 
+The three assumptions underlying the formal ranking of 
+algorithms presented above have been chosen to reflect conditions under which we would ideally match feature points. However, for each assumption there exist 
+corner cases where it is no longer valid. In this section we 
+discuss these corner cases in order to review the 
 circumstances under which the absolute or relative performance of the 
 algorithms might differ.
 
 The first assumption states that there is at most one unique match to 
-every feature point which is often the case when in e.g.\ stereo 
-matching with natural images. However for recognition of object classes 
-or in generated images with repetitive content this assumption is no 
-longer valid and using any assumption of uniqueness will lead to 
-incorrect results. However, as long as the query image does not contain 
-repetitive objects we can still use \emph{Self-Match} without loss of 
-precision even if the target image might not contain a unique match.
+every feature point, which is often the case for natural images. 
+However, for the recognition of object classes or in generated images 
+with repetitive content, a point in the \emph{query image} might have 
+several true correspondences in the \emph{target image}, so using a 
+\emph{baseline match} from the target image will lead to a much higher 
+\emph{uniqueness ratio}. However, as long as the query image does not 
+contain repetitive objects, we can still use \emph{Self-Match} without 
+loss of precision.
 
 According to the second assumption, feature descriptors behave such that
 when matched, a true correspondence to a query feature will always be 
-the nearest neighbor. For actual feature detectors and descriptors 
-Mikolajczyk and Tuytelaars shows that this property depends strongly on 
-the differences between query and target image 
-\cite{mikolajczyk2005performance} \cite{tuytelaars2008local}. In the 
-degenerate case where the closest match is not an actual correspondence, 
-it is often the case that other matches are similarly close resulting in 
-a uniqueness ratio near 1, effectively filtering out bad 
-correspondences.  This means that with a lenient threshold close to 1, 
-the guarantees about precision and recall equivalence in between the 
-different ratio algorithms might no longer hold due to the lack of 
-consistent descriptor behaviour. It is worth pointing out that if this 
-assumption holds true, matching using only nearest neighbor is not 
-necessarily optimal unless there is a complete scene overlap between
+the nearest neighbor. For practical implementations of feature detectors and descriptors, 
+this property strongly depends on the differences between \emph{query} 
+and \emph{target image}, as shown in  
+\cite{mikolajczyk2005performance,tuytelaars2008local}. In the degenerate 
+case where the closest match is not an actual correspondence, there is 
+no reason why this match should be disproportionately closer to the 
+\emph{query feature} than any matches in the \emph{target image}, so in 
+most cases we would expect the \emph{uniqueness ratio} to be high 
+(signifying a bad match). This means that with a lenient threshold (close 
+to 1), the guarantees about precision and recall equivalence between the 
+different ratio algorithms might no longer hold due to the inconsistent descriptor behavior. 
+It is worth noting that if 
+assumption \#2 holds, matching using only nearest neighbor is not 
+necessarily optimal, unless there is a complete scene overlap between
 the images matched. For cases where there is little or no overlap, a 
 nearest neighbor would indiscriminately return false matches even with 
-well behaved feature descriptors.
+well-behaved feature descriptors.
 
-\begin{figure}[t]
+The third assumption states that the \emph{uniqueness ratios} using either the 
+\emph{query} or \emph{target image} as the baseline set would be similar
+in distribution given that the feature point we are matching has a true 
+correspondence. We can support this assumption by looking at the 
+\emph{uniqueness ratios} returned by \emph{Self-Match} and 
+\emph{Ratio-Match}, since they use the \emph{query} and 
+\emph{target image} respectively to calculate the \emph{uniqueness ratio}.  
+Figure~\ref{fig:ratio_hist} shows the actual \emph{uniqueness ratios} 
+measured from 3024 image pairs featuring 3D objects (see below for more on this dataset).  
+For ratios lower than $0.7$, the \emph{uniqueness ratios} are similar, but as we approach 
+more lenient thresholds, the ratios based on the \emph{query image} are 
+higher than those for the \emph{target image}. This means that the third assumption 
+is invalid for more lenient thresholds, and we can no longer expect \emph{Mirror-Match} to outperform 
+\emph{Ratio-Match-Ext} in terms of precision without a penalty in recall.
+
+
+\begin{figure}[htb]
 \centering
 \includegraphics[width=0.99\columnwidth]{images/results_ratio_hist}
 \caption{Normalized histogram of the \emph{uniqueness ratios} of true 
@@ -603,106 +1150,61 @@ correspondences for 84 different 3D objects.}
 \label{fig:ratio_hist}
 \end{figure}
 
-The last assumption states that the uniqueness ratio using either the 
-\emph{query} or target image as the baseline set would be similar
-in distribution when we know that the feature point we are matching has 
-a true correspondence. For an ideal feature descriptor where any true 
-correspondence between two feature points will have a distance of $0$, 
-the third assumption is obviously true for any cases where the second 
-closest feature point has a true correspondence in the other image. For 
-non-ideal feature descriptors where the baseline match has a true 
-correspondence in the other image we can verify the assumption by 
-looking at the \emph{uniqueness ratio} for a true correspondences when 
-it is based on the query image compared to when it is based on the 
-target image. To compare we plot the actual \emph{uniqueness ratios} 
-measured from $84$ 3D objects in Figure~\ref{fig:ratio_hist}. For ratios 
-lower than $0.7$ this is generally the case, but as we approach more 
-lenient thresholds the performance of \emph{Mirror-Match} might no 
-longer be equal or better than \emph{Ratio-Match-Ext} in terms of 
-precision.
-% Needs rewording
 
 \section{Experiments and Results}
 \label{S:Experiments}
 %
-\begin{figure}[htb]
-    \begin{subfigure}[t]{0.48\columnwidth}
-        \centering
-        \includegraphics[width=\columnwidth]{images/Frog_A}
-        \caption{Query Image}
-        \label{fig:frog_a}
-    \end{subfigure}%
-    \quad %add desired spacing between images, e. g. ~, \quad, \qquad a 
-    %blank line to force the subfigure onto a new line)
-    \begin{subfigure}[t]{0.48\columnwidth}
-        \centering
-        \includegraphics[width=\columnwidth]{images/Frog_B}
-        \caption{Auxiliary Image}
-        \label{fig:frog_b}
-    \end{subfigure}%
-    \\ %add desired spacing between images, e. g. ~, \quad, \qquad 
-    %a blank line to force the subfigure onto a new line)
-    \begin{subfigure}[t]{0.48\columnwidth}
-        \centering
-        \includegraphics[width=\columnwidth]{images/Frog_C}
-        \caption{Target Image}
-        \label{fig:frog_c}
-    \end{subfigure}%
-    \quad %add desired spacing between images, e. g. ~, \quad, \qquad 
-    %blank line to force the subfigure onto a new line)
-    \begin{subfigure}[t]{0.48\columnwidth}
-        \centering
-        \includegraphics[width=\columnwidth]{images/Frog_C_lines}
-        \caption{Target Image with epipolar constraints}
-        \label{fig:frog_c_lines}
-    \end{subfigure}%
-    \caption{Creating epipolar constraints based on three source images.  
-        In a) the \emph{query image} has been marked with the position 
-        of the feature we are attempting to match. In b) the 
-        \emph{auxiliary image} is shown. This image is taken with the 
-        same rotation as the \emph{query image} but from a higher 
-        viewpoint. The line going through the image is the epipolar line 
-        of the feature point in the \emph{query image}.  The markers 
-        indicate all feature points in the image found near the epipolar 
-        line.  In c) we show the \emph{target image} which in this case 
-        is rotated 45 degrees from the \emph{query image}.  The line 
-        overlaid on the image represents the epipolar line corresponding 
-        to the feature point shown in the \emph{query image}.  The 
-        markers indicate all feature points in the image found near the 
-    epipolar line. In d) we show the \emph{target image} again, this 
-    time overlaid with the epipolar lines corresponding to all the 
-    features shown in the \emph{auxiliary image}. A true correspondence 
-    should be found within a small distance of one of the intersections 
-    of the line in c) and the lines in d). In this particular case both 
-    feature points shown in c) and d) could possible be a correct 
-    correspondence.
-}%
-    \label{fig:frog}%
-\end{figure}%
-In this section we will go over the experimental results comparing 
+In this section we present the experiments and evaluation results comparing 
 \emph{Self-Match}, \emph{Ratio-Match}, \emph{Ratio-Match-Ext} and 
-\emph{Mirror-Match}. We use two different image databases to compile 
-results over different variations.  To measure results on realistic and 
-variate non-planar images we test the algorithm on the 3D Objects 
+\emph{Mirror-Match}. We use two different databases to compile 
+results over different image variations.  
+
+To measure results on realistic and 
+variate non-planar images, we test the algorithm on the 3D Objects 
 database released by Moreels and Pietro \cite{moreels2007evaluation} in 
-Section~\ref{S:3dobjects}. The database contains a set of 86 3D objects 
+Section~\ref{S:3dobjects}. This database contains a set of 86 3D objects 
 photographed from all sides at 5 degree intervals from two different 
-viewpoints and under three different lighting conditions.
+elevation angles and under three different lighting conditions.
+To measure the performance over variations such as viewpoint change, 
+blur, compression noise, rotation, and zoom, we use the graffiti 
+image set introduced by Mikolajczyk and Schmid 
+\cite{mikolajczyk2005performance} in Section~\ref{S:Planar}.  This 
+dataset contains 8 scenes each with 6 images linked by homographies and 
+features only planar or almost planar scenes.
 
-In the experiments we use the \emph{SIFT} descriptor and keypoint 
+For the experiments we use the \emph{SIFT} descriptor and keypoint 
 detector with default parameters as implemented in the OpenCV library 
-v.\ 2.4.6.  To test how the framework performs across descriptors we 
+2.4.6.  To further test how the framework performs across descriptors, we 
 evaluate SURF \cite{bay2006surf}, BRISK \cite{leutenegger2011brisk}, 
-BRIEF \cite{calonder2010brief} and FREAK \cite{alahi2012freak} in 
-Section~\ref{label:desc}. Across all experiments images larger than 
-1024x768 have been resized to fit within those dimensions using 
-Imagemagick with default parameters and only the luminance channel has 
-been used in the feature detection and description stage.
+BRIEF \cite{calonder2010brief}, and FREAK \cite{alahi2012freak} in 
+Section~\ref{label:desc}. 
 
-\subsection{Experiments on 3D objects}
+Across all experiments, only the luminance channel is used in the feature detection and description stage.  
+Images larger than $1024\!\times\!768$ are resized to fit within those dimensions using 
+ImageMagick with default parameters.  
+
+\subsection{Experiments on 3D Objects}
 \label{S:3dobjects}
 
-\begin{figure}[t]
+
+\begin{figure*}[t]
+	\centering
+    \includegraphics[width=2\columnwidth]{images/results_all_objects}
+    \caption{Results for the 3D objects dataset. Each plot 
+    contains data accumulated from 84 objects photographed under 3 
+different lighting conditions.}
+    \label{fig:all_objects}
+\end{figure*}
+
+
+The 3D objects dataset by Moreels and Pietro \cite{moreels2007evaluation} allows us to experimentally compare matching 
+algorithms over a large range of object and surface types rotated on a 
+turnstile and photographed from every 5 degree turn.  15 objects from the dataset are shown in Figure~\ref{fig:3d_objects}.  We use images of 
+84 different objects under three different lighting conditions at 12 
+different angle intervals, conducting experiments with a total of 3024 
+image pairs.  
+
+\begin{figure}[htb]
     \begin{subfigure}[t]{0.19\columnwidth}
         \centering
         \includegraphics[width=1\columnwidth]{images/3d/1}
@@ -781,107 +1283,294 @@ been used in the feature detection and description stage.
     \end{subfigure}%
     \vspace{1.5 mm}
 
-    \caption{The first 15 objects from the 3D objects dataset by Moreels
-    and Pietro \cite{moreels2007evaluation}}
+    \caption{15 objects from the 3D Objects dataset by Moreels
+    and Pietro \cite{moreels2007evaluation}.}
     \label{fig:3d_objects}
 \end{figure}
 
-\begin{figure*}[ht]
+
+To validate matches, Moreels and Pietro propose a method 
+using epipolar constraints \cite[p.266]{moreels2007evaluation}, which is 
+outlined in Figure~\ref{fig:frog}.  According to their 
+experiments, these constraints are able to identify 
+true correspondences with an error rate of $2\%$. We use their proposed 
+method to generate the ground truth for the evaluation of our framework.
+
+
+\begin{figure}[htb]
+    \begin{subfigure}[t]{0.48\columnwidth}
+        \centering
+        \includegraphics[width=\columnwidth]{images/Frog_A}
+        \caption{Query Image}
+        \label{fig:frog_a}
+    \end{subfigure}%
+    \quad %add desired spacing between images, e. g. ~, \quad, \qquad a 
+    %blank line to force the subfigure onto a new line)
+    \begin{subfigure}[t]{0.48\columnwidth}
+        \centering
+        \includegraphics[width=\columnwidth]{images/Frog_B}
+        \caption{Auxiliary Image}
+        \label{fig:frog_b}
+    \end{subfigure}%
+    \\ %add desired spacing between images, e. g. ~, \quad, \qquad 
+    %a blank line to force the subfigure onto a new line)
+    \begin{subfigure}[t]{0.48\columnwidth}
+        \centering
+        \includegraphics[width=\columnwidth]{images/Frog_C}
+        \caption{Target Image}
+        \label{fig:frog_c}
+    \end{subfigure}%
+    \quad %add desired spacing between images, e. g. ~, \quad, \qquad 
+    %blank line to force the subfigure onto a new line)
+    \begin{subfigure}[t]{0.48\columnwidth}
+        \centering
+        \includegraphics[width=\columnwidth]{images/Frog_C_lines}
+        \caption{Target Image with epipolar constraints}
+        \label{fig:frog_c_lines}
+    \end{subfigure}%
+    \caption{Creating epipolar constraints based on three source images \cite{moreels2007evaluation}.  
+        (a) \emph{Query image} marked with the position 
+        of the feature we are attempting to match. (b) 
+        Auxiliary image, taken at the 
+        same rotation as the \emph{query image} but from a higher 
+<<<<<<< HEAD
+        viewpoint. The line going through the image is the epipolar line 
+        of the feature point in the \emph{query image}.  The markers 
+        indicate all feature points in the image found near the epipolar 
+        line.  In c) we show the \emph{target image} which in this case 
+        is rotated 45 degrees from the \emph{query image}.  The line 
+        overlaid on the image represents the epipolar line corresponding 
+        to the feature point shown in the \emph{query image}.  The 
+        markers indicate all feature points in the image found near the 
+    epipolar line. In d) we show the \emph{target image} again, this 
+    time overlaid with the epipolar lines corresponding to all the 
+    features shown in the \emph{auxiliary image}. A true correspondence 
+    should be found within a small distance of one of the intersections 
+    of the line in c) and the lines in d). In this particular case both 
+    feature points shown in c) and d) could possible be a correct 
+    correspondence.
+}%
+    \label{fig:frog}%
+\end{figure}%
+In this section we will go over the experimental results comparing 
+\emph{Self-Match}, \emph{Ratio-Match}, \emph{Ratio-Match-Ext} and 
+\emph{Mirror-Match}. To measure results on realistic and 
+variate non-planar images we test the algorithm on the 3D Objects 
+database released by Moreels and Pietro \cite{moreels2007evaluation} in 
+Section~\ref{S:3dobjects}. This database contains a set of 86 3D objects 
+photographed from all sides at 5 degree intervals from two different 
+elevation angles and under three different lighting conditions.
+
+In the experiments we use the \emph{SIFT} descriptor and keypoint 
+detector with default parameters as implemented in the OpenCV library 
+2.4.6.  To further test how the framework performs across descriptors, we 
+evaluate SURF \cite{bay2006surf}, BRISK \cite{leutenegger2011brisk}, 
+BRIEF \cite{calonder2010brief}, and FREAK \cite{alahi2012freak} in 
+Section~\ref{label:desc}. 
+
+Across all experiments, only the luminance channel is used in the feature detection and description stage. Images larger than $1024\!\times\!768$ are resized to fit within those dimensions using ImageMagick with default parameters.  
+
+\subsection{Experiments on 3D objects}
+\label{S:3dobjects}
+
+
+\begin{figure*}[t]
 	\centering
     \includegraphics[width=2\columnwidth]{images/results_all_objects}
-    \caption{Accumulated results from the 3D objects dataset. Each plot 
+    \caption{Results for the 3D objects dataset. Each plot 
     contains data accumulated from 84 objects photographed under 3 
 different lighting conditions.}
     \label{fig:all_objects}
 \end{figure*}
 
 
-The 3D objects dataset allows us to experimentally comparing matching 
+The 3D objects dataset by Moreels and Pietro \cite{moreels2007evaluation} allows us to experimentally compare matching 
 algorithms over a large range of object and surface types rotated on a 
-turnstile and photographed from every 5 degree turn. We used images of 
+turnstile and photographed from every 5 degree turn.  15 objects from the dataset are shown in Figure~\ref{fig:3d_objects}.  We use images of 
 84 different objects under three different lighting conditions at 12 
-different angle intervals conducting experiments with a total of 3024 
-image pairs.  To validate matches, Moreels and Pietro propose a method 
-to that will validate a match as a true or false correspondence using 
-epipolar constraints \cite[p.  266]{moreels2007evaluation}.  Their 
-method is outlined in Figure~\ref{fig:frog}.  According to their 
-experiments these constraints are sufficient to reduce the error rate 
-recognizing true correspondences to $2\%$. We have used their proposed 
-method to evaluate the precision and recall of the framework methods.
+different angle intervals, conducting experiments with a total of 3024 
+image pairs.  
 
-To compute the total number of possible correspondences we took each 
-feature in a \emph{query image} and counted how many of them had a 
+\begin{figure}[htb]
+    \begin{subfigure}[t]{0.19\columnwidth}
+        \centering
+        \includegraphics[width=1\columnwidth]{images/3d/1}
+    \end{subfigure}%
+    ~ %
+    \begin{subfigure}[t]{0.19\columnwidth}
+        \centering
+        \includegraphics[width=1\columnwidth]{images/3d/2}
+    \end{subfigure}%
+    ~ %
+    \begin{subfigure}[t]{0.19\columnwidth}
+        \centering
+        \includegraphics[width=1\columnwidth]{images/3d/3}
+    \end{subfigure}%
+    ~ %
+    \begin{subfigure}[t]{0.19\columnwidth}
+        \centering
+        \includegraphics[width=1\columnwidth]{images/3d/4}
+    \end{subfigure}%
+    ~ %
+    \begin{subfigure}[t]{0.19\columnwidth}
+        \centering
+        \includegraphics[width=1\columnwidth]{images/3d/5}
+    \end{subfigure}%
+    \vspace{1.5 mm}
+
+    \begin{subfigure}[t]{0.19\columnwidth}
+        \centering
+        \includegraphics[width=1\columnwidth]{images/3d/6}
+    \end{subfigure}%
+    ~ %
+    \begin{subfigure}[t]{0.19\columnwidth}
+        \centering
+        \includegraphics[width=1\columnwidth]{images/3d/7}
+    \end{subfigure}%
+    ~ %
+    \begin{subfigure}[t]{0.19\columnwidth}
+        \centering
+        \includegraphics[width=1\columnwidth]{images/3d/8}
+    \end{subfigure}%
+    ~ %
+    \begin{subfigure}[t]{0.19\columnwidth}
+        \centering
+        \includegraphics[width=1\columnwidth]{images/3d/9}
+    \end{subfigure}%
+    ~ %
+    \begin{subfigure}[t]{0.19\columnwidth}
+        \centering
+        \includegraphics[width=1\columnwidth]{images/3d/10}
+    \end{subfigure}%
+    \vspace{1.5 mm}
+
+    \begin{subfigure}[t]{0.19\columnwidth}
+        \centering
+        \includegraphics[width=1\columnwidth]{images/3d/11}
+    \end{subfigure}%
+    ~ %
+    \begin{subfigure}[t]{0.19\columnwidth}
+        \centering
+        \includegraphics[width=1\columnwidth]{images/3d/12}
+    \end{subfigure}%
+    ~ %
+    \begin{subfigure}[t]{0.19\columnwidth}
+        \centering
+        \includegraphics[width=1\columnwidth]{images/3d/13}
+    \end{subfigure}%
+    ~ %
+    \begin{subfigure}[t]{0.19\columnwidth}
+        \centering
+        \includegraphics[width=1\columnwidth]{images/3d/14}
+    \end{subfigure}%
+    ~ %
+    \begin{subfigure}[t]{0.19\columnwidth}
+        \centering
+        \includegraphics[width=1\columnwidth]{images/3d/15}
+    \end{subfigure}%
+    \vspace{1.5 mm}
+
+    \caption{15 objects from the 3D Objects dataset by Moreels
+    and Pietro \cite{moreels2007evaluation}.}
+    \label{fig:3d_objects}
+\end{figure}
+
+
+To validate matches, Moreels and Pietro propose a method 
+using epipolar constraints \cite[p.266]{moreels2007evaluation}, which is 
+outlined in Figure~\ref{fig:frog}.  According to their 
+experiments, these constraints are able to identify 
+true correspondences with an error rate of $2\%$. We use their proposed 
+method to generate the ground truth for the evaluation of our framework.
+
+
+\begin{figure}[htb]
+    \begin{subfigure}[t]{0.48\columnwidth}
+        \centering
+        \includegraphics[width=\columnwidth]{images/Frog_A}
+        \caption{Query Image}
+        \label{fig:frog_a}
+    \end{subfigure}%
+    \quad %add desired spacing between images, e. g. ~, \quad, \qquad a 
+    %blank line to force the subfigure onto a new line)
+    \begin{subfigure}[t]{0.48\columnwidth}
+        \centering
+        \includegraphics[width=\columnwidth]{images/Frog_B}
+        \caption{Auxiliary Image}
+        \label{fig:frog_b}
+    \end{subfigure}%
+    \\ %add desired spacing between images, e. g. ~, \quad, \qquad 
+    %a blank line to force the subfigure onto a new line)
+    \begin{subfigure}[t]{0.48\columnwidth}
+        \centering
+        \includegraphics[width=\columnwidth]{images/Frog_C}
+        \caption{Target Image}
+        \label{fig:frog_c}
+    \end{subfigure}%
+    \quad %add desired spacing between images, e. g. ~, \quad, \qquad 
+    %blank line to force the subfigure onto a new line)
+    \begin{subfigure}[t]{0.48\columnwidth}
+        \centering
+        \includegraphics[width=\columnwidth]{images/Frog_C_lines}
+        \caption{Target Image with epipolar constraints}
+        \label{fig:frog_c_lines}
+    \end{subfigure}%
+    \caption{Creating epipolar constraints based on three source images \cite{moreels2007evaluation}.  
+        (a) \emph{Query image} marked with the position 
+        of the feature we are attempting to match. (b) 
+        Auxiliary image, taken at the 
+        same rotation as the \emph{query image} but from a higher 
+        viewpoint. Feature points near the epipolar line 
+        of the feature point from the \emph{query image} are shown as dots.
+				(c) Sample \emph{target image} with feature points near the epipolar line of the feature point from the \emph{query image}.
+				(d) Same \emph{target image} with epipolar lines from all the 
+    feature points shown in the \emph{auxiliary image}. 
+		True correspondences should lie close to the intersections 
+    of the epipolar line from (c) with the lines from (d). In this particular case two 
+    feature points are possible correspondences.
+}%
+    \label{fig:frog}%
+\end{figure}%
+
+
+To compute the total number of possible correspondences, we take each 
+feature in a \emph{query image} and count how many of them have a 
 feature in the \emph{target image} which would satisfy the epipolar 
-constraints outlined above. In the experiments on 3D objects features 
-with no correspondences were not included in the set of features used to 
-test the matching algorithms to avoid matching non-moving background and 
+constraints outlined above. When using this dataset, features 
+with no correspondences were not included in the set of features for testing, 
+so as to avoid matching non-moving background and 
 foreground objects.
 
-We evaluated the 4 matching algorithms on the 3D objects dataset by 
+We evaluate all matching algorithms from our framework on the 3D objects dataset by 
 matching images at different angular intervals. For each object we 
-picked the \emph{query} image as the image taken at 10 degrees rotation 
-for calibration stability.  We then proceeded to match this image with 
-the same object turned an additional $d$ degrees, $d \in \{5, 10, 
-\ldots, 60\}$.  For every angle interval we compaired images taken under 
+pick the \emph{query} image as the image taken at 10 degrees rotation 
+for calibration stability.  We then match this image with 
+the same object turned an additional $\Delta$ degrees, $\Delta \in \{5, 10, 
+\ldots, 60\}$.  For every angle interval we compare images taken under 
 3 different lighting conditions as provided by the dataset.
-We included all objects in the database for which photos at 5 degree 
-angle intervals were available except for the ``Rooster'' and ``Sponge'' 
+We include all objects in the database for which photos at 5 degree 
+angle intervals are available except for the ``Rooster'' and ``Sponge'' 
 objects due to image irregularities. For each plot we show the 
-accumulated results on all 3D objects, weighed by the number of possible 
+accumulated results on all 3D objects, weighted by the number of possible 
 true correspondences for the particular object. This ensures that each 
-object contributes equally to the final result despite some objects
+object contributes equally to the final result, despite some objects
 resulting in disproportionally more matches than others.
 
-The results can be seen in Figure~\ref{fig:all_objects}. In the figure
-we see the performance of the different matching methods in our proposed
-framework for $12$ increasingly bigger rotations. The results are shown
-in a precision / recall plot to make it easy to compare performance in
-terms of precision at similar levels of recall. For the application of
-feature matching it is important to keep in mind that for many
-applications, such as image stitching, object and scene recognition and
-near duplicate detection, precision is much more important than recall,
-since a handfull of highly reliable correspondences tells us much more
-about the similarity of image components than a high number of imprecise
-matches. For applications where we intent to combine one of the
-algorithms with a geometric method, we would ideally like for it to
-produce results with a high recall that can then be further filtered by
-a geometric method.
-
-For objects in the top row rotated between $5$ and $20$ degrees we see a 
-gradual increase in the performance gap between the methods as the angle 
-increases.  \emph{Ratio-Match} and \emph{Self-Match} show similar 
-results while \emph{Mirror-Match} and \emph{Ratio-Match-Ext} outperform 
-the them, showing the advantage of composing the \emph{proposed set} of 
-features from both images. \emph{Mirror-Match} show performance which is 
-consistently slightly better than \emph{Ratio-Match-Ext}. In general we 
-see the largest performance improvements at lower recall and a 
-convergence of precision at higher recall. This is expected since a 
-higher recall is a direct consequence of a more lenient threshold and as
-we let the threshold approach $1$ we lose the benefits of thresholding 
-on the \emph{uniqueness ratio} the methods all start approximating the 
-results of a simple nearest neighbor match. However for all but 
-\emph{Ratio-Match} the features with better matches within the same 
-image are still weeded out, which explains the tail end of 
-\emph{Ratio-Match} at high recall where the other algorithms no longer 
-have results. As we demonstrated in \cite{arnfred2013mirror} the removal 
+Figure~\ref{fig:all_objects} shows the performance of the different matching methods in our proposed framework for $12$ increasingly bigger angle differences. The results are shown in a precision / recall plot to make it easy to compare performance in terms of precision at similar levels of recall.  \emph{Ratio-Match} and \emph{Self-Match} show similar results, while \emph{Mirror-Match} and \emph{Ratio-Match-Ext} outperform both of them, showing the advantage of composing the \emph{proposed set} of features from both images. \emph{Mirror-Match} fares slightly but consistently better than \emph{Ratio-Match-Ext}. In general we see the largest performance improvements at lower recall and a  convergence of precision at higher recall. This is expected since a higher recall is a direct consequence of a more lenient threshold; as we let the threshold approach $1$, we lose the benefits of thresholding on the \emph{uniqueness ratio}, and all methods start approximating the results of a simple nearest neighbor match. For all but 
+\emph{Ratio-Match} at high recall where the other algorithms no longer have results. As we demonstrated in \cite{arnfred2013mirror}, the removal 
 of within-image matches improves performance on image pairs with partial 
 or no overlap. For no overlap we would expect a matching algorithm to 
 reject matches within regions that have no matching counterparts in the 
 other image.
 
-In the middle row featuring rotations of between $25$ and $40$ degrees 
-we see the strongest improvement of \emph{Mirror-Match} compared to 
-\emph{Ratio-Match} generally peaking at around
-a $20$ percentage-point increase in precision. Finally the the performance
-gain decreases as we further increase the rotation to between $45$ and 
-$60$. We suspect that this is partly because assumption \#2 that a 
-descriptor is well behaved and match best with a descriptor of a true 
-correspondence stops being valid when the images are transformed beyond 
+The performance gap between methods increases gradually with angle, reaching its maximum between $25$ and $40$ degrees, 
+where \emph{Mirror-Match} exhibits about 20 percentage-points higher precision than \emph{Ratio-Match}. 
+At larger viewpoint differences above $45$ degrees, the performance gain decreases.  We suspect this is partly because assumption \#2 stops being valid when the images are transformed beyond 
 a certain level of recognizability.
 
 To summarize, the methods perform as predicted on the 3D Objects dataset
 with \emph{Mirror-Match} in general performing better than 
-\emph{Ratio-Match-Ext} which in turn was performing better than 
+\emph{Ratio-Match-Ext}, which in turn outperforms
 \emph{Ratio-Match}. The experimental results also show that 
 \emph{Self-Match} overall perform equal to or better than 
 \emph{Ratio-Match}.
@@ -893,72 +1582,71 @@ with \emph{Mirror-Match} in general performing better than
     \centering
     \includegraphics[width=2\columnwidth]{images/results_descriptors_imageset1}
     \caption{Keypoint / Descriptor combinations measured on 15 pairs of 
-    photos of 3D objects taken 15 degrees apart. K = Keypoint, D = 
-Descriptor.}
+    photos of 3D objects taken 25 degrees apart.}
     \label{fig:descriptors}
 \end{figure*}
 
-To evaluate whether the improvement gains shown with the SIFT descriptor 
-translates to other feature descriptors such as SURF \cite{bay2006surf} 
+To evaluate whether the improvement gains with the SIFT descriptor 
+translate to other feature descriptors such as SURF \cite{bay2006surf} 
 or binary features such as BRIEF \cite{calonder2010brief}, BRISK 
-\cite{leutenegger2011brisk} or FREAK \cite{alahi2012freak} we evaluated 
-the different descriptors on the 3D objects data set.  For the binary 
-features they were each paired with the FAST feature detector while SIFT 
-and SURF were tested with their respective feature detectors.  For each 
-keypoint detector and feature descriptor pair we used the standard 
-implementation from OpenCV 2.4.6.
+\cite{leutenegger2011brisk}, or FREAK \cite{alahi2012freak}, we evaluated 
+the different descriptors on the 3D objects data set.  The binary 
+features were each paired with the FAST feature detector for 
+consistency, while SIFT and SURF were tested with their respective 
+feature detectors.  For each keypoint detector and feature descriptor 
+pair we used the standard implementation from OpenCV 2.4.6.
 
 The descriptors were evaluated on 15 images of the 3D object dataset 
 with a fixed angle offset of 25 degrees (pictured in 
-Figure~\ref{fig:3d_objects}).  The evaluation was otherwise performed as
-in the general evaluation of 3D Objects, and the data presented is 
+Figure~\ref{fig:3d_objects}).  Otherwise the evaluation performed in the same manner as the general evaluation of 3D Objects in Section~ref{S:3dobjects}, and the data presented is 
 accumulated over the 15 objects, each set of results weighted by the 
-possible amount of correspondences.
+possible number of correspondences.
 
-The results can be seen in Figure~\ref{fig:descriptors} and shows a 
-clear difference in the variance of matching method performance in 
-between SIFT and the rest of the descriptors. The performance of 
-\emph{Mirror-Match} using SIFT shows a clear increase in precision over 
-\emph{Ratio-Match} at equal recall levels. For other descriptors the 
-improvement is much less pronounced.  For the case of SURF, BRISK and 
-BRIEF we see a small improvement in precision using \emph{Mirror-Match} 
-over \emph{Ratio-Match} and \emph{Ratio-Match-ext} while FREAK yields 
-similar results no matter what algorithm is used. For all descriptors it 
-is the case that \emph{Self-Match} performs equally well to 
+The results in Figure~\ref{fig:descriptors} are again in line with the theoretical performance analysis of Section~\ref{S:Proofs} .
+They also show a clear difference in the variance of matching method 
+performance between SIFT and the rest of the descriptors. The 
+performance of \emph{Mirror-Match} using SIFT shows a clear increase in 
+precision over \emph{Ratio-Match} at equal recall levels. For other 
+descriptors the improvement is much less pronounced.  For SURF, BRISK, 
+and BRIEF we see a small improvement in precision using 
+\emph{Mirror-Match} over \emph{Ratio-Match} and \emph{Ratio-Match-ext}, 
+whereas FREAK yields similar results no matter what algorithm is used.  
+For all descriptors \emph{Self-Match} performs on par with 
 \emph{Ratio-Match}.
 
-Part of the explanation behind this difference between SIFT and the 
-other descriptors can be found by looking at the recall rate in the case
-of for example SURF\@. Given the same amount of possible matches, 
-\emph{Ratio-Match} in the case of SURF spans a larger range of recall.  
+Part of this difference between SIFT and the 
+other descriptors can be explained by looking at the recall rate 
+with for example SURF\@. Given the same amount of possible matches, 
+\emph{Ratio-Match} with SURF spans a larger range of recall.  
 Since all other methods filter out matches that are better matched 
-within the same image but show no increase in precision, we can conclude 
+within the same image, but show no increase in precision, we can conclude 
 that correct matches are discarded because there are better matches 
 within the same image. This violates assumption \#2 stating that a 
-descriptor is well behaved and match best with a descriptor of a true 
-correspondence. This means that for this particular evaluation case SURF 
+descriptor is well behaved and matches best with a descriptor of a true 
+correspondence. This means that for this particular evaluation case, SURF 
 and the binary features tested are not sufficiently discriminative to 
 provide a viable case for preferring \emph{Mirror-Match} over 
 \emph{Ratio-Match}.
 
 \subsection{Performance}
 
-In terms of computational complexity the algorithms can be implemented 
+In terms of computational complexity, the algorithms can be implemented 
 in $O(n\log n)$, if we assume that both the \emph{query} and the 
-\emph{target} image has $n$ feature points. For a target image with $m$ 
-features where $m$ is significantly different from $n$ the complexities 
-are as noted in Table~\ref{table:running_times}. In practice the constant factors 
+\emph{target} image have $n$ feature points. For a target image with $m$ 
+features where $m$ is significantly different from $n$, the complexities 
+are as noted in Table~\ref{table:running_times}. 
+In practice the constant factors 
 involved in the actual matching of two images with approximately the 
-same amount of feature points are usually small enough that all the 
-algorithms run at a similar speed. To illustrate 
-Table~\ref{table:running_times} contains the running times as measured 
+same number of feature points are usually small enough that all the 
+algorithms run at very similar speeds. This is also shown in 
+Table~\ref{table:running_times}, which contains the running times as measured 
 while matching 15 3D objects under three different lighting conditions 
 ($42$ image pairs were matched in total). The running times are averaged 
 over three separate runs of each algorithm implemented using the same 
 data structures and libraries in Python. 
 
 \begin{table}[htb]
-\caption{Complexity and running times tested on 45 image pairs with average $n = 237$ and average $m = 247$ 
+\caption{Complexity and running times tested on 45 image pairs with average $n = 237$ and average $m = 247$ feature points
 as tested on a Intel\textregistered\ Core\texttrademark\ i5-3550 CPU @ 
 3.30~GHz with 8~GB memory.}
 \label{table:running_times}
@@ -979,69 +1667,63 @@ as tested on a Intel\textregistered\ Core\texttrademark\ i5-3550 CPU @
 \end{tabular}
 \end{table}
 
-\subsection{Extending to multiple target images}
+\subsection{Extending to Multiple Target Images}
 %
-When we match a query image against multiple target images as seen in 
-for example image stitching, assumption \#1 that any feature in the 
-query image has at most 1 real correspondence in the set of target 
+When we match a query image against multiple target images, as 
+for example in image stitching, assumption \#1 that any feature in the 
+query image has at most one real correspondence in the set of target 
 features is no longer true. It might be the case that two target images 
 contain the same real object which yields two target features that are 
 both real correspondences. In this case calculating the \emph{uniqueness 
 ratio} by dividing the distance of one real correspondence with the 
 distance to another renders it entirely useless if the two features are 
 found in sets where there might be more than one correct 
-correspondences.
+correspondence.
 
-Brown et al.\ \cite{brown2005multi} proposes calculating the uniqueness 
+Brown et al.\ \cite{brown2005multi} propose calculating the uniqueness 
 ratio by taking the average of the $n$ nearest neighbors in each of the 
 $n$ target images. Since their particular case deals with images that 
 are aligned horizontally one after the other, this approach is not 
-flawed per se. However for the more general case of $n$ target images 
-with an unknown amount of overlaps in the target group, their approach 
-would not work since several features in the target group could possible 
+flawed per se. However for the more general case of $N$ target images 
+with an unknown amount of overlap in the target group, their approach 
+would not work since several features in the target group could possibly 
 be a correct correspondence. 
 
 This leaves us with two alternatives. Either we match the query image to 
-every target image individually or we use a matching strategy where the 
+every target image individually, or we use a matching strategy where the 
 \emph{baseline set} is guaranteed not to contain any real 
 correspondences. \emph{Self-Match} provides such a set, since the 
 \emph{baseline set} of \emph{Self-Match} only contains features in the 
-query image itself. In addition, matching a query image to $n$ target 
+query image itself. In addition, matching a query image to $N$ target 
 images with \emph{Self-Match} is vastly faster than matching the query 
-image to every target image: If we for the sake of simplicity assume 
-that every of the $n$ images has $k$ features then matching the query 
-image to all $n$ images can be done in $O(nklog(k))$ using a metric 
-tree. However, matching with \emph{Self-Match} is done in $O(klog(nk)) =
-O(klog(n) + klog(k))$.
+image to every target image: If we assume 
+that every of the $N$ images has $n$ features, then matching the query 
+image to all $N$ images can be done in $O(Nn\log(n))$ using a metric 
+tree. However, matching with \emph{Self-Match} is done in $O(n\log(nN)) =
+O(n\log(N) + n\log(n))$.
 
 \section{Conclusion}
 \label{S:Summary}
 
 We have proposed a framework of matching methods building on the ideas 
 behind \emph{Ratio-Match} and \emph{Mirror-Match} introducing the 
-variations \emph{Self-Match} and \emph{Ratio-Match-Ext}. We proved that 
-in terms of precision and recall \emph{Mirror-Match} performs better or 
-equal to \emph{Ratio-Match-Ext} which in turn performs better or equal 
-to \emph{Ratio-Match} under three common assumptions.
+variations \emph{Self-Match} and \emph{Ratio-Match-Ext}. We formally proved under three assumptions that \emph{Mirror-Match} performs better than or 
+equal to \emph{Ratio-Match-Ext} in terms of precision and recall, which in turn performs better than or equal 
+to \emph{Ratio-Match}.
 
-From an evaluation using images of rotated 3D objects we have shown that
-the theoretical conclusions are reflected in experimental data with 
+From an evaluation using images of rotated 3D objects, we have shown that
+the theoretical conclusions are reflected in the experimental results with 
 \emph{Mirror-Match} often outperforming \emph{Ratio-Match}
-significantly over 3024 image pairs. This performance gain comes free in 
-terms of both computational complexity as well as actual time 
-consumption as measured over 45 image pairs. Finally evaluations across 
-several different descriptors show that the gains in performance are 
-tied to descriptor performance with significantly smaller gains occuring 
-with descriptors that are less performant.
+significantly over 3024 image pairs. Finally we show that the theoretical conclusions hold across a variety of popular feature descriptors (SIFT, SURF, BRISK, BRIEF, and FREAK). These performance gain come for free in 
+terms of both computational complexity as well as actual computing time.
 
 With the framework we introduced three simple methods that are all 
 applicable in situations where \emph{Ratio-Match} is currently used.  
-\emph{Self-Match} is on par with \emph{Ratio-Match} across all 
-evaluations but can be applied when matching multiple overlapping 
-images. \emph{Ratio-Match-Ext} and \emph{Mirror-Match} on the other hand 
-can easily replace \emph{Ratio-Match} without any performance penalty 
-and with an increase in precision but are both limited to matching 
-image pairs like \emph{Ratio-Match}.
+\emph{Ratio-Match-Ext} and \emph{Mirror-Match} 
+can readily and easily replace \emph{Ratio-Match} without any performance penalty 
+and with an increase in precision.  However, both are limited to matching 
+image pairs like \emph{Ratio-Match}. \emph{Self-Match} on the other hand is on par with \emph{Ratio-Match} across all 
+evaluations, but can be applied when matching multiple overlapping images. 
 
 \appendix
 
@@ -1095,9 +1777,7 @@ also behave identically for this case. This proves that for any set of
 \emph{query features} \emph{Both-Match} returns the same matches as 
 \emph{Mirror-Match}.
 
-
+\balance
 \bibliographystyle{IEEEtran}
-\bibliography{tail/bibliography}
+\bibliography{bibliography}
 \end{document}
-
-

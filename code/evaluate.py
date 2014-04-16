@@ -47,12 +47,11 @@ def imageToImage(images, paths, keypoint_type, descriptor_type, score_fun = lamb
 	# Get descriptors
 	#data = map(lambda i,k : f.getDescriptors(descriptor_type, i, k), images, keypoints)
 	data = [f.getFeatures([p],keypoint_type, descriptor_type) for p in paths]
-	
+
 	indices, keypoints, descriptors = zip(*data)
 
 	# Return the scores labeled with a boolean to indicate if they are of same set
 	return matchDescriptors(descriptors, paths, descriptor_type, score_fun)
-
 
 
 def matchDescriptors(descriptors, paths, descriptor_type, score_fun) :
@@ -83,7 +82,7 @@ def matchDescriptors(descriptors, paths, descriptor_type, score_fun) :
 	print("=") * (int(len(path_pairs) / 100) +1)
 
 	score = [((f.getLabel(p1) == f.getLabel(p2)), getScore(D1, D2, i), (p1, p2))
-			for ((D1, D2), (p1, p2), i) 
+			for ((D1, D2), (p1, p2), i)
 			in zip( desc_pairs, path_pairs, range(len(path_pairs)) )]
 
 	# Add a newline

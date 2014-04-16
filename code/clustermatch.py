@@ -97,7 +97,7 @@ def cluster(weights, indices, split_limit = 10, prune_limit = 3, verbose = False
     partitions = louvain.cluster(weights, verbose=verbose)
     if rec_level > 10 : return partitions
     p_set = set(partitions)
-    
+
     r = numpy.arange(0, weights.shape[0])
     for p in p_set :
         partition_mask = partitions == p
@@ -107,7 +107,7 @@ def cluster(weights, indices, split_limit = 10, prune_limit = 3, verbose = False
             col_mask = partition_mask & (indices == j)
             index_row = r[row_mask]
             index_col = r[col_mask]
-    
+
             # Get weights
             pij_edges = weights[row_mask][:,col_mask]
             p_edges = weights[partition_mask][:,partition_mask]
@@ -125,10 +125,10 @@ def cluster(weights, indices, split_limit = 10, prune_limit = 3, verbose = False
                 p_zero = p_edges_pruned == 0
                 p_edges_norm = (p_edges_pruned - p_min) / (p_max - p_min)
                 p_edges_norm[p_zero] = 0
-                
+
                 # cluster
                 p_partition = cluster(p_edges_norm, indices[partition_mask], split_limit, prune_limit, verbose, rec_level + 1)
-            
+
                 # Update partitioning
                 partitions[partition_mask] = p_partition + numpy.max(partitions) + 1
     return partitions
@@ -163,11 +163,11 @@ def getPartitionMatches(partitions, weights, full_weights, indices, threshold, v
                 # Get weight
                 (m_i, m_j) = numpy.unravel_index(pij_edges.argmax(), pij_edges.shape)
                 w = pij_edges[m_i, m_j]
-                
+
                 # Get second largest row and col weight
                 sort_row = numpy.sort(full_weights[index_row[m_i],:])
                 sort_col = numpy.sort(full_weights[:,index_col[m_j]])
-                
+
                 # Test if the maximum match is the both for row and col
                 bothways_p = sort_row[-1] == sort_col[-1]
                 ratio_row = sort_row[-2] / w
@@ -175,7 +175,7 @@ def getPartitionMatches(partitions, weights, full_weights, indices, threshold, v
 
                 if bothways_p and (ratio_row < threshold and ratio_col < threshold) :
                     (p_i, p_j) = (index_row[m_i], index_col[m_j])
-                    if verbose : 
+                    if verbose :
                         distance = matchDistance(ks[p_i].pt, ks[p_j].pt, homography)
                         print("%4i\tEdges: %i\tDistance: %.2f" % (p, nb_e, distance))
                     yield ((p_i, p_j), ratio_row, w)
@@ -263,7 +263,7 @@ def getGeom(full_weights, keypoints, indices, limit = 0.7) :
 def modularity(weights, mask) :
     """ Calculates the modularity of the partition masked by 'mask' in the weight matrix
         Input: Weights [numpy.darray] The weightmatrix used
-               mask [boolean numpy.darray] A mask marking the partition of vertices 
+               mask [boolean numpy.darray] A mask marking the partition of vertices
     """
     K = weights.sum()
     if K == 0 : return 0
